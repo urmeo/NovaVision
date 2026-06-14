@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import gradio as gr
+from dotenv import load_dotenv
 
 from novavision.affect.analyzer import EmotionAnalyzer
 from novavision.config import get_settings
 from novavision.generation import get_backend
 from novavision.pipeline import NovaVision
 from novavision.prompting import STYLE_PRESETS
+
+load_dotenv()
 
 _cfg = get_settings()
 _kwargs = {"model_id": _cfg.diffusion_model} if _cfg.backend == "diffusers" else {}
