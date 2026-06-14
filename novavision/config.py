@@ -1,8 +1,7 @@
 """Application settings."""
 
-from __future__ import annotations
-
 from functools import lru_cache
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,7 +13,7 @@ class Settings(BaseSettings):
     backend: str = "null"
     emotion_model: str = "j-hartmann/emotion-english-distilroberta-base"
     diffusion_model: str = "stabilityai/sd-turbo"
-    hf_token: str | None = None
+    hf_token: Optional[str] = None
     default_style: str = "artistic"
     default_tier: str = "affect"
     width: int = 512
