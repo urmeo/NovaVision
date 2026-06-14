@@ -7,8 +7,7 @@ Do not open public issues for security problems.
 
 ## Secrets & configuration
 
-- No secrets are committed. Copy `.env.example` to `.env` and fill in your own values;
-  `.env` is gitignored.
+- No secrets are committed. Configuration is read from environment variables.
 - `HF_TOKEN` is needed only for the hosted `hf-api` backend.
 
 ## Hardening defaults
