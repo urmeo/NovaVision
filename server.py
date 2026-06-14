@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import random
+from datetime import datetime, timezone
 from io import BytesIO
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -93,6 +94,7 @@ def generate():
             "original_text": text,
             "style": style,
             "seed": result.seed,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     )
 
