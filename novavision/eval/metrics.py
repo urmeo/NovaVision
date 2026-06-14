@@ -7,7 +7,13 @@ from collections.abc import Sequence
 import numpy as np
 
 
+def _check(y_true: Sequence[str], y_pred: Sequence[str]) -> None:
+    if len(y_true) != len(y_pred):
+        raise ValueError("y_true and y_pred must be the same length")
+
+
 def accuracy(y_true: Sequence[str], y_pred: Sequence[str]) -> float:
+    _check(y_true, y_pred)
     if not y_true:
         return 0.0
     correct = sum(t == p for t, p in zip(y_true, y_pred))
@@ -17,6 +23,7 @@ def accuracy(y_true: Sequence[str], y_pred: Sequence[str]) -> float:
 def confusion_matrix(
     y_true: Sequence[str], y_pred: Sequence[str], labels: Sequence[str]
 ) -> np.ndarray:
+    _check(y_true, y_pred)
     index = {label: i for i, label in enumerate(labels)}
     matrix = np.zeros((len(labels), len(labels)), dtype=int)
     for t, p in zip(y_true, y_pred):
@@ -26,6 +33,7 @@ def confusion_matrix(
 
 
 def macro_f1(y_true: Sequence[str], y_pred: Sequence[str], labels: Sequence[str]) -> float:
+    _check(y_true, y_pred)
     scores = []
     for label in labels:
         tp = sum(t == label and p == label for t, p in zip(y_true, y_pred))
