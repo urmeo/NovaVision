@@ -11,7 +11,9 @@ from pathlib import Path
 from novavision.taxonomy import EMOTIONS, to_ekman
 
 
-def build(n_per_class: int = 100, out_path: str | Path = "data/affectbench.csv", seed: int = 0) -> Path:
+def build(
+    n_per_class: int = 100, out_path: str | Path = "data/affectbench.csv", seed: int = 0
+) -> Path:
     from datasets import load_dataset
 
     dataset = load_dataset("google-research-datasets/go_emotions", "simplified", split="train")
