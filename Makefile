@@ -7,11 +7,11 @@ test:
 	pytest -q
 
 lint:
-	ruff check novavision tests server.py app.py
-	ruff format --check novavision tests server.py app.py
+	ruff check novavision tests scripts server.py app.py
+	ruff format --check novavision tests scripts server.py app.py
 
 format:
-	ruff format novavision tests server.py app.py
+	ruff format novavision tests scripts server.py app.py
 
 app:
 	python server.py
