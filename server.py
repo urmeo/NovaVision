@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import base64
+import logging
+import os
 import random
 from datetime import datetime, timezone
 from io import BytesIO
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory
-from flask_cors import CORS
 
 from novavision.affect.analyzer import EmotionAnalyzer
 from novavision.config import get_settings
@@ -17,9 +18,20 @@ from novavision.generation import get_backend
 from novavision.pipeline import NovaVision
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("novavision.server")
+
+MIN_TEXT, MAX_TEXT = 3, 2000
 
 app = Flask(__name__, static_folder=".")
-CORS(app)
+app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # cap request body
+
+# CORS is off by default (same-origin SPA). Enable by listing origins in CORS_ORIGINS.
+_origins = os.getenv("CORS_ORIGINS", "").strip()
+if _origins:
+    from flask_cors import CORS
+
+    CORS(app, origins=[o.strip() for o in _origins.split(",")])
 
 _pipeline: NovaVision | None = None
 
@@ -39,6 +51,13 @@ def _emotion_list(scores: dict[str, float]):
     return [{"name": name, "score": round(score * 100, 1)} for name, score in ranked]
 
 
+def _valid_text(data) -> tuple[str, str | None]:
+    text = (data or {}).get("text", "").strip()
+    if not (MIN_TEXT <= len(text) <= MAX_TEXT):
+        return text, f"Text must be {MIN_TEXT}-{MAX_TEXT} characters."
+    return text, None
+
+
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -46,11 +65,16 @@ def index():
 
 @app.route("/api/analyze", methods=["POST"])
 def analyze():
-    text = (request.get_json(silent=True) or {}).get("text", "").strip()
-    if len(text) < 3:
-        return jsonify({"error": "Text too short"}), 400
+    text, error = _valid_text(request.get_json(silent=True))
+    if error:
+        return jsonify({"error": error}), 400
 
-    a = pipeline().analyzer.analyze(text)
+    try:
+        a = pipeline().analyzer.analyze(text)
+    except Exception:
+        logger.exception("analyze failed")
+        return jsonify({"error": "Analysis failed."}), 500
+
     return jsonify(
         {
             "success": True,
@@ -65,20 +89,23 @@ def analyze():
 
 @app.route("/api/generate", methods=["POST"])
 def generate():
-    data = request.get_json(silent=True) or {}
-    text = data.get("text", "").strip()
-    if not text:
-        return jsonify({"error": "Please enter some text."}), 400
+    data = request.get_json(silent=True)
+    text, error = _valid_text(data)
+    if error:
+        return jsonify({"error": error}), 400
 
-    style = data.get("style", "artistic")
-    seed = data.get("seed")
-    if seed is None:
-        seed = random.randint(0, 2**31 - 1)
+    style = str((data or {}).get("style", "artistic")).lower()
+    raw_seed = (data or {}).get("seed")
+    try:
+        seed = random.randint(0, 2**31 - 1) if raw_seed is None else int(raw_seed)
+    except (TypeError, ValueError):
+        return jsonify({"error": "seed must be an integer."}), 400
 
     try:
-        result = pipeline().auto_run(text, style=style.lower(), seed=int(seed))
-    except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+        result = pipeline().auto_run(text, style=style, seed=seed)
+    except Exception:
+        logger.exception("generation failed")
+        return jsonify({"error": "Generation failed."}), 500
 
     buffer = BytesIO()
     result.image.save(buffer, format="PNG")
@@ -103,4 +130,6 @@ def generate():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", "8000"))
+    app.run(host=host, port=port)
