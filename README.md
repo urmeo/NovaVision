@@ -1,119 +1,85 @@
 # NovaVision
 
-NovaVision turns a sentence into an image that reflects its emotional tone, and provides a
-benchmark for measuring whether the generated image conveys the intended emotion. It runs both
-as a web app and as a command-line research pipeline.
+Text-to-image generation conditioned on the emotion of a sentence — with a benchmark that
+measures whether the generated image actually conveys that emotion.
+
+<p align="center">
+  <img src="screenshots/main_interface.png" alt="NovaVision interface" width="860">
+</p>
+
+Most emotional image generators are judged by eye. NovaVision treats emotion as something to
+verify: it detects the emotion in text, grounds it in continuous valence and arousal,
+conditions the prompt, generates an image, then recovers the emotion from that image with CLIP
+and checks it against the original intent.
+
+<p align="center">
+  <img src="screenshots/demo_preview.gif" alt="Demo" width="860">
+</p>
 
 ## How it works
 
-1. A text classifier detects the dominant emotion across seven Ekman categories.
-2. Valence and arousal are estimated from the text with an affect lexicon, blended with the
-   detected emotion's circumplex prior in proportion to how many affect words appear.
-3. A prompt is composed at one of three conditioning levels — raw text, emotion scene, or
-   affect-grounded — and passed to an image backend.
-4. For evaluation, CLIP classifies the emotion of the generated image, which is compared
-   against the intended label (affect recovery).
+<p align="center">
+  <img src="screenshots/how_it_works.png" alt="Pipeline" width="780">
+</p>
 
-## Requirements
+- **Detect** — a DistilRoBERTa classifier scores seven Ekman emotions.
+- **Ground** — valence and arousal are computed from an affect lexicon, blended with the
+  emotion's circumplex prior in proportion to how many affect words the text contains.
+- **Condition** — the prompt is built at one of three levels (raw, emotion, affect-grounded),
+  which also serves as the ablation.
+- **Recover** — CLIP reads the emotion back from the generated image; its agreement with the
+  intended label is the core metric.
 
-- Python 3.9 or newer.
-- For local image generation, enough memory to run Stable Diffusion Turbo. A GPU or Apple
-  Silicon (MPS) is recommended; CPU works but is slow.
+## Highlights
 
-## Installation
+- Emotion is measured from the text, not mapped from fixed per-class constants.
+- Evaluation is automatic and reproducible (affect recovery), not manual inspection.
+- Image backends are pluggable: local Stable Diffusion Turbo (seedable), the hosted API, or an
+  offline backend for tests.
+- Seeded end to end; the deterministic core is covered by tests and CI.
 
-```bash
-git clone https://github.com/urme-b/NovaVision.git
-cd NovaVision
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev,research]"   # library, tests, and benchmark tools
-pip install -e ".[ml,app]"         # add models and the web app
-```
+## Evaluation
 
-## Usage
+<p align="center">
+  <img src="screenshots/emotion_analysis.png" alt="Emotion analysis" width="780">
+</p>
 
-Create a local environment file and choose a backend:
+The benchmark builds a balanced, emotion-labelled set from GoEmotions under the Ekman grouping
+and scores the three conditioning tiers on recovery accuracy, macro-F1, valence/arousal
+correlation, and CLIP-T. Confusion matrices and valence/arousal plots are generated into
+`results/`. Method and design are written up in `paper/paper.md`.
 
-```bash
-cp .env.example .env
-```
+## Tech stack
 
-Run the web app:
+- **ML / NLP** — PyTorch, Hugging Face Transformers, Diffusers (SD-Turbo), CLIP
+- **Application** — Python, Flask, Gradio
+- **Tooling** — pytest, ruff, GitHub Actions, Docker
 
-```bash
-python server.py   # Flask app on http://localhost:8000
-python app.py      # Gradio app on http://localhost:7860
-```
-
-### API
-
-- `POST /api/analyze` returns the detected emotion with valence and arousal.
-- `POST /api/generate` runs the full pipeline and returns a generated image with metadata.
-
-```bash
-curl -X POST localhost:8000/api/analyze \
-  -H 'Content-Type: application/json' \
-  -d '{"text": "I feel grateful and joyful today"}'
-```
-
-## Configuration
-
-Configuration is read from environment variables (see `.env.example`):
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `BACKEND` | Image backend: `null`, `diffusers`, or `hf-api` | `null` |
-| `DIFFUSION_MODEL` | Model id for the `diffusers` backend | `stabilityai/sd-turbo` |
-| `EMOTION_MODEL` | Model id for the text emotion classifier | `j-hartmann/emotion-english-distilroberta-base` |
-| `HF_TOKEN` | API token, required only for `hf-api` | unset |
-| `NOVAVISION_LEXICON` | Path to a full affect lexicon TSV | bundled demo lexicon |
-| `HOST`, `PORT` | Bind address for the Flask server | `127.0.0.1`, `8000` |
-| `CORS_ORIGINS` | Comma-separated allowed origins | same-origin only |
-
-## Benchmark
-
-The research pipeline builds a balanced benchmark, generates images across the three
-conditioning tiers, and scores affect recovery.
-
-```bash
-make benchmark            # build AffectBench from GoEmotions
-make reproduce            # generate and evaluate, writing to results/
-python scripts/report.py  # render the metrics table
-```
-
-A small, hand-authored sample benchmark and a demo lexicon ship in `data/` so the pipeline
-runs without downloads; see `data/README.md` for provenance. The method and evaluation are
-described in `paper/paper.md`.
-
-## Development
-
-```bash
-make test   # test suite (offline, no GPU or token required)
-make lint   # ruff checks and format verification
-```
-
-## Project layout
+## Project structure
 
 ```
 novavision/   core library: taxonomy, affect, prompting, generation, eval, pipeline
 data/         sample benchmark and demo lexicon
 paper/        method write-up and references
-scripts/      lexicon download and report generation
 tests/        test suite
-server.py     Flask API and static frontend
+server.py     web API and frontend
 app.py        Gradio interface
-index.html    single-page web client
 ```
 
-## Contributing
+## Quickstart
 
-Issues and pull requests are welcome. Run `make lint` and `make test` before submitting.
-Report security issues as described in `SECURITY.md`.
+```bash
+git clone https://github.com/urme-b/NovaVision.git
+cd NovaVision
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev,research]" && pip install -e ".[ml,app]"
+python server.py
+```
 
 ## Citation
 
-If you use NovaVision in your work, cite it using the metadata in `CITATION.cff`.
+Cite using the metadata in `CITATION.cff`.
 
 ## License
 
-Released under the MIT License. See `LICENSE`.
+MIT — see `LICENSE`.
