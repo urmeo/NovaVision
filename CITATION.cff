@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use NovaVision, please cite it."
+title: "NovaVision: Measuring Emotion Controllability in Text-to-Image Generation"
+version: 0.2.0
+date-released: 2026-06-14
+license: MIT
+repository-code: "https://github.com/urme-b/NovaVision"
+authors:
+  - family-names: Bose
+    given-names: Urme
+    alias: urme-b
