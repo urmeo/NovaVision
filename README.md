@@ -64,6 +64,7 @@ Configuration is read from environment variables (see `.env.example`):
 |----------|-------------|---------|
 | `BACKEND` | Image backend: `null`, `diffusers`, or `hf-api` | `null` |
 | `DIFFUSION_MODEL` | Model id for the `diffusers` backend | `stabilityai/sd-turbo` |
+| `EMOTION_MODEL` | Model id for the text emotion classifier | `j-hartmann/emotion-english-distilroberta-base` |
 | `HF_TOKEN` | API token, required only for `hf-api` | unset |
 | `NOVAVISION_LEXICON` | Path to a full affect lexicon TSV | bundled demo lexicon |
 | `HOST`, `PORT` | Bind address for the Flask server | `127.0.0.1`, `8000` |
@@ -97,6 +98,7 @@ make lint   # ruff checks and format verification
 novavision/   core library: taxonomy, affect, prompting, generation, eval, pipeline
 data/         sample benchmark and demo lexicon
 paper/        method write-up and references
+scripts/      lexicon download and report generation
 tests/        test suite
 server.py     Flask API and static frontend
 app.py        Gradio interface
@@ -107,6 +109,10 @@ index.html    single-page web client
 
 Issues and pull requests are welcome. Run `make lint` and `make test` before submitting.
 Report security issues as described in `SECURITY.md`.
+
+## Citation
+
+If you use NovaVision in your work, cite it using the metadata in `CITATION.cff`.
 
 ## License
 
