@@ -45,6 +45,7 @@ def run_experiment(
     records = []
     for i, row in enumerate(rows):
         text, intended = row["text"], row["emotion"]
+        print(f"[{i + 1}/{len(rows)}] {intended}", flush=True)
         analysis = analyzer.analyze(text)
         # Condition on the gold emotion to isolate controllability from
         # classifier error; ground valence/arousal in the text.
