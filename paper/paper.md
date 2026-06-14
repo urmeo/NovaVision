@@ -46,7 +46,7 @@ $a$). This grounds affect in the actual words while staying robust when few are 
 **Conditioning tiers.** We synthesise the generation prompt at three increasing levels:
 
 - **raw** — the input text plus a style preset (no emotion signal).
-- **emotion** — adds a scene template selected by the discrete emotion.
+- **emotion** — adds a scene template selected by the emotion.
 - **affect** — additionally injects valence/arousal cues (palette and lighting).
 
 The tiers form an ablation isolating the contribution of discrete-emotion conditioning and
@@ -54,30 +54,36 @@ of continuous affect grounding.
 
 ## 4. AffectBench
 
-We build a balanced benchmark from single-label GoEmotions examples, mapped to the seven
-Ekman categories (anger, disgust, fear, joy, neutral, sadness, surprise) and sampled to a
-fixed count per class (`novavision.data.build_benchmark`). A 56-item curated sample ships in
-the repository for offline runs.
+The full benchmark is built from single-label GoEmotions examples, mapped to the seven Ekman
+categories (anger, disgust, fear, joy, neutral, sadness, surprise) and sampled to a fixed
+count per class (`novavision.data.build_benchmark`). A separate, **hand-authored** 56-item
+sample (8 per class) ships in the repository for offline runs and tests; it is synthetic, not
+GoEmotions text. See `data/README.md`.
 
 ## 5. Evaluation: affect recovery
 
-Each generated image is passed to a CLIP zero-shot classifier over the seven emotion prompts;
-its argmax is the *recovered* emotion. We report:
+To isolate controllability from upstream text-classification error, the experiment
+**conditions on the gold emotion** (the benchmark label) and grounds valence/arousal in the
+text. Each generated image is passed to a CLIP zero-shot classifier — an ensemble of
+templates per emotion, averaged — and its argmax is the *recovered* emotion. We report:
 
-- **Recovery accuracy / macro-F1** — recovered vs. intended emotion.
-- **Valence/arousal correlation** — Pearson $r$ between intended (prior) and CLIP-probed
-  affect.
+- **Recovery accuracy / macro-F1** — recovered vs. intended (conditioned) emotion.
+- **Valence/arousal correlation** — Pearson $r$ between the *continuous grounded* affect we
+  conditioned on and CLIP's probed affect (not a per-class constant).
 - **CLIP-T** — image/text alignment, to confirm content is not lost when conditioning.
+- **Text-classification accuracy** — the upstream classifier vs. the gold label, reported
+  separately so it is not folded into the controllability number.
 
 ## 6. Experimental setup
 
-Generator: SD-Turbo (open, seedable). Recovery: CLIP ViT-B/32. Same seed per item across
-tiers for paired comparison. Full configuration is recorded in `results/results.json`.
+Generator: SD-Turbo (open, seedable). Recovery: CLIP ViT-B/32. The same seed is used per item
+across tiers for paired comparison. Full configuration is recorded in `results/results.json`.
 
 ## 7. Results
 
-Table 1 reports each metric per conditioning tier; per-tier confusion matrices and
-valence/arousal scatter plots are in `results/figures/`.
+Table 1 reports each metric per conditioning tier; text-classification accuracy is reported
+once (it is tier-independent). Per-tier confusion matrices and valence/arousal scatter plots
+are in `results/figures/`.
 
 **Table 1.** Affect recovery by conditioning tier (generated).
 
@@ -96,13 +102,22 @@ fear/sadness and surprise/joy).
 
 ## 9. Limitations
 
-CLIP-based recovery is a proxy for human perception, not a substitute; the demo lexicon is
-small (swap in empirical norms for research runs); and the Ekman taxonomy omits mixed
-affect. A human study is the natural next step.
+- **CLIP is a proxy** for human perception, not a substitute; a human study is the natural
+  next step.
+- **Scene-content confound.** The emotion/affect tiers prepend a scene template, so high
+  recovery on those tiers can partly reflect CLIP recognising the injected scene content
+  rather than affect transfer. The *affect-minus-emotion* delta (shared scene, added
+  valence/arousal cues) partially isolates the continuous-grounding effect.
+- **Probe co-design.** The CLIP recovery prompts share affective vocabulary with the
+  conditioning side; we mitigate with a per-emotion template ensemble and report results, but
+  an independent affect classifier would strengthen external validity.
+- The demo lexicon is small (swap in empirical norms for research runs), and the Ekman
+  taxonomy omits mixed affect.
 
 ## 10. Reproducibility
 
-`pip install -e ".[dev,ml,research]"`, then `make reproduce`. Everything is seeded; the
+`pip install -e ".[dev,research]" && pip install -e ".[ml]"`, then `make benchmark` followed
+by `make reproduce` (or `make smoke` for a quick run on the sample). Everything is seeded; the
 deterministic core is covered by unit tests in CI.
 
 ## References
