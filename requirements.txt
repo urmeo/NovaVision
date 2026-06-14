@@ -1,0 +1,13 @@
+# App runtime (pinned)
+numpy==1.26.4
+pillow==10.4.0
+pydantic==2.9.2
+pydantic-settings==2.5.2
+python-dotenv==1.0.1
+flask==3.0.3
+flask-cors==5.0.0
+transformers==4.44.2
+torch==2.2.2
+huggingface-hub==0.24.6
+diffusers==0.30.3
+accelerate==0.34.2
