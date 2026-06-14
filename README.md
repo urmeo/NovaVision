@@ -25,18 +25,14 @@ emotional controllability rather than a subjective one.
   <img src="screenshots/how_it_works.png" alt="Pipeline" width="780">
 </p>
 
-1. **Detect** — a DistilRoBERTa classifier (`j-hartmann/emotion-english-distilroberta-base`)
-   scores the seven Ekman emotions.
-2. **Ground** — valence and arousal are read from an affect lexicon and blended with the
-   emotion's circumplex prior by lexical coverage `c`: `v = c·v_lex + (1−c)·v_prior` (likewise
-   for arousal), so affect comes from the words rather than a fixed per-class constant.
-3. **Condition** — the prompt is assembled at one of three levels: raw text, emotion scene, or
-   affect-grounded (valence and arousal mapped to palette and lighting). The tiers double as
-   the ablation.
-4. **Generate** — Stable Diffusion Turbo renders from a fixed seed; backends are pluggable
-   (local diffusers, hosted API, or an offline stub for tests).
-5. **Recover** — CLIP (ViT-B/32) classifies the generated image's emotion; agreement with the
-   intended label is the primary metric.
+1. **Detect** — DistilRoBERTa scores the seven Ekman emotions in the text.
+2. **Ground** — valence and arousal are estimated from an affect lexicon, blended with the
+   emotion prior by word coverage: `v = c·v_lex + (1−c)·v_prior`.
+3. **Condition** — the prompt is built at one of three levels (raw, emotion, affect-grounded);
+   these tiers are the ablation.
+4. **Generate** — Stable Diffusion Turbo renders the image from a fixed seed.
+5. **Recover** — CLIP (ViT-B/32) reads the emotion back from the image and compares it to the
+   intended label.
 
 ## Evaluation
 
@@ -55,10 +51,6 @@ to `results/`. The method is described in the paper, `paper/paper.md`.
 - **ML / NLP** — PyTorch, Hugging Face Transformers, Diffusers (SD-Turbo), CLIP
 - **Application** — Python, Flask, Gradio
 - **Tooling** — pytest, ruff, GitHub Actions, Docker
-
-## Citation
-
-Cite using the metadata in `CITATION.cff`.
 
 ## Future scope
 
