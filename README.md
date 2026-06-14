@@ -31,9 +31,9 @@ they are computed from the text rather than looked up from a fixed table.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"        # core + research + tests
-pip install -e ".[ml,app]"     # add models + web/Gradio app
-cp .env.example .env           # set BACKEND, and HF_TOKEN if using the API
+pip install -e ".[dev,research]"   # core + research + tests
+pip install -e ".[ml,app]"         # add models + web/Gradio app
+cp .env.example .env               # set BACKEND, and HF_TOKEN if using the API
 ```
 
 ## Run the app
@@ -66,15 +66,22 @@ automatic evaluation that asks: does a conditioned image's emotion, recovered by
 the intended one?
 
 ```bash
+pip install -e ".[ml]"         # models for generation + CLIP
 make benchmark                 # build AffectBench from GoEmotions (data/affectbench.csv)
 make reproduce                 # generate + evaluate across tiers -> results/results.json
+make smoke                     # quick run on the shipped sample
 python scripts/report.py       # render the metrics table for the paper
 ```
 
-Metrics: affect-recovery accuracy, macro-F1, valence/arousal correlation, and CLIP-T.
-Figures (confusion matrices, valence/arousal scatter) are written to `results/figures/`.
-A 56-item sample benchmark and a demo lexicon ship in `data/` so everything runs offline; for
-research use, swap in empirical norms with `python scripts/download_lexicon.py`.
+Metrics: affect-recovery accuracy, macro-F1, valence/arousal correlation, CLIP-T, and
+(separately) text-classification accuracy. The experiment conditions on the gold emotion to
+isolate controllability. Figures (confusion matrices, valence/arousal scatter) go to
+`results/figures/`.
+
+A hand-authored 56-item sample benchmark and a demo lexicon ship in `data/` (see
+[data/README.md](data/README.md)) so the **tests** run offline; the experiment itself needs the
+`ml` extras (it downloads SD-Turbo, CLIP, and the classifier). For research, swap in empirical
+norms with `python scripts/download_lexicon.py`.
 
 The write-up lives in [`paper/paper.md`](paper/paper.md).
 
