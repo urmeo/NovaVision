@@ -48,9 +48,11 @@ to `results/`. The method is described in the paper, `paper/paper.md`.
 
 ## Tech stack
 
-- **ML / NLP** — PyTorch, Hugging Face Transformers, Diffusers (SD-Turbo), CLIP
-- **Application** — Python, Flask, Gradio
-- **Tooling** — pytest, ruff, GitHub Actions, Docker
+| Area | Tools |
+|------|-------|
+| ML / NLP | PyTorch, Hugging Face Transformers, Diffusers (SD-Turbo), CLIP |
+| Application | Python, Flask, Gradio |
+| Tooling | pytest, ruff, GitHub Actions, Docker |
 
 ## Future scope
 
