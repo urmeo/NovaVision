@@ -7,6 +7,7 @@ import random
 from datetime import datetime, timezone
 from io import BytesIO
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
@@ -14,6 +15,8 @@ from novavision.affect.analyzer import EmotionAnalyzer
 from novavision.config import get_settings
 from novavision.generation import get_backend
 from novavision.pipeline import NovaVision
+
+load_dotenv()
 
 app = Flask(__name__, static_folder=".")
 CORS(app)
