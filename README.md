@@ -1,118 +1,126 @@
-# NovaVision
+<div align="center">
+
+# 🎨 NovaVision
+
+**Turn how you feel into art — then measure whether the art actually feels that way.**
 
 [![CI](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-green.svg)](https://python.org)
+[![Code style: ruff](https://img.shields.io/badge/style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 
-Turn a sentence into art that *feels* the way the sentence does — and then check whether it
-actually does. NovaVision reads the emotion in text, grounds it in continuous
-valence/arousal, builds a conditioned prompt, and generates an image. It also ships a small
-benchmark that measures whether generated images carry the intended emotion back.
+<img src="screenshots/main_interface.png" alt="NovaVision interface" width="820">
 
-## Demo
+</div>
 
-[![Watch the demo](https://img.youtube.com/vi/S7LZsnMPOmA/maxresdefault.jpg)](https://youtu.be/S7LZsnMPOmA)
+NovaVision reads the emotion in a sentence, grounds it in continuous **valence/arousal**,
+builds an affect-conditioned prompt, and generates an image. It is both a **web app** and a
+small **research benchmark** that asks a falsifiable question: *does a conditioned image
+actually carry the intended emotion back to a viewer?*
 
-## How it works
+<div align="center">
+  <img src="screenshots/demo_preview.gif" alt="Demo" width="820">
+  <br><em><a href="https://youtu.be/S7LZsnMPOmA">▶ Watch the full demo</a></em>
+</div>
+
+## ✨ Features
+
+- **Emotion → art** across 7 Ekman emotions, with five visual styles.
+- **Grounded affect** — valence/arousal are *computed from the text* (lexicon blended with
+  circumplex priors), not looked up from constants.
+- **Pluggable backends** — local `sd-turbo` (seedable, reproducible), the HF Inference API,
+  or a deterministic `null` backend for offline dev/CI.
+- **AffectBench** — a reproducible benchmark + automatic CLIP *affect-recovery* metric.
+- **Production-checked** — 38 tests, ruff-clean, CI, Flask + gunicorn + Gradio.
+
+## 🧠 How it works
+
+<div align="center"><img src="screenshots/how_it_works.png" alt="Pipeline" width="760"></div>
 
 ```
 text ─► emotion classifier ─┐
                             ├─► affect grounding (valence/arousal) ─► tiered prompt ─► image
-        affect lexicon  ────┘                                                            │
-                                                                                         ▼
-                                              CLIP affect recovery ◄── intended vs recovered emotion
+        affect lexicon  ────┘                                                           │
+                                                                                        ▼
+                                          CLIP affect recovery ◄── intended vs recovered emotion
 ```
 
-Emotion is read with a DistilRoBERTa classifier; valence/arousal come from an affect lexicon
-(blended with the emotion's circumplex prior by how many affect words the text contains), so
-they are computed from the text rather than looked up from a fixed table.
+<div align="center"><img src="screenshots/emotion_analysis.png" alt="Emotion analysis" width="760"></div>
 
-## Install
+## 🚀 Quick start
 
 ```bash
+git clone https://github.com/urme-b/NovaVision.git
+cd NovaVision
 python -m venv .venv && source .venv/bin/activate
+
 pip install -e ".[dev,research]"   # core + research + tests
-pip install -e ".[ml,app]"         # add models + web/Gradio app
-cp .env.example .env               # set BACKEND, and HF_TOKEN if using the API
+pip install -e ".[ml,app]"         # models + web app
+cp .env.example .env               # choose BACKEND (default: diffusers / sd-turbo)
+
+python server.py                   # → http://localhost:8000
 ```
 
-## Run the app
-
-```bash
-python server.py               # Flask app at http://localhost:8000
-python app.py                  # Gradio app at http://localhost:7860
-```
-
-Set `BACKEND=diffusers` (local, reproducible, default `stabilityai/sd-turbo`) or
-`BACKEND=hf-api` with an `HF_TOKEN`. `BACKEND=null` returns placeholder images for offline
-development.
-
-### API
+## 🔌 API
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/analyze` | Emotion + valence/arousal for text |
+| `POST` | `/api/analyze`  | Emotion + valence/arousal for text |
 | `POST` | `/api/generate` | Full pipeline → image + metadata |
 
 ```bash
 curl -X POST localhost:8000/api/analyze -H 'Content-Type: application/json' \
-  -d '{"text":"I feel so grateful today"}'
+  -d '{"text":"I feel grateful and joyful today"}'
+# → {"primary_emotion":"joy","confidence":99.2,"valence":0.81,"arousal":0.70, ...}
 ```
 
-## Research: the affect-recovery benchmark
+## 🔬 Research: AffectBench
 
-The conditioning method has three ablation tiers — `raw`, `emotion`, `affect` — and an
-automatic evaluation that asks: does a conditioned image's emotion, recovered by CLIP, match
-the intended one?
+Three conditioning tiers (`raw` → `emotion` → `affect`) are evaluated by an automatic
+**affect-recovery** protocol: generate an image, classify its emotion back with CLIP, and
+compare to the intended label. Metrics: recovery accuracy, macro-F1, valence/arousal
+correlation, CLIP-T, and (separately) text-classification accuracy.
 
 ```bash
-pip install -e ".[ml]"         # models for generation + CLIP
-make benchmark                 # build AffectBench from GoEmotions (data/affectbench.csv)
-make reproduce                 # generate + evaluate across tiers -> results/results.json
-make smoke                     # quick run on the shipped sample
-python scripts/report.py       # render the metrics table for the paper
+make benchmark     # build AffectBench from GoEmotions (Ekman mapping)
+make reproduce     # generate + evaluate across tiers → results/
+python scripts/report.py   # render the metrics table
 ```
 
-Metrics: affect-recovery accuracy, macro-F1, valence/arousal correlation, CLIP-T, and
-(separately) text-classification accuracy. The experiment conditions on the gold emotion to
-isolate controllability. Figures (confusion matrices, valence/arousal scatter) go to
-`results/figures/`.
+The write-up is in [`paper/paper.md`](paper/paper.md); data provenance in
+[`data/README.md`](data/README.md). Everything is seeded; the deterministic core runs
+offline in CI.
 
-A hand-authored 56-item sample benchmark and a demo lexicon ship in `data/` (see
-[data/README.md](data/README.md)) so the **tests** run offline; the experiment itself needs the
-`ml` extras (it downloads SD-Turbo, CLIP, and the classifier). For research, swap in empirical
-norms with `python scripts/download_lexicon.py`.
-
-The write-up lives in [`paper/paper.md`](paper/paper.md).
-
-## Repo structure
+## 📁 Project structure
 
 ```
 novavision/
-  taxonomy.py            # emotions, priors, GoEmotions->Ekman map
-  affect/                # lexicon scoring + emotion analyzer
-  prompting.py           # affect-conditioned prompt synthesis (tiers)
-  generation/            # null / diffusers / hf-api backends
-  pipeline.py            # text -> image
-  eval/                  # CLIP recovery, metrics, figures
-  data/                  # benchmark builder + loader
-  experiments/run.py     # end-to-end benchmark
-data/                    # sample benchmark + demo lexicon
-paper/                   # write-up + references
-server.py · app.py · index.html
+  taxonomy.py          emotions, priors, GoEmotions→Ekman map
+  affect/              lexicon scoring + emotion analyzer
+  prompting.py         affect-conditioned prompt synthesis (tiers)
+  generation/          null · diffusers · hf-api backends
+  pipeline.py          text → image
+  eval/                CLIP recovery · metrics · figures
+  data/ · experiments/ benchmark builder · runner
+data/  paper/  tests/  server.py  app.py  index.html
 ```
 
-## Test
+## 🛠 Tech stack
+
+Python · HuggingFace Transformers · Diffusers (SD-Turbo) · CLIP · Flask · Gradio ·
+Pydantic · pytest · ruff · Docker
+
+## ✅ Testing
 
 ```bash
-make test                # deterministic core, no GPU or token needed
+make test    # 38 tests, offline, no GPU or token
 make lint
 ```
 
-## Citation
+## 📚 Citation
 
 See [`CITATION.cff`](CITATION.cff).
 
-## License
+## 📄 License
 
-MIT
+[MIT](LICENSE) © urme-b
