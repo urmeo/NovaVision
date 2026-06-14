@@ -27,16 +27,19 @@ image ─► CLIPAffect.recover ─► (recovered emotion, valence, arousal)
 intended emotion ◄── compare ──► recovered emotion
 ```
 
-`eval/clip_affect.py` runs CLIP zero-shot over the seven emotion prompts (recovery) and over
-valence/arousal anchor prompts (affect probing). `eval/metrics.py` computes accuracy,
+`eval/clip_affect.py` runs CLIP zero-shot over a per-emotion template ensemble (recovery) and
+over valence/arousal anchor prompts (affect probing). `eval/metrics.py` computes accuracy,
 macro-F1, confusion, and Pearson correlation — pure numpy, fully unit-tested.
 `experiments/run.py` ties it together over the benchmark and writes `results.json` + figures.
+To isolate controllability from upstream classifier error, the experiment conditions on the
+**gold** emotion and correlates recovered affect against the **continuous** text-grounded
+valence/arousal; text-classification accuracy is reported separately.
 
 ## Data
 
-`data/build_benchmark.py` maps single-label GoEmotions to the seven Ekman categories
-(`taxonomy.GOEMOTIONS_TO_EKMAN`) and samples a balanced set. A curated sample and a demo
-lexicon ship in `data/` for offline use.
+`novavision/data/build_benchmark.py` maps single-label GoEmotions to the seven Ekman
+categories (`taxonomy.GOEMOTIONS_TO_EKMAN`) and samples a balanced set. A separate
+hand-authored sample and a demo lexicon ship in `data/` for offline use (see `data/README.md`).
 
 ## Design notes
 
