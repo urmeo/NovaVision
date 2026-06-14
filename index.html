@@ -3220,16 +3220,25 @@
 
                 // Update all 7 emotion bars
                 const emotionBars = document.getElementById('emotionBars');
-                const emotionBarsHTML = data.emotions.map((e, i) => `
-                    <div class="emotion-bar">
-                        <span class="emotion-name">${e.name.charAt(0).toUpperCase() + e.name.slice(1)}</span>
-                        <div class="emotion-track">
-                            <div class="emotion-fill ${i > 0 ? 'secondary' : ''}" style="width: ${e.score}%"></div>
-                        </div>
-                        <span class="emotion-value">${e.score.toFixed(1)}%</span>
-                    </div>
-                `).join('');
-                emotionBars.innerHTML = emotionBarsHTML;
+                emotionBars.innerHTML = '';
+                data.emotions.forEach((e, i) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'emotion-bar';
+                    const name = document.createElement('span');
+                    name.className = 'emotion-name';
+                    name.textContent = e.name.charAt(0).toUpperCase() + e.name.slice(1);
+                    const track = document.createElement('div');
+                    track.className = 'emotion-track';
+                    const fill = document.createElement('div');
+                    fill.className = 'emotion-fill' + (i > 0 ? ' secondary' : '');
+                    fill.style.width = e.score + '%';
+                    track.appendChild(fill);
+                    const value = document.createElement('span');
+                    value.className = 'emotion-value';
+                    value.textContent = e.score.toFixed(1) + '%';
+                    bar.append(name, track, value);
+                    emotionBars.appendChild(bar);
+                });
 
                 // Update prompt text (remove default styling)
                 const promptTextEl = document.getElementById('promptText');
