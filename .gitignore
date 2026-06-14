@@ -97,3 +97,6 @@ Thumbs.db
 *.log
 outputs/
 results/
+
+# Superseded pre-rebuild report (contains stale, non-reproducible numbers)
+Report.pdf
