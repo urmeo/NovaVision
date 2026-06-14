@@ -1,57 +1,49 @@
-# System Architecture
+# Architecture
 
-## Overview
-NovaVision transforms text into AI-generated art using emotion detection and diffusion models.
+NovaVision is two things sharing one core: a text-to-art **app** and an emotion-controllability
+**benchmark**. Both run through the same pipeline.
 
-## Data Flow
+## Pipeline
+
 ```
-User Input → Smart Detection → Emotion Analysis → Prompt Building → Image Generation → Output
+text ─► EmotionAnalyzer ─► (emotion, valence, arousal) ─► build_prompt(tier) ─► ImageBackend ─► image
 ```
 
-## Pipeline Steps
+1. **EmotionAnalyzer** (`affect/analyzer.py`) — DistilRoBERTa gives discrete-emotion scores.
+   Valence/arousal come from **AffectLexicon** (`affect/lexicon.py`) over the input words,
+   blended with the emotion's circumplex prior by lexical coverage. So affect is *measured
+   from text*, not read from a constant per emotion.
+2. **Prompt synthesis** (`prompting.py`) — three tiers: `raw` (text only), `emotion` (adds an
+   emotion scene), `affect` (adds valence/arousal palette and lighting cues). The tiers are
+   the ablation.
+3. **Backends** (`generation/`) — a common `ImageBackend` interface with three
+   implementations: `null` (deterministic, offline, for tests), `diffusers` (local, seedable),
+   `hf-api` (hosted). Selected by `BACKEND`.
 
-**Step 1: Input**
-- User enters text + selects style
-- Example: "I feel happy today" + Artistic
+## Evaluation
 
-**Step 2: Smart Detection**
-- Checks if input is EMOTION ("I feel happy") or OBJECT ("red car")
-- Routes to appropriate processing
+```
+image ─► CLIPAffect.recover ─► (recovered emotion, valence, arousal)
+intended emotion ◄── compare ──► recovered emotion
+```
 
-**Step 3: Emotion Analysis** (if emotion mode)
-- Model: emotion-english-distilroberta-base
-- Output: primary emotion, confidence, valence, arousal
+`eval/clip_affect.py` runs CLIP zero-shot over the seven emotion prompts (recovery) and over
+valence/arousal anchor prompts (affect probing). `eval/metrics.py` computes accuracy,
+macro-F1, confusion, and Pearson correlation — pure numpy, fully unit-tested.
+`experiments/run.py` ties it together over the benchmark and writes `results.json` + figures.
 
-**Step 4: Prompt Building**
-- Maps emotion → visual elements (colors, lighting, mood)
-- Adds style modifiers + quality keywords
-- Appends anti-watermark suffix
+## Data
 
-**Step 5: Image Generation**
-- Model: FLUX.1-schnell via HuggingFace API
-- Resolution: 1024x1024
-- Returns PIL Image
+`data/build_benchmark.py` maps single-label GoEmotions to the seven Ekman categories
+(`taxonomy.GOEMOTIONS_TO_EKMAN`) and samples a balanced set. A curated sample and a demo
+lexicon ship in `data/` for offline use.
 
-## Emotion Mapping
-| Emotion | Valence | Arousal | Visual Style |
-|---------|---------|---------|--------------|
-| Joy | +0.8 | 0.7 | Bright, warm, golden |
-| Sadness | -0.7 | 0.3 | Muted, cool, dim |
-| Anger | -0.6 | 0.9 | Red, sharp, intense |
-| Fear | -0.8 | 0.8 | Dark, shadows, tense |
-| Neutral | 0.0 | 0.3 | Balanced, calm |
+## Design notes
 
-## Style Presets
-| Style | Modifiers |
-|-------|-----------|
-| Artistic | oil painting, brushwork, museum quality |
-| Photorealistic | DSLR, 85mm lens, 8k, natural light |
-| Abstract | geometric, bold colors, modern art |
-| Nature | landscape, golden hour, serene |
-| Dreamscape | surreal, fantasy, ethereal |
-
-## Tech Stack
-- **Frontend:** Gradio / HTML
-- **Backend:** Python / Flask
-- **NLP:** HuggingFace Transformers
-- **Image:** FLUX.1 via Inference API
+- **Heavy deps are lazy.** Importing the package needs only numpy/pillow; torch, transformers,
+  diffusers, and CLIP are imported inside the functions that use them, so the deterministic
+  core and its tests run anywhere and in CI.
+- **Seeded and reproducible.** The same seed is used per item across tiers for paired
+  comparison; the null backend is deterministic for tests.
+- **One source of truth.** `server.py`, `app.py`, and `experiments/run.py` are thin adapters
+  over `novavision/`; there is no duplicated logic.
