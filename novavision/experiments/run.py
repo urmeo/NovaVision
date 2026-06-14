@@ -35,7 +35,11 @@ def run_experiment(
         rows = rows[:limit]
 
     analyzer = EmotionAnalyzer(model_name=emotion_model)
-    gen = get_backend(backend, model_id=diffusion_model) if backend == "diffusers" else get_backend(backend)
+    gen = (
+        get_backend(backend, model_id=diffusion_model)
+        if backend == "diffusers"
+        else get_backend(backend)
+    )
     clip = CLIPAffect(model_id=clip_model)
 
     records = []
@@ -45,23 +49,30 @@ def run_experiment(
         iv, ia = prior(intended)
         for tier in tiers:
             prompt = build_prompt(
-                text, emotion=analysis.primary, valence=analysis.valence,
-                arousal=analysis.arousal, style=style, tier=tier,
+                text,
+                emotion=analysis.primary,
+                valence=analysis.valence,
+                arousal=analysis.arousal,
+                style=style,
+                tier=tier,
             )
-            image = gen.generate(prompt, width=width, height=height, seed=seed + i,
-                                 negative_prompt=NEGATIVE_PROMPT)
+            image = gen.generate(
+                prompt, width=width, height=height, seed=seed + i, negative_prompt=NEGATIVE_PROMPT
+            )
             rec = clip.recover(image)
-            records.append({
-                "text": text,
-                "intended": intended,
-                "tier": tier,
-                "predicted": rec.emotion,
-                "intended_valence": iv,
-                "intended_arousal": ia,
-                "recovered_valence": rec.valence,
-                "recovered_arousal": rec.arousal,
-                "clip_t": clip.clip_t(image, text),
-            })
+            records.append(
+                {
+                    "text": text,
+                    "intended": intended,
+                    "tier": tier,
+                    "predicted": rec.emotion,
+                    "intended_valence": iv,
+                    "intended_arousal": ia,
+                    "recovered_valence": rec.valence,
+                    "recovered_arousal": rec.arousal,
+                    "clip_t": clip.clip_t(image, text),
+                }
+            )
 
     metrics = _summarize(records, tiers)
     _write(out, backend, style, seed, records, metrics)
@@ -77,10 +88,18 @@ def _summarize(records, tiers) -> dict:
         summary[tier] = {
             "accuracy": round(accuracy(y_true, y_pred), 4),
             "macro_f1": round(macro_f1(y_true, y_pred, EMOTIONS), 4),
-            "valence_r": round(pearson([r["intended_valence"] for r in sub],
-                                       [r["recovered_valence"] for r in sub]), 4),
-            "arousal_r": round(pearson([r["intended_arousal"] for r in sub],
-                                       [r["recovered_arousal"] for r in sub]), 4),
+            "valence_r": round(
+                pearson(
+                    [r["intended_valence"] for r in sub], [r["recovered_valence"] for r in sub]
+                ),
+                4,
+            ),
+            "arousal_r": round(
+                pearson(
+                    [r["intended_arousal"] for r in sub], [r["recovered_arousal"] for r in sub]
+                ),
+                4,
+            ),
             "clip_t": round(sum(r["clip_t"] for r in sub) / len(sub), 4) if sub else 0.0,
             "n": len(sub),
         }
@@ -118,8 +137,12 @@ def main() -> None:
     args = parser.parse_args()
 
     metrics = run_experiment(
-        backend=args.backend, benchmark=args.benchmark, style=args.style,
-        limit=args.limit, seed=args.seed, out=args.out,
+        backend=args.backend,
+        benchmark=args.benchmark,
+        style=args.style,
+        limit=args.limit,
+        seed=args.seed,
+        out=args.out,
     )
     print(json.dumps(metrics, indent=2))
 

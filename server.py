@@ -47,14 +47,16 @@ def analyze():
         return jsonify({"error": "Text too short"}), 400
 
     a = pipeline().analyzer.analyze(text)
-    return jsonify({
-        "success": True,
-        "primary_emotion": a.primary,
-        "confidence": round(a.confidence * 100, 1),
-        "valence": a.valence,
-        "arousal": a.arousal,
-        "emotions": _emotion_list(a.scores),
-    })
+    return jsonify(
+        {
+            "success": True,
+            "primary_emotion": a.primary,
+            "confidence": round(a.confidence * 100, 1),
+            "valence": a.valence,
+            "arousal": a.arousal,
+            "emotions": _emotion_list(a.scores),
+        }
+    )
 
 
 @app.route("/api/generate", methods=["POST"])
@@ -78,19 +80,21 @@ def generate():
     result.image.save(buffer, format="PNG")
     image = base64.b64encode(buffer.getvalue()).decode("utf-8")
     a = result.analysis
-    return jsonify({
-        "success": True,
-        "image": f"data:image/png;base64,{image}",
-        "primary_emotion": a.primary,
-        "confidence": round(a.confidence * 100, 1),
-        "valence": a.valence,
-        "arousal": a.arousal,
-        "emotions": _emotion_list(a.scores),
-        "prompt": result.prompt,
-        "original_text": text,
-        "style": style,
-        "seed": result.seed,
-    })
+    return jsonify(
+        {
+            "success": True,
+            "image": f"data:image/png;base64,{image}",
+            "primary_emotion": a.primary,
+            "confidence": round(a.confidence * 100, 1),
+            "valence": a.valence,
+            "arousal": a.arousal,
+            "emotions": _emotion_list(a.scores),
+            "prompt": result.prompt,
+            "original_text": text,
+            "style": style,
+            "seed": result.seed,
+        }
+    )
 
 
 if __name__ == "__main__":
