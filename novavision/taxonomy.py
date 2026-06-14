@@ -57,15 +57,43 @@ GOEMOTIONS_TO_EKMAN: dict[str, str] = {
     "neutral": "neutral",
 }
 
-# Zero-shot recovery prompts for CLIP
-EMOTION_PROMPTS: dict[str, str] = {
-    "anger": "an image that feels angry and intense",
-    "disgust": "an image that feels disgusting and repulsive",
-    "fear": "an image that feels fearful and threatening",
-    "joy": "an image that feels joyful and happy",
-    "neutral": "an image that feels calm and neutral",
-    "sadness": "an image that feels sad and melancholic",
-    "surprise": "an image that feels surprising and astonishing",
+# Zero-shot recovery prompts for CLIP (ensemble per emotion, averaged)
+EMOTION_PROMPTS: dict[str, tuple[str, ...]] = {
+    "anger": (
+        "an angry, intense image",
+        "a furious, rage-filled scene",
+        "a hostile, aggressive picture",
+    ),
+    "disgust": (
+        "a disgusting, repulsive image",
+        "a revolting, sickening scene",
+        "a gross, nauseating picture",
+    ),
+    "fear": (
+        "a fearful, threatening image",
+        "a scary, terrifying scene",
+        "an anxious, dread-filled picture",
+    ),
+    "joy": (
+        "a joyful, happy image",
+        "a cheerful, uplifting scene",
+        "a delighted, blissful picture",
+    ),
+    "neutral": (
+        "a calm, neutral image",
+        "a plain, ordinary scene",
+        "an emotionless, balanced picture",
+    ),
+    "sadness": (
+        "a sad, melancholic image",
+        "a sorrowful, gloomy scene",
+        "a lonely, grieving picture",
+    ),
+    "surprise": (
+        "a surprising, astonishing image",
+        "a shocking, unexpected scene",
+        "an amazed, startled picture",
+    ),
 }
 
 # Anchor prompts for valence/arousal probing

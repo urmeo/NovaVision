@@ -70,8 +70,14 @@ class CLIPAffect:
 
     def _fixed_features(self):
         if self._emo_feats is None:
-            labels = list(EMOTION_PROMPTS)
-            self._emo_feats = self._text_features([EMOTION_PROMPTS[label] for label in labels])
+            import torch
+
+            means = []
+            for label in EMOTION_PROMPTS:
+                feats = self._text_features(EMOTION_PROMPTS[label])  # ensemble
+                mean = feats.mean(dim=0)
+                means.append(mean / mean.norm())
+            self._emo_feats = torch.stack(means)
             self._anchor_feats = self._text_features([*VALENCE_ANCHORS, *AROUSAL_ANCHORS])
         return self._emo_feats, self._anchor_feats
 
