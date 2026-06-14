@@ -1,9 +1,16 @@
+import pytest
+
 from novavision.eval.metrics import accuracy, confusion_matrix, macro_f1, pearson
 
 
 def test_accuracy():
     assert accuracy(["a", "b", "c"], ["a", "b", "x"]) == 2 / 3
     assert accuracy([], []) == 0.0
+
+
+def test_length_mismatch_raises():
+    with pytest.raises(ValueError):
+        accuracy(["a", "b"], ["a"])
 
 
 def test_macro_f1_perfect():
