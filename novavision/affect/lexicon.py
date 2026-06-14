@@ -60,7 +60,9 @@ class AffectLexicon:
 
         valence = sum(v for v, _ in matched) / len(matched)
         arousal = sum(a for _, a in matched) / len(matched)
-        return AffectScore(round(valence, 4), round(arousal, 4), round(len(matched) / len(tokens), 4))
+        return AffectScore(
+            round(valence, 4), round(arousal, 4), round(len(matched) / len(tokens), 4)
+        )
 
     @classmethod
     def load(cls, path: str | os.PathLike | None = None) -> AffectLexicon:

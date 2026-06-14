@@ -47,10 +47,20 @@ def plot_va_scatter(records, tier: str, path: str | Path) -> None:
 
     sub = [r for r in records if r["tier"] == tier]
     fig, ax = plt.subplots(figsize=(4.5, 4.5))
-    ax.scatter([r["intended_valence"] for r in sub], [r["recovered_valence"] for r in sub],
-               alpha=0.6, label="valence", color="#c44e52")
-    ax.scatter([r["intended_arousal"] for r in sub], [r["recovered_arousal"] for r in sub],
-               alpha=0.6, label="arousal", color="#55a868")
+    ax.scatter(
+        [r["intended_valence"] for r in sub],
+        [r["recovered_valence"] for r in sub],
+        alpha=0.6,
+        label="valence",
+        color="#c44e52",
+    )
+    ax.scatter(
+        [r["intended_arousal"] for r in sub],
+        [r["recovered_arousal"] for r in sub],
+        alpha=0.6,
+        label="arousal",
+        color="#55a868",
+    )
     ax.plot([-1, 1], [-1, 1], "k--", linewidth=0.8)
     ax.set_xlabel("intended")
     ax.set_ylabel("recovered")

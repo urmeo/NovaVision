@@ -23,8 +23,7 @@ class ImageBackend(ABC):
         height: int = 512,
         seed: int = 0,
         negative_prompt: str | None = None,
-    ) -> Image.Image:
-        ...
+    ) -> Image.Image: ...
 
 
 class NullBackend(ImageBackend):

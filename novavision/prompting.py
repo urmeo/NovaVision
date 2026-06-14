@@ -72,6 +72,12 @@ def build_prompt(
     elif tier == "emotion":
         parts = [scene, f"inspired by '{text}'", style_desc, QUALITY]
     else:
-        parts = [scene, va_descriptors(valence, arousal), f"inspired by '{text}'", style_desc, QUALITY]
+        parts = [
+            scene,
+            va_descriptors(valence, arousal),
+            f"inspired by '{text}'",
+            style_desc,
+            QUALITY,
+        ]
 
     return ", ".join(parts)

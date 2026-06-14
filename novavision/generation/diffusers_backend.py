@@ -22,7 +22,9 @@ class DiffusersBackend(ImageBackend):
 
     name = "diffusers"
 
-    def __init__(self, model_id: str = "stabilityai/sd-turbo", device: str | None = None, steps: int = 2):
+    def __init__(
+        self, model_id: str = "stabilityai/sd-turbo", device: str | None = None, steps: int = 2
+    ):
         self.model_id = model_id
         self.device = device or _pick_device()
         self.steps = steps
