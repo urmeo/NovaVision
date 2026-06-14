@@ -72,13 +72,3 @@ class NovaVision:
             prompt, width=width, height=height, seed=seed, negative_prompt=NEGATIVE_PROMPT
         )
         return Result(image, prompt, analysis, tier, style, seed, self.backend.name)
-
-
-_pipeline: NovaVision | None = None
-
-
-def get_pipeline() -> NovaVision:
-    global _pipeline
-    if _pipeline is None:
-        _pipeline = NovaVision()
-    return _pipeline
