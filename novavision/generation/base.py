@@ -46,4 +46,4 @@ class NullBackend(ImageBackend):
         tint = np.frombuffer(digest[:3], dtype=np.uint8).astype(np.float32)
         noise = rng.integers(0, 64, size=(height, width, 3), dtype=np.uint8)
         arr = (noise.astype(np.float32) + tint).clip(0, 255).astype(np.uint8)
-        return Image.fromarray(arr, mode="RGB")
+        return Image.fromarray(arr)
