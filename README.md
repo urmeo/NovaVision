@@ -40,11 +40,11 @@ emotional controllability rather than a subjective one.
   <img src="screenshots/emotion_analysis.png" alt="Emotion analysis" width="780">
 </p>
 
-The benchmark is built from GoEmotions under the official Ekman mapping, balanced across the
-seven classes. Each item is conditioned on its gold emotion — isolating controllability from
-upstream classifier error — and scored on recovery accuracy, macro-F1, valence/arousal
-correlation (Pearson r), and CLIP-T. Confusion matrices and valence/arousal plots are written
-to `results/`. The method is described in the paper, `paper/paper.md`.
+- Built from GoEmotions under the official Ekman mapping, balanced across the seven classes.
+- Each item is conditioned on its gold emotion, isolating controllability from classifier error.
+- Scored on recovery accuracy, macro-F1, valence/arousal correlation (Pearson r), and CLIP-T.
+- Confusion matrices and valence/arousal plots are written to `results/`.
+- Method details in the paper, `paper/paper.md`.
 
 ## Tech stack
 
