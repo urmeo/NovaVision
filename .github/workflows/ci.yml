@@ -15,8 +15,8 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install ruff
-      - run: ruff check novavision tests server.py app.py
-      - run: ruff format --check novavision tests server.py app.py
+      - run: ruff check novavision tests scripts server.py app.py
+      - run: ruff format --check novavision tests scripts server.py app.py
 
   test:
     runs-on: ubuntu-latest
