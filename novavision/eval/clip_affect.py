@@ -36,6 +36,8 @@ class CLIPAffect:
         self._device = device
         self._model = None
         self._processor = None
+        self._emo_feats = None
+        self._anchor_feats = None
 
     def _load(self):
         if self._model is None:
@@ -66,14 +68,20 @@ class CLIPAffect:
             feats = self._model.get_text_features(**inputs)
         return feats / feats.norm(dim=-1, keepdim=True)
 
+    def _fixed_features(self):
+        if self._emo_feats is None:
+            labels = list(EMOTION_PROMPTS)
+            self._emo_feats = self._text_features([EMOTION_PROMPTS[label] for label in labels])
+            self._anchor_feats = self._text_features([*VALENCE_ANCHORS, *AROUSAL_ANCHORS])
+        return self._emo_feats, self._anchor_feats
+
     def recover(self, image: Image.Image) -> Recovery:
         labels = list(EMOTION_PROMPTS)
-        prompts = [EMOTION_PROMPTS[label] for label in labels]
-        anchors = [*VALENCE_ANCHORS, *AROUSAL_ANCHORS]
+        emo_feats, anchor_feats = self._fixed_features()
 
         img = self._image_features(image)
-        emo = (img @ self._text_features(prompts).T).squeeze(0).cpu().numpy()
-        anc = (img @ self._text_features(anchors).T).squeeze(0).cpu().numpy()
+        emo = (img @ emo_feats.T).squeeze(0).cpu().numpy()
+        anc = (img @ anchor_feats.T).squeeze(0).cpu().numpy()
 
         probs = _softmax(emo)
         scores = {label: float(p) for label, p in zip(labels, probs)}
