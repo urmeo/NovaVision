@@ -6,8 +6,6 @@ import argparse
 import json
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 from novavision.affect.analyzer import EmotionAnalyzer
 from novavision.data import load_benchmark
 from novavision.eval import figures
@@ -145,7 +143,6 @@ def _write(out, backend, style, seed, records, metrics, classification) -> None:
 
 
 def main() -> None:
-    load_dotenv()
     parser = argparse.ArgumentParser(description="Affect-recovery benchmark")
     parser.add_argument("--backend", default="diffusers", choices=["diffusers", "hf-api", "null"])
     parser.add_argument("--benchmark", default=None)
