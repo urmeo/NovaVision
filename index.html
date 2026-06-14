@@ -3009,10 +3009,13 @@
             imageHistory.forEach((item, index) => {
                 const thumb = document.createElement('div');
                 thumb.className = 'history-thumbnail' + (index === 0 ? ' active' : '');
-                thumb.innerHTML = `
-                    <img src="${item.image}" alt="Previous generation">
-                    <div class="history-tooltip">${item.prompt}</div>
-                `;
+                const thumbImg = document.createElement('img');
+                thumbImg.src = item.image;
+                thumbImg.alt = 'Previous generation';
+                const tooltip = document.createElement('div');
+                tooltip.className = 'history-tooltip';
+                tooltip.textContent = item.prompt;
+                thumb.append(thumbImg, tooltip);
                 thumb.addEventListener('click', () => {
                     generatedImage.src = item.image;
                     generatedImage.classList.add('visible');
