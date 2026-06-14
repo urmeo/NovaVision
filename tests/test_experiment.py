@@ -34,7 +34,38 @@ def test_summarize():
 def test_write_creates_outputs(tmp_path):
     records = _records("affect", correct=True)
     metrics = run._summarize(records, ("affect",))
-    run._write(str(tmp_path), "null", "artistic", 0, records, metrics)
+    run._write(str(tmp_path), "null", "artistic", 0, records, metrics, 0.5)
     assert (tmp_path / "results.json").exists()
     assert (tmp_path / "figures" / "accuracy.png").exists()
     assert (tmp_path / "figures" / "confusion_affect.png").exists()
+
+
+def test_run_experiment_with_stubs(tmp_path, monkeypatch):
+    from novavision.affect.analyzer import EmotionAnalysis
+    from novavision.eval.clip_affect import Recovery
+
+    class FakeAnalyzer:
+        def __init__(self, *a, **k):
+            pass
+
+        def analyze(self, text):
+            return EmotionAnalysis("joy", 0.9, 0.5, 0.6, 1.0, {"joy": 0.9})
+
+    class FakeCLIP:
+        def __init__(self, *a, **k):
+            pass
+
+        def recover(self, image):
+            return Recovery("joy", 0.4, 0.6, {"joy": 0.9})
+
+        def clip_t(self, image, text):
+            return 0.3
+
+    monkeypatch.setattr(run, "EmotionAnalyzer", FakeAnalyzer)
+    monkeypatch.setattr(run, "CLIPAffect", FakeCLIP)
+
+    result = run.run_experiment(backend="null", limit=4, out=str(tmp_path))
+    assert "classification_accuracy" in result
+    assert (tmp_path / "results.json").exists()
+    for tier in ("raw", "emotion", "affect"):
+        assert result["metrics"][tier]["n"] == 4

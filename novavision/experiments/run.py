@@ -13,7 +13,7 @@ from novavision.eval.clip_affect import CLIPAffect
 from novavision.eval.metrics import accuracy, confusion_matrix, macro_f1, pearson
 from novavision.generation import get_backend
 from novavision.prompting import NEGATIVE_PROMPT, TIERS, build_prompt
-from novavision.taxonomy import EMOTIONS, prior
+from novavision.taxonomy import EMOTIONS
 
 
 def run_experiment(
@@ -46,11 +46,12 @@ def run_experiment(
     for i, row in enumerate(rows):
         text, intended = row["text"], row["emotion"]
         analysis = analyzer.analyze(text)
-        iv, ia = prior(intended)
+        # Condition on the gold emotion to isolate controllability from
+        # classifier error; ground valence/arousal in the text.
         for tier in tiers:
             prompt = build_prompt(
                 text,
-                emotion=analysis.primary,
+                emotion=intended,
                 valence=analysis.valence,
                 arousal=analysis.arousal,
                 style=style,
@@ -64,10 +65,11 @@ def run_experiment(
                 {
                     "text": text,
                     "intended": intended,
+                    "classified": analysis.primary,
                     "tier": tier,
                     "predicted": rec.emotion,
-                    "intended_valence": iv,
-                    "intended_arousal": ia,
+                    "intended_valence": analysis.valence,
+                    "intended_arousal": analysis.arousal,
                     "recovered_valence": rec.valence,
                     "recovered_arousal": rec.arousal,
                     "clip_t": clip.clip_t(image, text),
@@ -75,8 +77,9 @@ def run_experiment(
             )
 
     metrics = _summarize(records, tiers)
-    _write(out, backend, style, seed, records, metrics)
-    return metrics
+    classification = _classification_accuracy(records)
+    _write(out, backend, style, seed, records, metrics, classification)
+    return {"metrics": metrics, "classification_accuracy": classification}
 
 
 def _summarize(records, tiers) -> dict:
@@ -106,7 +109,18 @@ def _summarize(records, tiers) -> dict:
     return summary
 
 
-def _write(out, backend, style, seed, records, metrics) -> None:
+def _classification_accuracy(records) -> float:
+    seen, true, pred = set(), [], []
+    for r in records:
+        if r["text"] in seen:
+            continue
+        seen.add(r["text"])
+        true.append(r["intended"])
+        pred.append(r["classified"])
+    return round(accuracy(true, pred), 4)
+
+
+def _write(out, backend, style, seed, records, metrics, classification) -> None:
     out_dir = Path(out)
     fig_dir = out_dir / "figures"
     fig_dir.mkdir(parents=True, exist_ok=True)
@@ -114,6 +128,7 @@ def _write(out, backend, style, seed, records, metrics) -> None:
     payload = {
         "config": {"backend": backend, "style": style, "seed": seed},
         "metrics": metrics,
+        "classification_accuracy": classification,
         "records": records,
     }
     (out_dir / "results.json").write_text(json.dumps(payload, indent=2))
@@ -136,7 +151,7 @@ def main() -> None:
     parser.add_argument("--out", default="results")
     args = parser.parse_args()
 
-    metrics = run_experiment(
+    result = run_experiment(
         backend=args.backend,
         benchmark=args.benchmark,
         style=args.style,
@@ -144,7 +159,7 @@ def main() -> None:
         seed=args.seed,
         out=args.out,
     )
-    print(json.dumps(metrics, indent=2))
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
