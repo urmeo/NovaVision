@@ -8,8 +8,6 @@ from PIL import Image
 
 from novavision.generation.base import ImageBackend
 
-FALLBACK_MODEL = "black-forest-labs/FLUX.1-schnell"
-
 
 class HFApiBackend(ImageBackend):
     """Generates via the hosted HuggingFace Inference API."""
@@ -40,11 +38,4 @@ class HFApiBackend(ImageBackend):
         seed: int = 0,
         negative_prompt: str | None = None,
     ) -> Image.Image:
-        try:
-            return self.client.text_to_image(
-                prompt, model=self.model_id, width=width, height=height
-            )
-        except Exception:  # fallback to schnell
-            return self.client.text_to_image(
-                prompt, model=FALLBACK_MODEL, width=width, height=height
-            )
+        return self.client.text_to_image(prompt, model=self.model_id, width=width, height=height)
