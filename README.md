@@ -1,126 +1,113 @@
-<div align="center">
+# NovaVision
 
-# 🎨 NovaVision
+NovaVision turns a sentence into an image that reflects its emotional tone, and provides a
+benchmark for measuring whether the generated image conveys the intended emotion. It runs both
+as a web app and as a command-line research pipeline.
 
-**Turn how you feel into art — then measure whether the art actually feels that way.**
+## How it works
 
-[![CI](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-green.svg)](https://python.org)
-[![Code style: ruff](https://img.shields.io/badge/style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
+1. A text classifier detects the dominant emotion across seven Ekman categories.
+2. Valence and arousal are estimated from the text with an affect lexicon, blended with the
+   detected emotion's circumplex prior in proportion to how many affect words appear.
+3. A prompt is composed at one of three conditioning levels — raw text, emotion scene, or
+   affect-grounded — and passed to an image backend.
+4. For evaluation, CLIP classifies the emotion of the generated image, which is compared
+   against the intended label (affect recovery).
 
-<img src="screenshots/main_interface.png" alt="NovaVision interface" width="820">
+## Requirements
 
-</div>
+- Python 3.9 or newer.
+- For local image generation, enough memory to run Stable Diffusion Turbo. A GPU or Apple
+  Silicon (MPS) is recommended; CPU works but is slow.
 
-NovaVision reads the emotion in a sentence, grounds it in continuous **valence/arousal**,
-builds an affect-conditioned prompt, and generates an image. It is both a **web app** and a
-small **research benchmark** that asks a falsifiable question: *does a conditioned image
-actually carry the intended emotion back to a viewer?*
-
-<div align="center">
-  <img src="screenshots/demo_preview.gif" alt="Demo" width="820">
-  <br><em><a href="https://youtu.be/S7LZsnMPOmA">▶ Watch the full demo</a></em>
-</div>
-
-## ✨ Features
-
-- **Emotion → art** across 7 Ekman emotions, with five visual styles.
-- **Grounded affect** — valence/arousal are *computed from the text* (lexicon blended with
-  circumplex priors), not looked up from constants.
-- **Pluggable backends** — local `sd-turbo` (seedable, reproducible), the HF Inference API,
-  or a deterministic `null` backend for offline dev/CI.
-- **AffectBench** — a reproducible benchmark + automatic CLIP *affect-recovery* metric.
-- **Production-checked** — 38 tests, ruff-clean, CI, Flask + gunicorn + Gradio.
-
-## 🧠 How it works
-
-<div align="center"><img src="screenshots/how_it_works.png" alt="Pipeline" width="760"></div>
-
-```
-text ─► emotion classifier ─┐
-                            ├─► affect grounding (valence/arousal) ─► tiered prompt ─► image
-        affect lexicon  ────┘                                                           │
-                                                                                        ▼
-                                          CLIP affect recovery ◄── intended vs recovered emotion
-```
-
-<div align="center"><img src="screenshots/emotion_analysis.png" alt="Emotion analysis" width="760"></div>
-
-## 🚀 Quick start
+## Installation
 
 ```bash
 git clone https://github.com/urme-b/NovaVision.git
 cd NovaVision
 python -m venv .venv && source .venv/bin/activate
-
-pip install -e ".[dev,research]"   # core + research + tests
-pip install -e ".[ml,app]"         # models + web app
-cp .env.example .env               # choose BACKEND (default: diffusers / sd-turbo)
-
-python server.py                   # → http://localhost:8000
+pip install -e ".[dev,research]"   # library, tests, and benchmark tools
+pip install -e ".[ml,app]"         # add models and the web app
 ```
 
-## 🔌 API
+## Usage
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/analyze`  | Emotion + valence/arousal for text |
-| `POST` | `/api/generate` | Full pipeline → image + metadata |
+Create a local environment file and choose a backend:
 
 ```bash
-curl -X POST localhost:8000/api/analyze -H 'Content-Type: application/json' \
-  -d '{"text":"I feel grateful and joyful today"}'
-# → {"primary_emotion":"joy","confidence":99.2,"valence":0.81,"arousal":0.70, ...}
+cp .env.example .env
 ```
 
-## 🔬 Research: AffectBench
-
-Three conditioning tiers (`raw` → `emotion` → `affect`) are evaluated by an automatic
-**affect-recovery** protocol: generate an image, classify its emotion back with CLIP, and
-compare to the intended label. Metrics: recovery accuracy, macro-F1, valence/arousal
-correlation, CLIP-T, and (separately) text-classification accuracy.
+Run the web app:
 
 ```bash
-make benchmark     # build AffectBench from GoEmotions (Ekman mapping)
-make reproduce     # generate + evaluate across tiers → results/
-python scripts/report.py   # render the metrics table
+python server.py   # Flask app on http://localhost:8000
+python app.py      # Gradio app on http://localhost:7860
 ```
 
-The write-up is in [`paper/paper.md`](paper/paper.md); data provenance in
-[`data/README.md`](data/README.md). Everything is seeded; the deterministic core runs
-offline in CI.
+### API
 
-## 📁 Project structure
-
-```
-novavision/
-  taxonomy.py          emotions, priors, GoEmotions→Ekman map
-  affect/              lexicon scoring + emotion analyzer
-  prompting.py         affect-conditioned prompt synthesis (tiers)
-  generation/          null · diffusers · hf-api backends
-  pipeline.py          text → image
-  eval/                CLIP recovery · metrics · figures
-  data/ · experiments/ benchmark builder · runner
-data/  paper/  tests/  server.py  app.py  index.html
-```
-
-## 🛠 Tech stack
-
-Python · HuggingFace Transformers · Diffusers (SD-Turbo) · CLIP · Flask · Gradio ·
-Pydantic · pytest · ruff · Docker
-
-## ✅ Testing
+- `POST /api/analyze` returns the detected emotion with valence and arousal.
+- `POST /api/generate` runs the full pipeline and returns a generated image with metadata.
 
 ```bash
-make test    # 38 tests, offline, no GPU or token
-make lint
+curl -X POST localhost:8000/api/analyze \
+  -H 'Content-Type: application/json' \
+  -d '{"text": "I feel grateful and joyful today"}'
 ```
 
-## 📚 Citation
+## Configuration
 
-See [`CITATION.cff`](CITATION.cff).
+Configuration is read from environment variables (see `.env.example`):
 
-## 📄 License
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BACKEND` | Image backend: `null`, `diffusers`, or `hf-api` | `null` |
+| `DIFFUSION_MODEL` | Model id for the `diffusers` backend | `stabilityai/sd-turbo` |
+| `HF_TOKEN` | API token, required only for `hf-api` | unset |
+| `NOVAVISION_LEXICON` | Path to a full affect lexicon TSV | bundled demo lexicon |
+| `HOST`, `PORT` | Bind address for the Flask server | `127.0.0.1`, `8000` |
+| `CORS_ORIGINS` | Comma-separated allowed origins | same-origin only |
 
-[MIT](LICENSE) © urme-b
+## Benchmark
+
+The research pipeline builds a balanced benchmark, generates images across the three
+conditioning tiers, and scores affect recovery.
+
+```bash
+make benchmark            # build AffectBench from GoEmotions
+make reproduce            # generate and evaluate, writing to results/
+python scripts/report.py  # render the metrics table
+```
+
+A small, hand-authored sample benchmark and a demo lexicon ship in `data/` so the pipeline
+runs without downloads; see `data/README.md` for provenance. The method and evaluation are
+described in `paper/paper.md`.
+
+## Development
+
+```bash
+make test   # test suite (offline, no GPU or token required)
+make lint   # ruff checks and format verification
+```
+
+## Project layout
+
+```
+novavision/   core library: taxonomy, affect, prompting, generation, eval, pipeline
+data/         sample benchmark and demo lexicon
+paper/        method write-up and references
+tests/        test suite
+server.py     Flask API and static frontend
+app.py        Gradio interface
+index.html    single-page web client
+```
+
+## Contributing
+
+Issues and pull requests are welcome. Run `make lint` and `make test` before submitting.
+Report security issues as described in `SECURITY.md`.
+
+## License
+
+Released under the MIT License. See `LICENSE`.
