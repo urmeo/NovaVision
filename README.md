@@ -63,4 +63,4 @@ to `results/`. The method is described in the paper, `paper/paper.md`.
 
 ## License
 
-MIT
+[MIT](LICENSE)
