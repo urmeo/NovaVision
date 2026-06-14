@@ -14,7 +14,9 @@ def accuracy(y_true: Sequence[str], y_pred: Sequence[str]) -> float:
     return correct / len(y_true)
 
 
-def confusion_matrix(y_true: Sequence[str], y_pred: Sequence[str], labels: Sequence[str]) -> np.ndarray:
+def confusion_matrix(
+    y_true: Sequence[str], y_pred: Sequence[str], labels: Sequence[str]
+) -> np.ndarray:
     index = {label: i for i, label in enumerate(labels)}
     matrix = np.zeros((len(labels), len(labels)), dtype=int)
     for t, p in zip(y_true, y_pred):

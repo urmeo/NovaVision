@@ -59,7 +59,9 @@ class CLIPAffect:
         import torch
 
         self._load()
-        inputs = self._processor(text=list(texts), return_tensors="pt", padding=True).to(self._device)
+        inputs = self._processor(text=list(texts), return_tensors="pt", padding=True).to(
+            self._device
+        )
         with torch.no_grad():
             feats = self._model.get_text_features(**inputs)
         return feats / feats.norm(dim=-1, keepdim=True)
