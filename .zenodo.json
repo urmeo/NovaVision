@@ -1,0 +1,19 @@
+{
+  "upload_type": "software",
+  "title": "NovaVision: Measuring Emotion Controllability in Text-to-Image Generation",
+  "description": "Emotion-conditioned text-to-image generation with an automatic, reproducible benchmark that recovers the emotion from generated images (via CLIP) and compares it to the intended affect.",
+  "creators": [
+    { "name": "Bose, Urme" }
+  ],
+  "license": "MIT",
+  "access_right": "open",
+  "keywords": [
+    "text-to-image",
+    "affective-computing",
+    "emotion-recognition",
+    "valence-arousal",
+    "diffusion-models",
+    "clip",
+    "benchmark"
+  ]
+}
