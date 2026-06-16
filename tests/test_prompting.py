@@ -1,27 +1,35 @@
 import pytest
 
-from novavision.prompting import TIERS, build_prompt, va_descriptors
+from novavision.prompting import EMOTION_SCENES, TIERS, build_prompt, va_descriptors
 
 
 def test_tiers():
     assert TIERS == ("raw", "emotion", "affect")
 
 
-def test_raw_keeps_text_and_skips_scene():
+def test_raw_keeps_content_and_skips_emotion():
     prompt = build_prompt("a red bicycle", emotion="joy", tier="raw")
     assert "a red bicycle" in prompt
-    assert "meadow" not in prompt
+    assert "mood" not in prompt
 
 
-def test_emotion_tier_injects_scene():
-    prompt = build_prompt("good news", emotion="joy", tier="emotion")
-    assert "meadow" in prompt
+def test_emotion_tier_keeps_content_and_adds_mood():
+    prompt = build_prompt("a city street", emotion="joy", tier="emotion")
+    assert "a city street" in prompt
+    assert "joyful uplifting mood" in prompt
 
 
 def test_affect_tier_adds_palette():
-    prompt = build_prompt("good news", emotion="joy", valence=0.8, arousal=0.7, tier="affect")
+    prompt = build_prompt("a city street", emotion="joy", valence=0.8, arousal=0.7, tier="affect")
+    assert "a city street" in prompt
     assert "warm vibrant palette" in prompt
     assert "dramatic high-contrast" in prompt
+
+
+def test_scene_floor_drops_content():
+    prompt = build_prompt("a city street", emotion="joy", tier="scene")
+    assert "a city street" not in prompt
+    assert EMOTION_SCENES["joy"] in prompt
 
 
 def test_unknown_tier_raises():
