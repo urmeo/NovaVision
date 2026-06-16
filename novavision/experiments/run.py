@@ -185,6 +185,8 @@ def _summarize(records) -> dict:
 
 def _contrasts(records) -> dict:
     """Paired bootstrap on per-item recovery correctness between tiers."""
+    # (content, intended, seed-index) keys the same generation seed across tiers,
+    # so the pairs share noise — see _seed, which is a function of exactly these.
     by_key: dict[tuple, dict[str, int]] = {}
     for r in records:
         key = (r["content"], r["intended"], r["seed"])
