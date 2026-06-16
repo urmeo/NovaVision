@@ -130,13 +130,13 @@ canonical run. Until then this section states the protocol, not results.
 
 ## 8. Limitations
 
-- CLIP recovery is a proxy for human perception; §7 bounds it but a larger human study would
-  strengthen it.
-- Mood modifiers and probe prompts share affective vocabulary; the shuffled/scene floors and the
-  cross-probe check mitigate this, and an independently-trained image-emotion probe would remove
-  it entirely.
-- On neutral content the intended valence/arousal varies mainly between emotions, so the VA
-  correlation should be read within-emotion; we report it but do not headline it.
+- CLIP recovery is a proxy for human perception; the §7 harnesses bound it, but a populated
+  human study would strengthen it.
+- Mood modifiers and probe prompts share affective vocabulary; the `raw` control and `scene`
+  floor bound how much recovery this could explain, but an independently-trained image-emotion
+  probe (the `Probe` interface is swappable) would remove the residual overlap entirely.
+- On neutral content the intended valence/arousal is the per-emotion prior, so the reported VA
+  correlation is between-emotion; within-emotion grounding is exercised only on the text track.
 - The Ekman set omits mixed and compound affect, and `disgust` is the scarcest class under the
   Ekman collapse of GoEmotions.
 
