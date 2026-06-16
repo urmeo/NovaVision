@@ -63,7 +63,8 @@ class DiffusersBackend(ImageBackend):
     ) -> Image.Image:
         import torch
 
-        generator = torch.Generator(device=self.device).manual_seed(int(seed))
+        # Clamp so a negative or out-of-range seed cannot crash manual_seed.
+        generator = torch.Generator(device=self.device).manual_seed(int(seed) % (2**63 - 1))
         turbo = "turbo" in self.model_id.lower()
         out = self.pipe(
             prompt=prompt,
