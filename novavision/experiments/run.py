@@ -14,6 +14,7 @@ import argparse
 import json
 from pathlib import Path
 
+from novavision.config import CLIP_REVISION
 from novavision.data import load_content_bank, sha256
 from novavision.determinism import set_determinism
 from novavision.eval import figures
@@ -65,7 +66,7 @@ def run_experiment(
         if backend != "null"
         else get_backend(backend)
     )
-    probe = CLIPProbe(model_id=clip_model)
+    probe = CLIPProbe(model_id=clip_model, revision=CLIP_REVISION)
 
     records = _content_records(bank, gen, probe, style, seeds, base_seed, width, height)
 
@@ -76,6 +77,7 @@ def run_experiment(
         diffusion_model=diffusion_model,
         clip_model=clip_model,
         device=getattr(gen, "device", "n/a"),
+        dtype=getattr(gen, "dtype", "n/a"),
         style=style,
         contents=len(bank),
         seeds=seeds,

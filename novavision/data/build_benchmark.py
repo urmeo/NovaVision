@@ -19,7 +19,7 @@ from novavision.taxonomy import EMOTIONS, to_ekman
 
 DATASET = "google-research-datasets/go_emotions"
 # Pin the dataset revision so a rebuild reconstructs the same pool.
-DEFAULT_REVISION = "13888bb783fae7d7eb33ef4cb1ee19a4c3c0d3f8"
+DEFAULT_REVISION = "add492243ff905527e67aeb8b80c082af02207c3"
 
 
 def _curate(
