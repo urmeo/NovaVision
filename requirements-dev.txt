@@ -1,2 +1,0 @@
-# Tests, lint, and benchmark build (extras defined in pyproject.toml).
-.[dev,research]
