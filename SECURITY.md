@@ -13,9 +13,11 @@ Do not open public issues for security problems.
 ## Hardening defaults
 
 - **CORS** is disabled by default (same-origin). Set `CORS_ORIGINS` to allow specific domains.
-- The dev server binds to `127.0.0.1` by default (`HOST`/`PORT` configurable).
+- The Flask server binds to `127.0.0.1` by default; the Gradio app binds `0.0.0.0` for Spaces
+  but honours `HOST`/`PORT` for a private local run.
 - Request bodies are capped at 64 KB and input text at 2000 characters.
 - API errors return generic messages; details are logged server-side only.
+- **CI** runs with least-privilege `permissions: contents: read`; no workflow has write scope.
 
 ## Sample data
 
