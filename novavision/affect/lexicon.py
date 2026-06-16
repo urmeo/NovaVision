@@ -31,6 +31,7 @@ def _variants(token: str):
     yield token
     if token.endswith(("ies", "ied")) and len(token) > 4:
         yield token[:-3] + "y"  # cities -> city, tried -> try
+        yield token[:-1]  # movies -> movie, lies -> lie
     elif token.endswith("ing") and len(token) > 5:
         stem = token[:-3]
         yield stem + "e"  # caring -> care
