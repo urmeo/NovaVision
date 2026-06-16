@@ -14,9 +14,7 @@ def _fmt(x) -> str:
 
 
 def metrics_table(metrics: dict) -> str:
-    head = (
-        "| Condition | Accuracy [95% CI] | Macro-F1 | Valence ρ† | Arousal ρ† | CLIP-T | n |"
-    )
+    head = "| Condition | Accuracy [95% CI] | Macro-F1 | Valence ρ† | Arousal ρ† | CLIP-T | n |"
     rule = "|" + "---|" * 7
     lines = [head, rule]
     for cond in CONDITIONS:

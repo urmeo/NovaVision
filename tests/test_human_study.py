@@ -58,7 +58,8 @@ def test_build_sheet_and_analyze(tmp_path):
     key = list(human_study._read_csv(study / "key.csv"))
     rated = study / "rated.csv"
     human_study._write_csv(
-        rated, ["id", "image", "emotion"],
+        rated,
+        ["id", "image", "emotion"],
         [{"id": r["id"], "image": "", "emotion": r["probe"]} for r in key],
     )
     result = human_study.analyze(rated, study / "key.csv")
