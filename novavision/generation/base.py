@@ -32,7 +32,7 @@ class NullBackend(ImageBackend):
     name = "null"
 
     def __init__(self, **kwargs):
-        pass  # ignore model_id etc. so it is drop-in for any backend
+        pass  # ignore kwargs
 
     def generate(
         self,
