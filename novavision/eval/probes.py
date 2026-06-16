@@ -14,7 +14,14 @@ from typing import Any
 
 from PIL import Image
 
-from novavision.taxonomy import AROUSAL_LADDER, EMOTION_PROMPTS, VALENCE_LADDER
+from novavision.taxonomy import (
+    AROUSAL_LADDER,
+    EMOTION_PROMPTS,
+    EMOTIONS,
+    NEUTRAL,
+    VALENCE_LADDER,
+    prior,
+)
 
 # Emotion is an argmax, so the full CLIP temperature is right. Valence/arousal
 # are an expected value over a ladder, where that temperature would collapse the
@@ -37,6 +44,59 @@ class Probe(ABC):
 
     @abstractmethod
     def recover(self, image: Image.Image) -> Recovery: ...
+
+    def clip_t(self, image: Image.Image, text: str) -> float:
+        return float("nan")  # undefined off CLIP
+
+
+class HFImageClassifierProbe(Probe):
+    """A non-CLIP image-emotion classifier — independent of the prompt vocabulary.
+
+    Wraps a HuggingFace image-classification model. Its labels are mapped to the
+    Ekman set (identity if already Ekman); valence/arousal fall back to the
+    recovered emotion's prior, so this probe's strength is independent emotion
+    recovery, not graded affect. Pair with ``eval.validate_probe`` to report its
+    known error before trusting it.
+    """
+
+    def __init__(
+        self,
+        model_id: str,
+        label_map: dict | None = None,
+        device: str | None = None,
+        revision: str | None = None,
+    ):
+        self.model_id = model_id
+        self.label_map = {k.lower(): v for k, v in (label_map or {}).items()}
+        self.revision = revision
+        self.device = device
+        self.name = f"img:{model_id.rsplit('/', 1)[-1]}"
+        self._pipe: Any = None
+
+    def _load(self):
+        if self._pipe is None:
+            from transformers import pipeline
+
+            self._pipe = pipeline(
+                "image-classification",
+                model=self.model_id,
+                revision=self.revision,
+                device=0 if self.device == "cuda" else -1,
+                top_k=None,
+            )
+
+    def recover(self, image: Image.Image) -> Recovery:
+        self._load()
+        known = set(EMOTIONS)
+        scores: dict[str, float] = {}
+        for pred in self._pipe(image):
+            label = pred["label"].lower()
+            label = self.label_map.get(label, label)
+            if label in known:
+                scores[label] = scores.get(label, 0.0) + float(pred["score"])
+        emotion = max(scores, key=lambda k: scores[k]) if scores else NEUTRAL
+        v, a = prior(emotion)
+        return Recovery(emotion, v, a, scores)
 
 
 def _softmax(values):
