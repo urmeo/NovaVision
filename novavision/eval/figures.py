@@ -27,7 +27,9 @@ def plot_confusion(matrix: np.ndarray, labels, path: str | Path, title: str = ""
     plt.close(fig)
 
 
-def plot_accuracy(tier_acc: dict[str, float], path: str | Path) -> None:
+def plot_accuracy(
+    tier_acc: dict[str, float], path: str | Path, chance: float | None = None
+) -> None:
     import matplotlib.pyplot as plt
 
     tiers = list(tier_acc)
@@ -37,6 +39,9 @@ def plot_accuracy(tier_acc: dict[str, float], path: str | Path) -> None:
     ax.set_ylim(0, 1)
     for i, t in enumerate(tiers):
         ax.text(i, tier_acc[t] + 0.02, f"{tier_acc[t]:.2f}", ha="center")
+    if chance is not None:
+        ax.axhline(chance, ls="--", lw=0.9, color="#888")
+        ax.text(len(tiers) - 0.5, chance + 0.02, "chance", ha="right", fontsize=8, color="#888")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)

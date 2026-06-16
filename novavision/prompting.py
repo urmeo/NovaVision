@@ -1,10 +1,19 @@
-"""Affect-conditioned prompt synthesis with ablation tiers."""
+"""Prompt synthesis: emotion as a modifier on independent content.
+
+The conditioning tiers are the ablation. Critically, the image *content* comes
+from the input (text or a content-bank subject), and emotion is layered on as a
+mood/affect modifier — content is never chosen by the emotion label. That
+decoupling is what lets recovery be attributed to the conditioning. The old
+fixed per-emotion scenes survive only as a ``scene`` floor that measures how
+much recovery is pure template recognition.
+"""
 
 from __future__ import annotations
 
 from novavision.taxonomy import NEUTRAL
 
 TIERS = ("raw", "emotion", "affect")
+FLOORS = ("scene",)
 
 STYLE_PRESETS = {
     "photorealistic": "hyperrealistic photograph, 85mm lens, natural light, ultra sharp, 8k",
@@ -14,6 +23,18 @@ STYLE_PRESETS = {
     "dreamscape": "surreal dreamscape, ethereal glow, volumetric light, imaginative",
 }
 
+# Affect modifiers, applied to any content (not scene replacements).
+EMOTION_MOODS = {
+    "joy": "joyful uplifting mood, bright cheerful atmosphere",
+    "sadness": "sad melancholic mood, somber wistful atmosphere",
+    "anger": "angry intense mood, hostile aggressive atmosphere",
+    "fear": "fearful anxious mood, tense ominous atmosphere",
+    "surprise": "surprised startled mood, sudden astonishing atmosphere",
+    "disgust": "disgusted repulsed mood, sickly off-putting atmosphere",
+    "neutral": "calm neutral mood, plain everyday atmosphere",
+}
+
+# Fixed per-emotion scenes — used ONLY by the `scene` floor.
 EMOTION_SCENES = {
     "joy": "a radiant sunlit meadow full of blooming wildflowers",
     "sadness": "a misty rain-soaked forest at dusk",
@@ -52,7 +73,7 @@ def va_descriptors(valence: float, arousal: float) -> str:
 
 
 def build_prompt(
-    text: str,
+    content: str,
     *,
     emotion: str = NEUTRAL,
     valence: float = 0.0,
@@ -60,24 +81,21 @@ def build_prompt(
     style: str = "artistic",
     tier: str = "affect",
 ) -> str:
-    """Compose the generation prompt for the given conditioning tier."""
-    if tier not in TIERS:
-        raise ValueError(f"Unknown tier '{tier}', expected one of {TIERS}")
+    """Compose the generation prompt for a conditioning tier or floor."""
+    if tier not in TIERS and tier not in FLOORS:
+        raise ValueError(f"Unknown tier '{tier}', expected one of {TIERS + FLOORS}")
 
     style_desc = STYLE_PRESETS.get(style.lower(), STYLE_PRESETS["artistic"])
-    scene = EMOTION_SCENES.get(emotion, EMOTION_SCENES[NEUTRAL])
+    mood = EMOTION_MOODS.get(emotion, EMOTION_MOODS[NEUTRAL])
 
     if tier == "raw":
-        parts = [text, style_desc, QUALITY]
+        parts = [content, style_desc, QUALITY]
     elif tier == "emotion":
-        parts = [scene, f"inspired by '{text}'", style_desc, QUALITY]
-    else:
-        parts = [
-            scene,
-            va_descriptors(valence, arousal),
-            f"inspired by '{text}'",
-            style_desc,
-            QUALITY,
-        ]
+        parts = [content, mood, style_desc, QUALITY]
+    elif tier == "affect":
+        parts = [content, mood, va_descriptors(valence, arousal), style_desc, QUALITY]
+    else:  # scene floor: emotion's template, no input content
+        scene = EMOTION_SCENES.get(emotion, EMOTION_SCENES[NEUTRAL])
+        parts = [scene, style_desc, QUALITY]
 
-    return ", ".join(parts)
+    return ", ".join(p for p in parts if p)
