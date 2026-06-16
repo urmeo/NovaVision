@@ -19,5 +19,5 @@ Do not open public issues for security problems.
 
 ## Sample data
 
-`data/affectbench_sample.csv` is fictional, hand-authored example content — see
+`tests/fixtures/affectbench_sample.csv` is fictional, hand-authored example content — see
 `data/README.md`. No personal or production data is included anywhere in this repository.

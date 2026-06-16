@@ -30,6 +30,8 @@ def run_experiment(
     emotion_model: str = "j-hartmann/emotion-english-distilroberta-base",
     clip_model: str = "openai/clip-vit-base-patch32",
 ) -> dict:
+    if not benchmark:
+        raise ValueError("A benchmark path is required (--benchmark); there is no default.")
     rows = load_benchmark(benchmark)
     if limit:
         rows = rows[:limit]
@@ -145,7 +147,7 @@ def _write(out, backend, style, seed, records, metrics, classification) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Affect-recovery benchmark")
     parser.add_argument("--backend", default="diffusers", choices=["diffusers", "hf-api", "null"])
-    parser.add_argument("--benchmark", default=None)
+    parser.add_argument("--benchmark", required=True)
     parser.add_argument("--style", default="artistic")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--seed", type=int, default=0)

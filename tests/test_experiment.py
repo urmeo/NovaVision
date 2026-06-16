@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from novavision.experiments import run
 from novavision.taxonomy import EMOTIONS, prior
 
@@ -64,7 +66,8 @@ def test_run_experiment_with_stubs(tmp_path, monkeypatch):
     monkeypatch.setattr(run, "EmotionAnalyzer", FakeAnalyzer)
     monkeypatch.setattr(run, "CLIPAffect", FakeCLIP)
 
-    result = run.run_experiment(backend="null", limit=4, out=str(tmp_path))
+    fixture = str(Path(__file__).parent / "fixtures" / "affectbench_sample.csv")
+    result = run.run_experiment(backend="null", benchmark=fixture, limit=4, out=str(tmp_path))
     assert "classification_accuracy" in result
     assert (tmp_path / "results.json").exists()
     for tier in ("raw", "emotion", "affect"):
