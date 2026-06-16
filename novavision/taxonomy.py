@@ -96,9 +96,21 @@ EMOTION_PROMPTS: dict[str, tuple[str, ...]] = {
     ),
 }
 
-# Anchor prompts for valence/arousal probing
-VALENCE_ANCHORS = ("a pleasant, positive, beautiful scene", "an unpleasant, negative, ugly scene")
-AROUSAL_ANCHORS = ("an energetic, intense, exciting scene", "a calm, quiet, low-energy scene")
+# Ordered anchor ladders for graded valence/arousal (expected value over softmax)
+VALENCE_LADDER: tuple[tuple[str, float], ...] = (
+    ("a very unpleasant, miserable, repulsive scene", -1.0),
+    ("an unpleasant, negative, gloomy scene", -0.5),
+    ("a neutral, ordinary, plain scene", 0.0),
+    ("a pleasant, positive, nice scene", 0.5),
+    ("a very pleasant, beautiful, delightful scene", 1.0),
+)
+AROUSAL_LADDER: tuple[tuple[str, float], ...] = (
+    ("a very calm, still, sleepy scene", 0.0),
+    ("a calm, quiet, relaxed scene", 0.25),
+    ("a moderate, steady scene", 0.5),
+    ("an energetic, lively, active scene", 0.75),
+    ("a very intense, frenzied, high-energy scene", 1.0),
+)
 
 
 def to_ekman(label: str) -> str:
