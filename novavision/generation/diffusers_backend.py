@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from PIL import Image
 
+from novavision.config import DIFFUSION_REVISION
 from novavision.generation.base import ImageBackend
 
 
@@ -23,11 +24,16 @@ class DiffusersBackend(ImageBackend):
     name = "diffusers"
 
     def __init__(
-        self, model_id: str = "stabilityai/sd-turbo", device: str | None = None, steps: int = 2
+        self,
+        model_id: str = "stabilityai/sd-turbo",
+        device: str | None = None,
+        steps: int = 2,
+        revision: str | None = DIFFUSION_REVISION,
     ):
         self.model_id = model_id
         self.device = device or _pick_device()
         self.steps = steps
+        self.revision = revision
         self._pipe = None
 
     @property
@@ -36,8 +42,11 @@ class DiffusersBackend(ImageBackend):
             import torch
             from diffusers import AutoPipelineForText2Image
 
+            self.dtype = "float16" if self.device == "cuda" else "float32"
             dtype = torch.float16 if self.device == "cuda" else torch.float32
-            pipe = AutoPipelineForText2Image.from_pretrained(self.model_id, torch_dtype=dtype)
+            pipe = AutoPipelineForText2Image.from_pretrained(
+                self.model_id, torch_dtype=dtype, revision=self.revision
+            )
             pipe = pipe.to(self.device)
             pipe.set_progress_bar_config(disable=True)
             self._pipe = pipe
@@ -54,7 +63,8 @@ class DiffusersBackend(ImageBackend):
     ) -> Image.Image:
         import torch
 
-        generator = torch.Generator(device=self.device).manual_seed(int(seed))
+        # Clamp so a negative or out-of-range seed cannot crash manual_seed.
+        generator = torch.Generator(device=self.device).manual_seed(int(seed) % (2**63 - 1))
         turbo = "turbo" in self.model_id.lower()
         out = self.pipe(
             prompt=prompt,
