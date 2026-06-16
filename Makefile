@@ -22,8 +22,8 @@ app:
 benchmark:              # build full AffectBench from GoEmotions
 	python -m novavision.data.build_benchmark --n 100 --out data/affectbench.csv
 
-smoke:                  # quick real run on the test fixture (needs setup-ml; downloads models)
-	python -m novavision.experiments.run --backend diffusers --benchmark tests/fixtures/affectbench_sample.csv --limit 8 --out results/smoke
+smoke:                  # quick real run, few subjects/seeds (needs setup-ml; downloads models)
+	python -m novavision.experiments.run --backend diffusers --contents 2 --seeds 1 --out results/smoke
 
 reproduce:              # canonical content-track run (needs setup-ml; downloads models)
 	python -m novavision.experiments.run --backend diffusers --seeds 3 --out results/paper
