@@ -31,3 +31,15 @@ def test_render_includes_ci_and_significance():
 def test_nan_renders_as_dash():
     assert report._fmt(float("nan")) == "–"
     assert report._fmt(None) == "–"
+
+
+def test_inject_replaces_between_markers(tmp_path):
+    paper = tmp_path / "paper.md"
+    paper.write_text("# Title\n\n<!--TABLES-->\nold\n<!--/TABLES-->\n\n## Next\n")
+    assert report.inject(paper, "NEW TABLE\n") is True
+    text = paper.read_text()
+    assert "NEW TABLE" in text and "old" not in text
+    assert "## Next" in text
+    # Idempotent: a second injection does not duplicate.
+    report.inject(paper, "NEWER\n")
+    assert paper.read_text().count("<!--TABLES-->") == 1
