@@ -3,7 +3,7 @@
 setup:                  # tests, lint, benchmark build
 	python -m pip install -e ".[dev,research]"
 
-setup-ml:               # models for the app and experiments
+setup-ml:               # model runtime (torch, transformers, diffusers)
 	python -m pip install -e ".[ml]"
 
 test:
@@ -22,10 +22,10 @@ app:
 benchmark:              # build full AffectBench from GoEmotions
 	python -m novavision.data.build_benchmark --n 100 --out data/affectbench.csv
 
-smoke:                  # quick real run, few subjects/seeds (needs setup-ml; downloads models)
+smoke:                  # quick real run (run: make setup setup-ml; downloads models)
 	python -m novavision.experiments.run --backend diffusers --contents 2 --seeds 1 --out results/smoke
 
-reproduce:              # canonical content-track run (needs setup-ml; downloads models)
+reproduce:              # canonical content-track run (run: make setup setup-ml; downloads models)
 	python -m novavision.experiments.run --backend diffusers --seeds 3 --out results/paper
 
 paper:                  # regenerate Table 1/2 from the canonical results
