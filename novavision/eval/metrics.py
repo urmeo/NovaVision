@@ -117,8 +117,12 @@ def paired_bootstrap_test(
     _check(da, db)
     diff = da - db
     if len(diff) < 2:
-        return {"mean_diff": float("nan"), "ci_low": float("nan"), "ci_high": float("nan"),
-                "p_value": float("nan")}
+        return {
+            "mean_diff": float("nan"),
+            "ci_low": float("nan"),
+            "ci_high": float("nan"),
+            "p_value": float("nan"),
+        }
     rng = np.random.default_rng(seed)
     resampled = diff[rng.integers(0, len(diff), size=(n, len(diff)))].mean(axis=1)
     lo, hi = np.quantile(resampled, [0.025, 0.975])
