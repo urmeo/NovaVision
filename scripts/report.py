@@ -59,15 +59,33 @@ def render(results: dict) -> str:
     return "\n".join(parts) + "\n"
 
 
+def inject(paper_path: str | Path, tables: str) -> bool:
+    """Replace the content between the TABLES markers in the paper."""
+    path = Path(paper_path)
+    if not path.exists():
+        return False
+    text = path.read_text()
+    start, end = "<!--TABLES-->", "<!--/TABLES-->"
+    if start not in text or end not in text:
+        return False
+    head = text.split(start)[0]
+    tail = text.split(end, 1)[1]
+    path.write_text(f"{head}{start}\n{tables}{end}{tail}")
+    return True
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render results as markdown tables")
     parser.add_argument("--results", default="results/results.json")
     parser.add_argument("--out", default="paper/tables.md")
+    parser.add_argument("--paper", default="paper/paper.md", help="inject tables into this file")
     args = parser.parse_args()
 
     results = json.loads(Path(args.results).read_text())
     table = render(results)
     Path(args.out).write_text(table)
+    if inject(args.paper, table):
+        print(f"Injected tables into {args.paper}")
     print(table)
 
 
