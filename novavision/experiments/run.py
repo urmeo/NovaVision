@@ -15,7 +15,7 @@ import json
 from pathlib import Path
 
 from novavision.config import CLIP_REVISION
-from novavision.data import load_content_bank, sha256
+from novavision.data import load_content_bank
 from novavision.determinism import set_determinism
 from novavision.eval import figures
 from novavision.eval.metrics import (
@@ -44,7 +44,6 @@ def _seed(base: int, ci: int, ei: int, sk: int) -> int:
 
 def run_experiment(
     backend: str = "diffusers",
-    benchmark: str | None = None,
     *,
     contents: int | None = None,
     seeds: int = 3,
@@ -84,8 +83,6 @@ def run_experiment(
         base_seed=base_seed,
         width=width,
         height=height,
-        benchmark=benchmark,
-        benchmark_sha256=sha256(benchmark) if benchmark else None,
     )
     _write(out, records, metrics, contrasts, manifest)
     return {"metrics": metrics, "contrasts": contrasts}
@@ -239,7 +236,6 @@ def _write(out, records, metrics, contrasts, manifest) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Affect-recovery benchmark")
     parser.add_argument("--backend", default="diffusers", choices=["diffusers", "hf-api", "null"])
-    parser.add_argument("--benchmark", default=None, help="optional text benchmark for provenance")
     parser.add_argument("--contents", type=int, default=None, help="limit content-bank subjects")
     parser.add_argument("--seeds", type=int, default=3)
     parser.add_argument("--base-seed", type=int, default=0)
@@ -254,7 +250,6 @@ def main() -> None:
 
     result = run_experiment(
         backend=args.backend,
-        benchmark=args.benchmark,
         contents=args.contents,
         seeds=args.seeds,
         base_seed=args.base_seed,
