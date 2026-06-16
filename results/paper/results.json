@@ -22,9 +22,7 @@
       "seeds": 1,
       "base_seed": 0,
       "width": 256,
-      "height": 256,
-      "benchmark": null,
-      "benchmark_sha256": null
+      "height": 256
     }
   },
   "metrics": {
