@@ -97,7 +97,7 @@ def _rank(a: np.ndarray) -> np.ndarray:
     order = a.argsort()
     ranks = np.empty(len(a), dtype=float)
     ranks[order] = np.arange(len(a), dtype=float)
-    # Average ties so equal values share a rank.
+    # average ties
     _, inverse, counts = np.unique(a, return_inverse=True, return_counts=True)
     sums = np.zeros(len(counts))
     np.add.at(sums, inverse, ranks)
@@ -142,7 +142,7 @@ def paired_bootstrap_test(
     resampled = diff[rng.integers(0, len(diff), size=(n, len(diff)))].mean(axis=1)
     lo, hi = np.quantile(resampled, [0.025, 0.975])
     centered = resampled - resampled.mean()
-    # +1 smoothing: the minimum reportable p is 1/(n+1), never exactly 0.
+    # +1 smoothing
     p = float((1 + np.sum(np.abs(centered) >= abs(diff.mean()))) / (n + 1))
     return {
         "mean_diff": float(diff.mean()),

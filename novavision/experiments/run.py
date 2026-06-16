@@ -128,7 +128,7 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -
                         )
                     )
 
-    # Scene floor: fixed template, no content — depends only on (emotion, seed).
+    # scene floor
     for ei, emotion in enumerate(EMOTIONS):
         pv, pa = prior(emotion)
         for sk in range(seeds):
@@ -138,7 +138,7 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -
                 prompt, width=width, height=height, seed=seed, negative_prompt=NEGATIVE_PROMPT
             )
             rec = probe.recover(image)
-            # No input content, so CLIP-T against content is undefined here.
+            # no content -> no CLIP-T
             records.append(_record(probe.name, "scene", "", emotion, sk, rec, pv, pa, float("nan")))
     return records
 
@@ -189,8 +189,7 @@ def _summarize(records) -> dict:
 
 def _contrasts(records) -> dict:
     """Paired bootstrap on per-item recovery correctness between tiers."""
-    # (content, intended, seed-index) keys the same generation seed across tiers,
-    # so the pairs share noise — see _seed, which is a function of exactly these.
+    # shared seed pairs tiers
     by_key: dict[tuple, dict[str, int]] = {}
     for r in records:
         key = (r["content"], r["intended"], r["seed"])

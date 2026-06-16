@@ -94,7 +94,7 @@ def build_prompt(
         parts = [content, mood, style_desc, QUALITY]
     elif tier == "affect":
         parts = [content, mood, va_descriptors(valence, arousal), style_desc, QUALITY]
-    else:  # scene floor: emotion's template, no input content
+    else:  # scene floor
         scene = EMOTION_SCENES.get(emotion, EMOTION_SCENES[NEUTRAL])
         parts = [scene, style_desc, QUALITY]
 
