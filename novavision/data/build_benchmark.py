@@ -22,9 +22,7 @@ DATASET = "google-research-datasets/go_emotions"
 DEFAULT_REVISION = "add492243ff905527e67aeb8b80c082af02207c3"
 
 
-def _curate(
-    examples: list[tuple[str, str]], n_per_class: int, seed: int
-) -> dict[str, list[str]]:
+def _curate(examples: list[tuple[str, str]], n_per_class: int, seed: int) -> dict[str, list[str]]:
     """Single-label, deduplicated, balanced per-class sampling.
 
     ``examples`` is (text, ekman_label). Texts are normalised for exact-dup

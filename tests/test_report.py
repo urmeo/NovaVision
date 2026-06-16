@@ -9,10 +9,24 @@ import report  # noqa: E402
 def _results():
     return {
         "metrics": {
-            "raw": {"accuracy": 0.14, "accuracy_ci": [0.1, 0.2], "macro_f1": 0.1,
-                    "valence_rho": 0.0, "arousal_rho": 0.0, "clip_t": 0.2, "n": 70},
-            "affect": {"accuracy": 0.55, "accuracy_ci": [0.45, 0.65], "macro_f1": 0.5,
-                       "valence_rho": 0.3, "arousal_rho": 0.2, "clip_t": 0.25, "n": 70},
+            "raw": {
+                "accuracy": 0.14,
+                "accuracy_ci": [0.1, 0.2],
+                "macro_f1": 0.1,
+                "valence_rho": 0.0,
+                "arousal_rho": 0.0,
+                "clip_t": 0.2,
+                "n": 70,
+            },
+            "affect": {
+                "accuracy": 0.55,
+                "accuracy_ci": [0.45, 0.65],
+                "macro_f1": 0.5,
+                "valence_rho": 0.3,
+                "arousal_rho": 0.2,
+                "clip_t": 0.25,
+                "n": 70,
+            },
             "chance": 0.143,
         },
         "contrasts": {
