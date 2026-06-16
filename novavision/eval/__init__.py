@@ -1,1 +1,1 @@
-"""Evaluation: metrics and CLIP affect recovery."""
+"""Evaluation: metrics, recovery probes, figures, and validation harnesses."""
