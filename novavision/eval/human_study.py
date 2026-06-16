@@ -46,6 +46,7 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
     results_dir = Path(results_dir)
     data = json.loads((results_dir / "results.json").read_text())
     cfg = data["manifest"]["config"]
+    style = cfg.get("style", "artistic")
     bank = load_content_bank()
 
     from novavision.experiments.run import _seed
@@ -62,7 +63,7 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
         ci, ei = bank.index(r["content"]), EMOTIONS.index(r["intended"])
         pv, pa = prior(r["intended"])
         prompt = build_prompt(
-            r["content"], emotion=r["intended"], valence=pv, arousal=pa, tier=r["tier"]
+            r["content"], emotion=r["intended"], valence=pv, arousal=pa, style=style, tier=r["tier"]
         )
         image = gen.generate(
             prompt,
