@@ -14,7 +14,9 @@ def _fmt(x) -> str:
 
 
 def metrics_table(metrics: dict) -> str:
-    head = "| Condition | Accuracy [95% CI] | Macro-F1 | Valence ρ | Arousal ρ | CLIP-T | n |"
+    head = (
+        "| Condition | Accuracy [95% CI] | Macro-F1 | Valence ρ† | Arousal ρ† | CLIP-T | n |"
+    )
     rule = "|" + "---|" * 7
     lines = [head, rule]
     for cond in CONDITIONS:
@@ -30,6 +32,10 @@ def metrics_table(metrics: dict) -> str:
     chance = metrics.get("chance")
     if chance is not None:
         lines.append(f"\nChance accuracy = {chance:.3f} (1/7).")
+    lines.append(
+        "† On neutral content the intended valence/arousal is the per-emotion prior, so these "
+        "correlations reflect between-emotion separation, not within-emotion grounding."
+    )
     return "\n".join(lines)
 
 
@@ -76,7 +82,7 @@ def inject(paper_path: str | Path, tables: str) -> bool:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render results as markdown tables")
-    parser.add_argument("--results", default="results/results.json")
+    parser.add_argument("--results", default="results/paper/results.json")
     parser.add_argument("--out", default="paper/tables.md")
     parser.add_argument("--paper", default="paper/paper.md", help="inject tables into this file")
     args = parser.parse_args()
