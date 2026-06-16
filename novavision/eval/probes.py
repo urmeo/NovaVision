@@ -1,0 +1,144 @@
+"""Affect recovery probes.
+
+A probe reads an emotion (and graded valence/arousal) back from an image. The
+benchmark's validity rests on the probe being independent of the conditioning,
+so probes are swappable behind one interface and the headline result is checked
+across more than one of them.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any
+
+from PIL import Image
+
+from novavision.taxonomy import AROUSAL_LADDER, EMOTION_PROMPTS, VALENCE_LADDER
+
+
+@dataclass(frozen=True)
+class Recovery:
+    emotion: str
+    valence: float
+    arousal: float
+    scores: dict[str, float]
+
+
+class Probe(ABC):
+    """Reads affect back from a generated image."""
+
+    name = "base"
+
+    @abstractmethod
+    def recover(self, image: Image.Image) -> Recovery: ...
+
+
+def _softmax(values):
+    import numpy as np
+
+    z = np.asarray(values, dtype=float)
+    z = z - z.max()
+    e = np.exp(z)
+    return e / e.sum()
+
+
+class CLIPProbe(Probe):
+    """Zero-shot emotion and graded valence/arousal with CLIP.
+
+    Logits are scaled by the model's learned temperature before softmax, so the
+    recovered valence/arousal span a usable range instead of being squeezed
+    toward zero. Valence/arousal are read as the expected value over an ordered
+    ladder of anchor prompts, not a single positive/negative contrast.
+    """
+
+    def __init__(
+        self,
+        model_id: str = "openai/clip-vit-base-patch32",
+        device: str | None = None,
+        revision: str | None = None,
+    ):
+        self.model_id = model_id
+        self.revision = revision
+        self.name = f"clip:{model_id.rsplit('/', 1)[-1]}"
+        self._device = device
+        self._model: Any = None
+        self._processor: Any = None
+        self._scale: float = 1.0
+        self._emo_feats: Any = None
+        self._val_feats: Any = None
+        self._aro_feats: Any = None
+
+    def _load(self):
+        if self._model is None:
+            import torch
+            from transformers import CLIPModel, CLIPProcessor
+
+            self._device = self._device or ("cuda" if torch.cuda.is_available() else "cpu")
+            self._model = (
+                CLIPModel.from_pretrained(self.model_id, revision=self.revision)
+                .to(self._device)
+                .eval()
+            )
+            self._processor = CLIPProcessor.from_pretrained(self.model_id, revision=self.revision)
+            self._scale = float(self._model.logit_scale.exp().item())
+
+    def _image_features(self, image: Image.Image):
+        import torch
+
+        self._load()
+        inputs = self._processor(images=image, return_tensors="pt").to(self._device)
+        with torch.no_grad():
+            feats = self._model.get_image_features(**inputs)
+        return feats / feats.norm(dim=-1, keepdim=True)
+
+    def _text_features(self, texts):
+        import torch
+
+        self._load()
+        inputs = self._processor(text=list(texts), return_tensors="pt", padding=True).to(
+            self._device
+        )
+        with torch.no_grad():
+            feats = self._model.get_text_features(**inputs)
+        return feats / feats.norm(dim=-1, keepdim=True)
+
+    def _fixed_features(self):
+        if self._emo_feats is None:
+            import torch
+
+            means = []
+            for label in EMOTION_PROMPTS:
+                feats = self._text_features(EMOTION_PROMPTS[label])  # ensemble
+                mean = feats.mean(dim=0)
+                means.append(mean / mean.norm())
+            self._emo_feats = torch.stack(means)
+            self._val_feats = self._text_features([p for p, _ in VALENCE_LADDER])
+            self._aro_feats = self._text_features([p for p, _ in AROUSAL_LADDER])
+        return self._emo_feats, self._val_feats, self._aro_feats
+
+    def _expected(self, img, feats, ladder):
+        import numpy as np
+
+        sims = (img @ feats.T).squeeze(0).cpu().numpy()
+        probs = _softmax(self._scale * sims)
+        return float(np.dot(probs, [v for _, v in ladder]))
+
+    def recover(self, image: Image.Image) -> Recovery:
+        labels = list(EMOTION_PROMPTS)
+        emo_feats, val_feats, aro_feats = self._fixed_features()
+        img = self._image_features(image)
+
+        emo = (img @ emo_feats.T).squeeze(0).cpu().numpy()
+        probs = _softmax(self._scale * emo)
+        scores = {label: float(p) for label, p in zip(labels, probs)}
+        emotion = labels[int(probs.argmax())]
+
+        valence = self._expected(img, val_feats, VALENCE_LADDER)
+        arousal = self._expected(img, aro_feats, AROUSAL_LADDER)
+        return Recovery(emotion, valence, arousal, scores)
+
+    def clip_t(self, image: Image.Image, text: str) -> float:
+        img = self._image_features(image)
+        txt = self._text_features([text])
+        return float((img @ txt.T).item())
