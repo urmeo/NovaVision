@@ -19,10 +19,10 @@ rather than from hand-written examples.
   official grouping (`novavision/taxonomy.py:GOEMOTIONS_TO_EKMAN`).
 - **Split.** Sampled from the GoEmotions **test** split by default, so items do
   not overlap a model's training split.
-- **Size / balance.** `n` items per class (configurable). The build asserts and
-  records realized per-class counts in `affectbench.manifest.json`; if a class
-  underfills it is reported and the set is flagged not balanced. Under the Ekman
-  collapse, `disgust` is the scarcest class.
+- **Size / balance.** `n` items per class (configurable). The build records the
+  realized per-class counts in `affectbench.manifest.json`; if a class underfills
+  it is logged and the set is flagged `balanced: false`. Under the Ekman collapse,
+  `disgust` is the scarcest class.
 
 ## Collection & preprocessing
 
