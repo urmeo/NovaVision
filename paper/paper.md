@@ -70,6 +70,9 @@ image. The default is CLIP zero-shot with two fixes over the naive version: logi
 the model's learned temperature before softmax (so valence/arousal are not squeezed toward zero),
 and valence/arousal are read as the expected value over an *ordered ladder* of anchor prompts
 rather than a single positive/negative contrast. Probe templates are frozen before measurement.
+To remove the residual vocabulary overlap between conditioning and probe, an **independent,
+non-CLIP image-emotion classifier** (`HFImageClassifierProbe`, `--probe hf`) slots into the same
+interface; the headline can then be checked for robustness across both.
 
 ## 4. AffectBench
 
@@ -171,9 +174,9 @@ canonical run. Until then this section states the protocol, not results.
 
 - CLIP recovery is a proxy for human perception; the §7 harnesses bound it, but a populated
   human study would strengthen it.
-- Mood modifiers and probe prompts share affective vocabulary; the `raw` control and `scene`
-  floor bound how much recovery this could explain, but an independently-trained image-emotion
-  probe (the `Probe` interface is swappable) would remove the residual overlap entirely.
+- Mood modifiers and the CLIP probe share affective vocabulary; the `raw` control and `scene`
+  floor bound how much recovery this could explain, and an independent non-CLIP probe
+  (`--probe hf`) removes the residual overlap once validated against a labelled image set.
 - On the content track the intended valence/arousal is the per-emotion prior, so its VA
   correlation is between-emotion; within-emotion, text-grounded VA is measured on the text track.
 - The Ekman set omits mixed and compound affect, and `disgust` is the scarcest class under the
