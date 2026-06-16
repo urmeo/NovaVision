@@ -16,6 +16,11 @@ from PIL import Image
 
 from novavision.taxonomy import AROUSAL_LADDER, EMOTION_PROMPTS, VALENCE_LADDER
 
+# Emotion is an argmax, so the full CLIP temperature is right. Valence/arousal
+# are an expected value over a ladder, where that temperature would collapse the
+# readout to one anchor; a gentler temperature keeps it graded.
+_VA_TEMPERATURE = 10.0
+
 
 @dataclass(frozen=True)
 class Recovery:
@@ -89,7 +94,8 @@ class CLIPProbe(Probe):
         self._load()
         inputs = self._processor(images=image, return_tensors="pt").to(self._device)
         with torch.no_grad():
-            feats = self._model.get_image_features(**inputs)
+            pooled = self._model.vision_model(pixel_values=inputs["pixel_values"]).pooler_output
+            feats = self._model.visual_projection(pooled)
         return feats / feats.norm(dim=-1, keepdim=True)
 
     def _text_features(self, texts):
@@ -100,7 +106,10 @@ class CLIPProbe(Probe):
             self._device
         )
         with torch.no_grad():
-            feats = self._model.get_text_features(**inputs)
+            pooled = self._model.text_model(
+                input_ids=inputs["input_ids"], attention_mask=inputs.get("attention_mask")
+            ).pooler_output
+            feats = self._model.text_projection(pooled)
         return feats / feats.norm(dim=-1, keepdim=True)
 
     def _fixed_features(self):
@@ -121,7 +130,7 @@ class CLIPProbe(Probe):
         import numpy as np
 
         sims = (img @ feats.T).squeeze(0).cpu().numpy()
-        probs = _softmax(self._scale * sims)
+        probs = _softmax(_VA_TEMPERATURE * sims)
         return float(np.dot(probs, [v for _, v in ladder]))
 
     def recover(self, image: Image.Image) -> Recovery:
