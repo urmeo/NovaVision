@@ -90,7 +90,7 @@ def spearman(x: Sequence[float], y: Sequence[float]) -> float:
     ya = np.asarray(y, dtype=float)
     if len(xa) < 2:
         return float("nan")
-    return pearson(_rank(xa), _rank(ya))
+    return pearson(_rank(xa).tolist(), _rank(ya).tolist())
 
 
 def _rank(a: np.ndarray) -> np.ndarray:
@@ -128,7 +128,8 @@ def paired_bootstrap_test(
     """
     da = np.asarray(a, dtype=float)
     db = np.asarray(b, dtype=float)
-    _check(da, db)
+    if len(da) != len(db):
+        raise ValueError("a and b must be the same length")
     diff = da - db
     if len(diff) < 2:
         return {
