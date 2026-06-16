@@ -1,11 +1,13 @@
 """Affect-recovery benchmark across conditioning tiers, with floors and stats.
 
-The primary track renders emotion-neutral content under each intended emotion,
-so recovered emotion is attributable to the conditioning, not the scene. Two
-floors bound the claim: ``raw`` (no emotion → chance) and ``scene`` (fixed
-template, no content → pure template recognition). Every tier is run over
-several seeds, and tier differences are reported with bootstrap CIs and a
-paired significance test.
+Two tracks share one pipeline. The **content** track renders emotion-neutral
+subjects under each intended emotion, so recovery is attributable to the
+conditioning, not the scene; its floors are ``raw`` (no emotion → chance) and
+``scene`` (fixed template, no content). The **text** track conditions on
+AffectBench sentences, grounds valence/arousal in the text, and uses a
+``shuffled`` floor (condition on a wrong emotion) since the sentence already
+carries affect. Every tier runs over several seeds; tier differences are
+reported with bootstrap CIs and a paired significance test.
 """
 
 from __future__ import annotations
@@ -14,8 +16,9 @@ import argparse
 import json
 from pathlib import Path
 
+from novavision.affect.analyzer import EmotionAnalyzer
 from novavision.config import CLIP_REVISION
-from novavision.data import load_content_bank
+from novavision.data import load_benchmark, load_content_bank, sha256
 from novavision.determinism import set_determinism
 from novavision.eval import figures
 from novavision.eval.metrics import (
@@ -33,7 +36,10 @@ from novavision.generation import get_backend
 from novavision.prompting import NEGATIVE_PROMPT, build_prompt
 from novavision.taxonomy import EMOTIONS, prior
 
-CONDITIONS = ("raw", "emotion", "affect", "scene")
+CONDITIONS = {
+    "content": ("raw", "emotion", "affect", "scene"),
+    "text": ("raw", "emotion", "affect", "shuffled"),
+}
 CONTRASTS = (("emotion", "raw"), ("affect", "emotion"), ("affect", "raw"))
 
 
@@ -42,10 +48,19 @@ def _seed(base: int, ci: int, ei: int, sk: int) -> int:
     return base + ((ci * 97 + ei * 13 + sk) % 100_000)
 
 
+def _shuffle_emotion(gold: str, seed: int) -> str:
+    """A deterministic wrong emotion, for the shuffled floor."""
+    others = [e for e in EMOTIONS if e != gold]
+    return others[seed % len(others)]
+
+
 def run_experiment(
     backend: str = "diffusers",
     *,
+    track: str = "content",
+    benchmark: str | None = None,
     contents: int | None = None,
+    limit: int | None = None,
     seeds: int = 3,
     base_seed: int = 0,
     style: str = "artistic",
@@ -55,36 +70,52 @@ def run_experiment(
     device: str | None = None,
     diffusion_model: str = "stabilityai/sd-turbo",
     clip_model: str = "openai/clip-vit-base-patch32",
+    emotion_model: str = "j-hartmann/emotion-english-distilroberta-base",
 ) -> dict:
     set_determinism(base_seed)
-    bank = load_content_bank()
-    if contents:
-        bank = bank[:contents]
-
     kwargs = {"model_id": diffusion_model}
     if device:
         kwargs["device"] = device
     gen = get_backend(backend, **kwargs)
     probe = CLIPProbe(model_id=clip_model, device=device, revision=CLIP_REVISION)
 
-    records = _content_records(bank, gen, probe, style, seeds, base_seed, width, height)
+    if track == "text":
+        if not benchmark:
+            raise ValueError("The text track requires --benchmark.")
+        rows = load_benchmark(benchmark)
+        if limit:
+            rows = rows[:limit]
+        analyzer = EmotionAnalyzer(model_name=emotion_model)
+        records = _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, height)
+        n_items = len(rows)
+    else:
+        bank = load_content_bank()
+        if contents:
+            bank = bank[:contents]
+        records = _content_records(bank, gen, probe, style, seeds, base_seed, width, height)
+        n_items = len(bank)
 
-    metrics = _summarize(records)
+    conditions = CONDITIONS[track]
+    metrics = _summarize(records, conditions)
     contrasts = _contrasts(records)
     manifest = build_manifest(
         backend=backend,
+        track=track,
         diffusion_model=diffusion_model,
         clip_model=clip_model,
+        emotion_model=emotion_model if track == "text" else None,
         device=getattr(gen, "device", "n/a"),
         dtype=getattr(gen, "dtype", "n/a"),
         style=style,
-        contents=len(bank),
+        items=n_items,
         seeds=seeds,
         base_seed=base_seed,
         width=width,
         height=height,
+        benchmark=benchmark,
+        benchmark_sha256=sha256(benchmark) if benchmark else None,
     )
-    _write(out, records, metrics, contrasts, manifest)
+    _write(out, records, metrics, contrasts, manifest, conditions)
     return {"metrics": metrics, "contrasts": contrasts}
 
 
@@ -100,29 +131,11 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -
                 step += 1
                 print(f"[{step}/{total}] {emotion} :: {content[:30]}", flush=True)
                 for tier in ("raw", "emotion", "affect"):
-                    prompt = build_prompt(
-                        content, emotion=emotion, valence=pv, arousal=pa, style=style, tier=tier
-                    )
-                    image = gen.generate(
-                        prompt,
-                        width=width,
-                        height=height,
-                        seed=seed,
-                        negative_prompt=NEGATIVE_PROMPT,
-                    )
+                    image = _render(gen, content, emotion, pv, pa, style, tier, seed, width, height)
                     rec = probe.recover(image)
+                    clip_t = probe.clip_t(image, content)
                     records.append(
-                        _record(
-                            probe.name,
-                            tier,
-                            content,
-                            emotion,
-                            sk,
-                            rec,
-                            pv,
-                            pa,
-                            probe.clip_t(image, content),
-                        )
+                        _record(probe.name, tier, content, emotion, sk, rec, pv, pa, clip_t)
                     )
 
     # scene floor
@@ -130,22 +143,60 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -
         pv, pa = prior(emotion)
         for sk in range(seeds):
             seed = _seed(base_seed, 0, ei, sk)
-            prompt = build_prompt("", emotion=emotion, style=style, tier="scene")
-            image = gen.generate(
-                prompt, width=width, height=height, seed=seed, negative_prompt=NEGATIVE_PROMPT
-            )
+            image = _render(gen, "", emotion, pv, pa, style, "scene", seed, width, height)
             rec = probe.recover(image)
-            # no content -> no CLIP-T
             records.append(_record(probe.name, "scene", "", emotion, sk, rec, pv, pa, float("nan")))
     return records
 
 
-def _record(probe, tier, content, emotion, sk, rec, pv, pa, clip_t) -> dict:
+def _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, height) -> list[dict]:
+    records: list[dict] = []
+    total = len(rows) * seeds
+    step = 0
+    for ri, row in enumerate(rows):
+        text, gold = row["text"], row["emotion"]
+        a = analyzer.analyze(text)
+        iv, ia = a.valence, a.arousal
+        gi = EMOTIONS.index(gold)
+        for sk in range(seeds):
+            step += 1
+            print(f"[{step}/{total}] {gold} :: {text[:30]}", flush=True)
+            seed = _seed(base_seed, ri, gi, sk)
+            for tier in ("raw", "emotion", "affect"):
+                image = _render(gen, text, gold, iv, ia, style, tier, seed, width, height)
+                rec = probe.recover(image)
+                clip_t = probe.clip_t(image, text)
+                records.append(
+                    _record(probe.name, tier, text, gold, sk, rec, iv, ia, clip_t, a.primary)
+                )
+
+            # shuffled floor: condition on a wrong emotion, score against it
+            wrong = _shuffle_emotion(gold, seed)
+            wv, wa = prior(wrong)
+            wseed = _seed(base_seed, ri, EMOTIONS.index(wrong), sk)
+            image = _render(gen, text, wrong, wv, wa, style, "emotion", wseed, width, height)
+            rec = probe.recover(image)
+            clip_t = probe.clip_t(image, text)
+            records.append(
+                _record(probe.name, "shuffled", text, wrong, sk, rec, wv, wa, clip_t, a.primary)
+            )
+    return records
+
+
+def _render(gen, content, emotion, v, a, style, tier, seed, width, height):
+    prompt = build_prompt(content, emotion=emotion, valence=v, arousal=a, style=style, tier=tier)
+    return gen.generate(
+        prompt, width=width, height=height, seed=seed, negative_prompt=NEGATIVE_PROMPT
+    )
+
+
+def _record(probe, tier, content, emotion, sk, rec, pv, pa, clip_t, classified=None) -> dict:
     return {
         "probe": probe,
         "tier": tier,
         "content": content,
         "intended": emotion,
+        "classified": classified,
         "seed": sk,
         "predicted": rec.emotion,
         "intended_valence": pv,
@@ -156,9 +207,9 @@ def _record(probe, tier, content, emotion, sk, rec, pv, pa, clip_t) -> dict:
     }
 
 
-def _summarize(records) -> dict:
+def _summarize(records, conditions) -> dict:
     summary: dict = {}
-    for tier in CONDITIONS:
+    for tier in conditions:
         sub = [r for r in records if r["tier"] == tier]
         if not sub:
             continue
@@ -181,7 +232,22 @@ def _summarize(records) -> dict:
             "n": len(sub),
         }
     summary["chance"] = round(1 / len(EMOTIONS), 4)
+    cls = _classification_accuracy(records)
+    if cls is not None:
+        summary["classification_accuracy"] = cls
     return summary
+
+
+def _classification_accuracy(records) -> float | None:
+    """Upstream classifier vs gold, once per text (text track only)."""
+    seen, true, pred = set(), [], []
+    for r in records:
+        if r.get("classified") is None or r["content"] in seen:
+            continue
+        seen.add(r["content"])
+        true.append(r["intended"])
+        pred.append(r["classified"])
+    return round(accuracy(true, pred), 4) if true else None
 
 
 def _contrasts(records) -> dict:
@@ -209,7 +275,7 @@ def _col(rows, key):
     return [r[key] for r in rows]
 
 
-def _write(out, records, metrics, contrasts, manifest) -> None:
+def _write(out, records, metrics, contrasts, manifest, conditions) -> None:
     out_dir = Path(out)
     fig_dir = out_dir / "figures"
     fig_dir.mkdir(parents=True, exist_ok=True)
@@ -222,21 +288,27 @@ def _write(out, records, metrics, contrasts, manifest) -> None:
     }
     (out_dir / "results.json").write_text(json.dumps(payload, indent=2))
 
-    acc = {t: metrics[t]["accuracy"] for t in CONDITIONS if t in metrics}
+    acc = {t: metrics[t]["accuracy"] for t in conditions if t in metrics}
     figures.plot_accuracy(acc, fig_dir / "accuracy.png", chance=metrics["chance"])
-    for tier in CONDITIONS:
+    for tier in conditions:
         sub = [r for r in records if r["tier"] == tier]
         if not sub:
             continue
         cm = confusion_matrix(_col(sub, "intended"), _col(sub, "predicted"), EMOTIONS)
         figures.plot_confusion(cm, EMOTIONS, fig_dir / f"confusion_{tier}.png", title=tier)
-    figures.plot_va_scatter(records, "affect", fig_dir / "va_affect.png")
+    if any(r["tier"] == "affect" for r in records):
+        figures.plot_va_scatter(records, "affect", fig_dir / "va_affect.png")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Affect-recovery benchmark")
     parser.add_argument("--backend", default="diffusers", choices=["diffusers", "hf-api", "null"])
+    parser.add_argument("--track", default="content", choices=["content", "text"])
+    parser.add_argument(
+        "--benchmark", default=None, help="AffectBench CSV (required for text track)"
+    )
     parser.add_argument("--contents", type=int, default=None, help="limit content-bank subjects")
+    parser.add_argument("--limit", type=int, default=None, help="limit text-benchmark rows")
     parser.add_argument("--seeds", type=int, default=3)
     parser.add_argument("--base-seed", type=int, default=0)
     parser.add_argument("--style", default="artistic")
@@ -250,7 +322,10 @@ def main() -> None:
 
     result = run_experiment(
         backend=args.backend,
+        track=args.track,
+        benchmark=args.benchmark,
         contents=args.contents,
+        limit=args.limit,
         seeds=args.seeds,
         base_seed=args.base_seed,
         style=args.style,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 from pathlib import Path
 
 from novavision.taxonomy import EMOTIONS
@@ -59,3 +60,8 @@ def load_content_bank(path: str | Path | None = None) -> list[str]:
     if not items:
         raise ValueError(f"{path} has no content prompts")
     return items
+
+
+def sha256(path: str | Path) -> str:
+    """Content hash of a benchmark, for the run manifest."""
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
