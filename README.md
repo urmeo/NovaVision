@@ -1,9 +1,5 @@
 # NovaVision
 
-[![CI](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
 Text-to-image generation conditioned on the emotion of a sentence — with a benchmark that
 measures whether the generated image actually conveys that emotion.
 
