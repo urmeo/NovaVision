@@ -73,32 +73,37 @@ rather than a single positive/negative contrast. Probe templates are frozen befo
 
 ## 4. AffectBench
 
-The experiment conditions on a bank of twenty affect-neutral content subjects
-(`data/content_bank.txt`), so content is independent of emotion by construction. We additionally
-*provide* **AffectBench** as a text benchmark for a future text-conditioned track (not run here):
-it is built on demand from GoEmotions [@demszky2020] under the official Ekman grouping —
+The primary track conditions on a bank of twenty affect-neutral content subjects
+(`data/content_bank.txt`), so content is independent of emotion by construction. A secondary
+**text** track (§5) conditions on **AffectBench**, where valence/arousal are grounded in the
+sentence rather than the emotion prior. AffectBench is built on demand from GoEmotions
+[@demszky2020] under the official Ekman grouping —
 single-label examples mapped to seven Ekman categories, deduplicated, sampled per class from the
 **test** split (so items do not overlap model training splits), and interleaved so any prefix
 stays balanced. The build records realized per-class counts and a content hash; a datasheet
 (`data/DATASHEET.md`) documents composition, splits, and licensing, and `load_benchmark` is the
 loader (no default path, so a run never silently uses a sample). A hand-authored sample ships
 only as a test fixture and can never produce a reported number. Because GoEmotions is *text*
-emotion, that track would be scoped to text-prompt controllability; image-grounded affect
+emotion, the text track is scoped to text-prompt controllability; image-grounded affect
 (EmoSet/FI) is used to validate the probe (§7).
 
 ## 5. Evaluation
 
-The primary track renders neutral content under each intended emotion (content $\perp$ emotion by
-construction). For each tier we report:
+The **content** track renders neutral content under each intended emotion (content $\perp$
+emotion by construction); its floor is `raw` (chance) and `scene` (template only). The **text**
+track conditions on AffectBench sentences using the **gold** emotion (the classifier's
+prediction is logged separately as classification accuracy); valence/arousal are text-grounded
+and continuous, and the floor is `shuffled` — condition on a *wrong* emotion and score against
+it, so a high value means the modifier overrides the sentence rather than the sentence leaking
+through. For each tier we report:
 
 - **Recovery accuracy / macro-F1** — recovered vs. intended emotion, with **bootstrap 95% CIs**.
 - **Valence/arousal correlation** — Pearson $r$ and Spearman $\rho$ between intended and probed
-  affect. On neutral content the intended valence/arousal is the per-emotion prior, so this is a
-  *between-emotion* check (does conditioning on "joy" raise recovered valence above "sadness"?),
-  not within-emotion grounding; we report it but do not headline it. Continuous, text-grounded
-  valence/arousal would be exercised on the text-conditioned track (future work). Because the affect tier's cues
-  are derived from that same prior on neutral content, the affect-vs-emotion delta measures the
-  marginal value of palette/lighting cues, not of independent affect grounding.
+  affect. On the content track the intended valence/arousal is the per-emotion prior, so this is
+  a *between-emotion* check (does conditioning on "joy" raise recovered valence above "sadness"?)
+  and the affect-vs-emotion delta only measures palette/lighting cues; the **text track** is
+  where continuous, text-grounded valence/arousal makes affect grounding an independent,
+  testable variable.
 - **CLIP-T** — image/text alignment, to confirm content is preserved.
 
 Tier differences (**emotion** vs **raw**, **affect** vs **emotion**, **affect** vs **raw**) are
@@ -169,8 +174,8 @@ canonical run. Until then this section states the protocol, not results.
 - Mood modifiers and probe prompts share affective vocabulary; the `raw` control and `scene`
   floor bound how much recovery this could explain, but an independently-trained image-emotion
   probe (the `Probe` interface is swappable) would remove the residual overlap entirely.
-- On neutral content the intended valence/arousal is the per-emotion prior, so the reported VA
-  correlation is between-emotion; within-emotion grounding would need the text-conditioned track.
+- On the content track the intended valence/arousal is the per-emotion prior, so its VA
+  correlation is between-emotion; within-emotion, text-grounded VA is measured on the text track.
 - The Ekman set omits mixed and compound affect, and `disgust` is the scarcest class under the
   Ekman collapse of GoEmotions.
 
