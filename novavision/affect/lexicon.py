@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 _TOKEN = re.compile(r"[a-z][a-z']+")
-_SUFFIXES = ("ing", "edly", "ed", "es", "s", "ly", "ness", "er", "est")
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DEFAULT_PATH = _REPO_ROOT / "data" / "lexicon" / "affect_lexicon.tsv"
@@ -22,10 +21,36 @@ class AffectScore:
 
 
 def _variants(token: str):
+    """Candidate lemmas in priority order.
+
+    Only reliable inflections are stripped, with spelling restored (caring ->
+    care, running -> run). Derivational suffixes that change meaning (-est,
+    -er, -ness, -less) are deliberately left alone: missing a word is harmless,
+    but mapping `hopeless` to `hope` or `honest` to `hon` corrupts the score.
+    """
     yield token
-    for suf in _SUFFIXES:
-        if token.endswith(suf) and len(token) > len(suf) + 2:
-            yield token[: -len(suf)]
+    if token.endswith(("ies", "ied")) and len(token) > 4:
+        yield token[:-3] + "y"  # cities -> city, tried -> try
+        yield token[:-1]  # movies -> movie, lies -> lie
+    elif token.endswith("ing") and len(token) > 5:
+        stem = token[:-3]
+        yield stem + "e"  # caring -> care
+        yield stem  # playing -> play
+        if len(stem) > 2 and stem[-1] == stem[-2]:
+            yield stem[:-1]  # running -> run
+    elif token.endswith("ed") and len(token) > 4:
+        stem = token[:-2]
+        yield stem + "e"  # closed -> close
+        yield stem  # played -> play
+        if len(stem) > 2 and stem[-1] == stem[-2]:
+            yield stem[:-1]  # stopped -> stop
+    elif token.endswith("es") and len(token) > 4:
+        yield token[:-2]  # wishes -> wish
+        yield token[:-1]  # likes -> like
+    elif token.endswith("s") and not token.endswith("ss") and len(token) > 3:
+        yield token[:-1]  # dogs -> dog
+    elif token.endswith("ly") and len(token) > 4:
+        yield token[:-2]  # sadly -> sad
 
 
 class AffectLexicon:
@@ -69,12 +94,16 @@ class AffectLexicon:
         path = Path(path or os.getenv("NOVAVISION_LEXICON") or _DEFAULT_PATH)
         entries: dict[str, tuple[float, float]] = {}
         with open(path, encoding="utf-8") as fh:
-            for line in fh:
+            for n, line in enumerate(fh, start=1):
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
-                word, valence, arousal = line.split("\t")
-                if word == "word":  # header
+                parts = line.split("\t")
+                if len(parts) < 3 or parts[0] == "word":
                     continue
-                entries[word.lower()] = (float(valence), float(arousal))
+                word, valence, arousal = parts[:3]
+                try:
+                    entries[word.lower()] = (float(valence), float(arousal))
+                except ValueError:
+                    raise ValueError(f"{path}:{n} has non-numeric valence/arousal") from None
         return cls(entries)

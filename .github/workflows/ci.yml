@@ -55,6 +55,44 @@ jobs:
           name: coverage-xml
           path: coverage.xml
 
+  ml-smoke:
+    name: ML import + null-path smoke
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install ml + research deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[ml,research]"
+      - name: Import the real generation/eval stack
+        run: |
+          python -c "from novavision.generation.diffusers_backend import DiffusersBackend; \
+                     from novavision.eval.probes import CLIPProbe; \
+                     from novavision.affect.analyzer import EmotionAnalyzer; print('imports ok')"
+      - name: Null-backend experiment smoke
+        run: |
+          python - <<'PY'
+          from unittest.mock import patch
+          from novavision.eval.probes import Recovery
+          from novavision.taxonomy import EMOTIONS
+          import novavision.experiments.run as run
+
+          class FakeProbe:
+              name = "clip:ci"
+              def __init__(self, *a, **k): pass
+              def recover(self, image): return Recovery("joy", 0.1, 0.5, {e: 0.0 for e in EMOTIONS})
+              def clip_t(self, image, text): return 0.2
+
+          with patch.object(run, "CLIPProbe", FakeProbe):
+              run.run_experiment(backend="null", contents=1, seeds=1, out="results/ci")
+          print("experiment smoke ok")
+          PY
+
   security:
     name: Dependency audit (pip-audit)
     runs-on: ubuntu-latest
@@ -64,11 +102,10 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: Install project + pip-audit
+      - name: Install pip-audit
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
           pip install pip-audit
-      - name: Audit installed dependencies
-        run: pip-audit --desc
+      - name: Audit the locked reproduction environment
+        run: pip-audit --desc -r requirements.lock
         continue-on-error: true  # advisory-only rollout; remove this line to make CVEs block the build
