@@ -1,4 +1,4 @@
-.PHONY: setup setup-ml test lint format app benchmark reproduce smoke
+.PHONY: setup setup-ml test lint format app benchmark reproduce smoke paper
 
 setup:                  # tests, lint, benchmark build
 	python -m pip install -e ".[dev,research]"
@@ -25,5 +25,8 @@ benchmark:              # build full AffectBench from GoEmotions
 smoke:                  # quick real run on the test fixture (needs setup-ml; downloads models)
 	python -m novavision.experiments.run --backend diffusers --benchmark tests/fixtures/affectbench_sample.csv --limit 8 --out results/smoke
 
-reproduce:              # full run on the built benchmark (run `make benchmark` first)
-	python -m novavision.experiments.run --backend diffusers --benchmark data/affectbench.csv --out results
+reproduce:              # canonical content-track run (needs setup-ml; downloads models)
+	python -m novavision.experiments.run --backend diffusers --seeds 3 --out results/paper
+
+paper:                  # regenerate Table 1/2 from the canonical results
+	python scripts/report.py --results results/paper/results.json --out paper/tables.md
