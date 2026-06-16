@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from PIL import Image
 
@@ -34,10 +35,10 @@ class CLIPAffect:
     def __init__(self, model_id: str = DEFAULT_MODEL, device: str | None = None):
         self.model_id = model_id
         self._device = device
-        self._model = None
-        self._processor = None
-        self._emo_feats = None
-        self._anchor_feats = None
+        self._model: Any = None
+        self._processor: Any = None
+        self._emo_feats: Any = None
+        self._anchor_feats: Any = None
 
     def _load(self):
         if self._model is None:
