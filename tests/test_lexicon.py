@@ -46,6 +46,12 @@ def test_inflections_restore_spelling():
     assert lex.lookup("running") == (0.1, 0.8)
 
 
+def test_ies_of_ie_nouns():
+    lex = AffectLexicon({"movie": (0.3, 0.5), "city": (0.1, 0.4)})
+    assert lex.lookup("movies") == (0.3, 0.5)  # not 'movy'
+    assert lex.lookup("cities") == (0.1, 0.4)
+
+
 def test_meaning_changing_suffixes_not_stripped():
     # `hon`/`inter` exist; honest/interest must not collapse onto them.
     lex = AffectLexicon({"hon": (0.5, 0.5), "inter": (0.0, 0.5), "hope": (0.8, 0.5)})
