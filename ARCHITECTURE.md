@@ -31,9 +31,9 @@ intended emotion ◄── compare ──► recovered emotion
 `eval/probes.py` defines a swappable `Probe`; the default `CLIPProbe` runs CLIP zero-shot over a
 per-emotion template ensemble (recovery, logit-scaled) and a graded valence/arousal anchor
 ladder. `eval/metrics.py` computes accuracy, macro-F1, confusion, Pearson/Spearman, bootstrap
-CIs, paired tests, and Cohen's κ — pure numpy, fully unit-tested. `experiments/run.py` renders
-neutral content under every intended emotion across seeds, computes the floors and tier
-contrasts, and writes `results.json` (with a full provenance manifest) + figures.
+CIs, paired tests, and Cohen's κ — pure numpy, fully unit-tested. `experiments/run.py` runs two
+tracks (`content` over the neutral bank, `text` over AffectBench) across seeds, computes the
+floors and tier contrasts, and writes `results.json` (with a full provenance manifest) + figures.
 `eval/human_study.py` regenerates a sampled subset for raters and scores human-vs-probe
 agreement.
 
