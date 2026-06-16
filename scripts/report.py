@@ -39,7 +39,8 @@ def contrasts_table(contrasts: dict) -> str:
     lines = [head, rule]
     for name, c in contrasts.items():
         ci = f"[{c['ci_low']:.3f}, {c['ci_high']:.3f}]"
-        lines.append(f"| {name.replace('_', ' ')} | {c['mean_diff']:+.3f} | {ci} | {c['p_value']:.3f} |")
+        label = name.replace("_", " ")
+        lines.append(f"| {label} | {c['mean_diff']:+.3f} | {ci} | {c['p_value']:.3f} |")
     return "\n".join(lines)
 
 
