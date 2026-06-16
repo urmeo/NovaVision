@@ -2,7 +2,15 @@ import math
 
 import pytest
 
-from novavision.eval.metrics import accuracy, confusion_matrix, macro_f1, pearson, spearman
+from novavision.eval.metrics import (
+    accuracy,
+    bootstrap_ci,
+    confusion_matrix,
+    macro_f1,
+    paired_bootstrap_test,
+    pearson,
+    spearman,
+)
 
 
 def test_accuracy():
@@ -43,3 +51,24 @@ def test_pearson():
 
 def test_spearman_monotonic():
     assert round(spearman([1, 2, 3, 4], [1, 4, 9, 16]), 4) == 1.0
+
+
+def test_bootstrap_ci_brackets_mean():
+    lo, hi = bootstrap_ci([0, 1, 1, 1, 0, 1, 1, 0, 1, 1])
+    assert lo <= 0.7 <= hi
+    assert 0.0 <= lo <= hi <= 1.0
+
+
+def test_paired_test_detects_difference():
+    a = [1, 1, 1, 1, 1, 1, 1, 1]
+    b = [0, 0, 0, 0, 0, 0, 0, 0]
+    res = paired_bootstrap_test(a, b)
+    assert res["mean_diff"] == 1.0
+    assert res["p_value"] < 0.05
+
+
+def test_paired_test_no_difference():
+    a = [1, 0, 1, 0, 1, 0]
+    res = paired_bootstrap_test(a, a)
+    assert res["mean_diff"] == 0.0
+    assert res["p_value"] >= 0.05
