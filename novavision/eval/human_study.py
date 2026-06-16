@@ -22,7 +22,7 @@ from novavision.prompting import NEGATIVE_PROMPT, build_prompt
 from novavision.taxonomy import EMOTIONS, prior
 
 
-def sample_records(records: list[dict], n: int, seed: int) -> list[dict]:
+def _sample_records(records: list[dict], n: int, seed: int) -> list[dict]:
     """A class-stratified sample from the conditioned tiers."""
     rng = random.Random(seed)
     pool = [r for r in records if r["tier"] in ("emotion", "affect")]
@@ -52,7 +52,7 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
     from novavision.experiments.run import _seed
 
     gen = gen or get_backend(cfg["backend"], model_id=cfg["diffusion_model"])
-    picked = sample_records(data["records"], n, seed)
+    picked = _sample_records(data["records"], n, seed)
 
     study = results_dir / "human_study"
     images = study / "images"
