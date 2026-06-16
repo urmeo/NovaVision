@@ -50,7 +50,7 @@ class EmotionAnalyzer:
 
         raw = self.classifier(text)[0]
         scores = {r["label"].lower(): float(r["score"]) for r in raw}
-        primary = max(scores, key=scores.get)
+        primary = max(scores, key=lambda k: scores[k])
 
         affect = self.lexicon.score(text)
         pv, pa = prior(primary)
