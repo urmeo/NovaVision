@@ -37,4 +37,9 @@ demo = gr.Interface(
 )
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    import os
+
+    # 0.0.0.0 for Spaces; override HOST=127.0.0.1 for a private local run.
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "7860"))
+    demo.launch(server_name=host, server_port=port)
