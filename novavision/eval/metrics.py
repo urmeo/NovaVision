@@ -88,3 +88,45 @@ def _rank(a: np.ndarray) -> np.ndarray:
     sums = np.zeros(len(counts))
     np.add.at(sums, inverse, ranks)
     return (sums / counts)[inverse]
+
+
+def bootstrap_ci(
+    values: Sequence[float], *, n: int = 2000, alpha: float = 0.05, seed: int = 0
+) -> tuple[float, float]:
+    """Percentile bootstrap CI for the mean, resampling over items."""
+    arr = np.asarray(values, dtype=float)
+    if len(arr) < 2:
+        return float("nan"), float("nan")
+    rng = np.random.default_rng(seed)
+    means = arr[rng.integers(0, len(arr), size=(n, len(arr)))].mean(axis=1)
+    lo, hi = np.quantile(means, [alpha / 2, 1 - alpha / 2])
+    return float(lo), float(hi)
+
+
+def paired_bootstrap_test(
+    a: Sequence[float], b: Sequence[float], *, n: int = 2000, seed: int = 0
+) -> dict[str, float]:
+    """Paired bootstrap on the per-item difference a - b.
+
+    Returns the observed mean difference, its 95% CI, and a two-sided p-value
+    for H0: mean difference = 0. Items are paired, so the two conditions must
+    be aligned element-wise (same item, same seed).
+    """
+    da = np.asarray(a, dtype=float)
+    db = np.asarray(b, dtype=float)
+    _check(da, db)
+    diff = da - db
+    if len(diff) < 2:
+        return {"mean_diff": float("nan"), "ci_low": float("nan"), "ci_high": float("nan"),
+                "p_value": float("nan")}
+    rng = np.random.default_rng(seed)
+    resampled = diff[rng.integers(0, len(diff), size=(n, len(diff)))].mean(axis=1)
+    lo, hi = np.quantile(resampled, [0.025, 0.975])
+    centered = resampled - resampled.mean()
+    p = float((np.abs(centered) >= abs(diff.mean())).mean())
+    return {
+        "mean_diff": float(diff.mean()),
+        "ci_low": float(lo),
+        "ci_high": float(hi),
+        "p_value": p,
+    }
