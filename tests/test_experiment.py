@@ -1,6 +1,11 @@
+from pathlib import Path
+
+from novavision.affect.analyzer import EmotionAnalysis
 from novavision.eval.probes import Recovery
 from novavision.experiments import run
 from novavision.taxonomy import EMOTIONS
+
+FIXTURE = Path(__file__).parent / "fixtures" / "affectbench_sample.csv"
 
 
 def _records(tier: str, correct: bool):
@@ -14,6 +19,7 @@ def _records(tier: str, correct: bool):
                     "tier": tier,
                     "content": "a city street",
                     "intended": emotion,
+                    "classified": None,
                     "seed": sk,
                     "predicted": predicted,
                     "intended_valence": 0.5,
@@ -28,7 +34,7 @@ def _records(tier: str, correct: bool):
 
 def test_summarize_reports_ci_and_chance():
     records = _records("affect", correct=True) + _records("raw", correct=False)
-    metrics = run._summarize(records)
+    metrics = run._summarize(records, run.CONDITIONS["content"])
     assert metrics["affect"]["accuracy"] == 1.0
     assert metrics["raw"]["accuracy"] == 0.0
     assert len(metrics["affect"]["accuracy_ci"]) == 2
@@ -42,19 +48,25 @@ def test_contrasts_detect_lift():
     assert contrasts["emotion_vs_raw"]["p_value"] < 0.05
 
 
+def test_shuffle_emotion_avoids_gold():
+    for e in EMOTIONS:
+        assert run._shuffle_emotion(e, 3) != e
+
+
+class FakeProbe:
+    name = "clip:fake"
+
+    def __init__(self, *a, **k):
+        pass
+
+    def recover(self, image):
+        return Recovery("joy", 0.4, 0.6, {e: 1.0 if e == "joy" else 0.0 for e in EMOTIONS})
+
+    def clip_t(self, image, text):
+        return 0.3
+
+
 def test_run_experiment_content_track(tmp_path, monkeypatch):
-    class FakeProbe:
-        name = "clip:fake"
-
-        def __init__(self, *a, **k):
-            pass
-
-        def recover(self, image):
-            return Recovery("joy", 0.4, 0.6, {e: 1.0 if e == "joy" else 0.0 for e in EMOTIONS})
-
-        def clip_t(self, image, text):
-            return 0.3
-
     monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
     result = run.run_experiment(backend="null", contents=2, seeds=1, out=str(tmp_path))
 
@@ -62,3 +74,31 @@ def test_run_experiment_content_track(tmp_path, monkeypatch):
     assert (tmp_path / "figures" / "accuracy.png").exists()
     for tier in ("raw", "emotion", "affect", "scene"):
         assert tier in result["metrics"]
+
+
+def test_run_experiment_text_track(tmp_path, monkeypatch):
+    class FakeAnalyzer:
+        def __init__(self, *a, **k):
+            pass
+
+        def analyze(self, text):
+            return EmotionAnalysis("joy", 0.9, 0.5, 0.6, 1.0, {"joy": 0.9})
+
+    monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
+    monkeypatch.setattr(run, "EmotionAnalyzer", FakeAnalyzer)
+    result = run.run_experiment(
+        backend="null", track="text", benchmark=str(FIXTURE), limit=4, seeds=1, out=str(tmp_path)
+    )
+
+    for tier in ("raw", "emotion", "affect", "shuffled"):
+        assert tier in result["metrics"]
+    assert "classification_accuracy" in result["metrics"]
+
+
+def test_text_track_requires_benchmark(monkeypatch):
+    monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
+    try:
+        run.run_experiment(backend="null", track="text", seeds=1, out="/tmp/x")
+        raise AssertionError("expected ValueError")
+    except ValueError:
+        pass
