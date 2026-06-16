@@ -30,7 +30,7 @@ from novavision.eval.metrics import (
     pearson,
     spearman,
 )
-from novavision.eval.probes import CLIPProbe
+from novavision.eval.probes import CLIPProbe, HFImageClassifierProbe
 from novavision.experiments.manifest import build_manifest
 from novavision.generation import get_backend
 from novavision.prompting import NEGATIVE_PROMPT, build_prompt
@@ -54,6 +54,15 @@ def _shuffle_emotion(gold: str, seed: int) -> str:
     return others[seed % len(others)]
 
 
+def _make_probe(kind: str, probe_model: str | None, clip_model: str, device: str | None):
+    """CLIP (default) or an independent HF image-emotion classifier."""
+    if kind == "hf":
+        if not probe_model:
+            raise ValueError("--probe hf requires --probe-model")
+        return HFImageClassifierProbe(model_id=probe_model, device=device)
+    return CLIPProbe(model_id=probe_model or clip_model, device=device, revision=CLIP_REVISION)
+
+
 def run_experiment(
     backend: str = "diffusers",
     *,
@@ -69,7 +78,9 @@ def run_experiment(
     height: int = 512,
     device: str | None = None,
     diffusion_model: str = "stabilityai/sd-turbo",
+    probe: str = "clip",
     clip_model: str = "openai/clip-vit-base-patch32",
+    probe_model: str | None = None,
     emotion_model: str = "j-hartmann/emotion-english-distilroberta-base",
 ) -> dict:
     set_determinism(base_seed)
@@ -77,7 +88,7 @@ def run_experiment(
     if device:
         kwargs["device"] = device
     gen = get_backend(backend, **kwargs)
-    probe = CLIPProbe(model_id=clip_model, device=device, revision=CLIP_REVISION)
+    probe_obj = _make_probe(probe, probe_model, clip_model, device)
 
     if track == "text":
         if not benchmark:
@@ -86,13 +97,15 @@ def run_experiment(
         if limit:
             rows = rows[:limit]
         analyzer = EmotionAnalyzer(model_name=emotion_model)
-        records = _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, height)
+        records = _text_records(
+            rows, gen, probe_obj, analyzer, style, seeds, base_seed, width, height
+        )
         n_items = len(rows)
     else:
         bank = load_content_bank()
         if contents:
             bank = bank[:contents]
-        records = _content_records(bank, gen, probe, style, seeds, base_seed, width, height)
+        records = _content_records(bank, gen, probe_obj, style, seeds, base_seed, width, height)
         n_items = len(bank)
 
     conditions = CONDITIONS[track]
@@ -102,7 +115,7 @@ def run_experiment(
         backend=backend,
         track=track,
         diffusion_model=diffusion_model,
-        clip_model=clip_model,
+        probe=probe_obj.name,
         emotion_model=emotion_model if track == "text" else None,
         device=getattr(gen, "device", "n/a"),
         dtype=getattr(gen, "dtype", "n/a"),
@@ -313,7 +326,9 @@ def main() -> None:
     parser.add_argument("--base-seed", type=int, default=0)
     parser.add_argument("--style", default="artistic")
     parser.add_argument("--diffusion-model", default="stabilityai/sd-turbo")
+    parser.add_argument("--probe", default="clip", choices=["clip", "hf"])
     parser.add_argument("--clip-model", default="openai/clip-vit-base-patch32")
+    parser.add_argument("--probe-model", default=None, help="probe model id (CLIP or HF)")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--device", default=None, help="cpu, cuda, or mps; auto if unset")
@@ -334,7 +349,9 @@ def main() -> None:
         height=args.height,
         device=args.device,
         diffusion_model=args.diffusion_model,
+        probe=args.probe,
         clip_model=args.clip_model,
+        probe_model=args.probe_model,
     )
     print(json.dumps(result, indent=2))
 
