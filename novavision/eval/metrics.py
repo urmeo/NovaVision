@@ -62,6 +62,20 @@ def macro_f1(y_true: Sequence[str], y_pred: Sequence[str], labels: Sequence[str]
     return float(np.mean(scores))
 
 
+def cohen_kappa(a: Sequence[str], b: Sequence[str], labels: Sequence[str]) -> float:
+    """Chance-corrected agreement between two label sets (e.g. human vs probe)."""
+    _check(a, b)
+    _check_labels(a, b, labels)
+    if not a:
+        return float("nan")
+    n = len(a)
+    po = sum(x == y for x, y in zip(a, b)) / n
+    pe = sum((a.count(c) / n) * (b.count(c) / n) for c in labels)
+    if pe == 1.0:
+        return float("nan")
+    return float((po - pe) / (1 - pe))
+
+
 def pearson(x: Sequence[float], y: Sequence[float]) -> float:
     xa = np.asarray(x, dtype=float)
     ya = np.asarray(y, dtype=float)
