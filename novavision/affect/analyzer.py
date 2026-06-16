@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from novavision.affect.lexicon import AffectLexicon
+from novavision.config import EMOTION_REVISION
 from novavision.taxonomy import prior
 
 DEFAULT_MODEL = "j-hartmann/emotion-english-distilroberta-base"
@@ -23,8 +24,14 @@ class EmotionAnalysis:
 class EmotionAnalyzer:
     """DistilRoBERTa emotion classifier + lexicon-grounded affect."""
 
-    def __init__(self, model_name: str = DEFAULT_MODEL, lexicon: AffectLexicon | None = None):
+    def __init__(
+        self,
+        model_name: str = DEFAULT_MODEL,
+        lexicon: AffectLexicon | None = None,
+        revision: str | None = EMOTION_REVISION,
+    ):
         self.model_name = model_name
+        self.revision = revision
         self._lexicon = lexicon
         self._classifier = None
 
@@ -40,7 +47,11 @@ class EmotionAnalyzer:
             from transformers import pipeline
 
             self._classifier = pipeline(
-                "text-classification", model=self.model_name, top_k=None, device=-1
+                "text-classification",
+                model=self.model_name,
+                revision=self.revision,
+                top_k=None,
+                device=-1,
             )
         return self._classifier
 
