@@ -97,6 +97,8 @@ Thumbs.db
 *.log
 outputs/
 results/
+!results/paper/          # canonical run that backs the paper is tracked
+results/paper/human_study/images/
 
 # Superseded pre-rebuild report (contains stale, non-reproducible numbers)
 Report.pdf
