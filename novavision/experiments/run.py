@@ -61,11 +61,7 @@ def run_experiment(
     if contents:
         bank = bank[:contents]
 
-    gen = (
-        get_backend(backend, model_id=diffusion_model)
-        if backend != "null"
-        else get_backend(backend)
-    )
+    gen = get_backend(backend, model_id=diffusion_model)
     probe = CLIPProbe(model_id=clip_model, revision=CLIP_REVISION)
 
     records = _content_records(bank, gen, probe, style, seeds, base_seed, width, height)
