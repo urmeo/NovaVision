@@ -16,9 +16,9 @@ is easy to get wrong: if the conditioning paints a fixed per-emotion scene and t
 written to match it, "recovery" becomes a tautology. We make the protocol honest. Image
 *content* is held independent of the intended emotion, emotion enters only as a modifier, and
 the headline number is bounded by two floors a tautology cannot beat: a no-emotion control
-(chance) and a template-only ceiling (pure scene recognition). We pair this with **AffectBench**,
-a frozen, datasheeted benchmark derived from GoEmotions, and report every tier with bootstrap
-confidence intervals and a paired significance test. The contribution is the protocol and
+(chance) and a template-only ceiling (pure scene recognition). We report every tier with
+bootstrap confidence intervals and a paired significance test, and release **AffectBench**, a
+frozen, datasheeted GoEmotions-derived benchmark, for a text-conditioned track. The contribution is the protocol and
 artifact — designed around its failure modes — not a single controllability score; we also ship
 probe-validation and human-study harnesses so the proxy can be checked against people.
 
@@ -73,17 +73,18 @@ rather than a single positive/negative contrast. Probe templates are frozen befo
 
 ## 4. AffectBench
 
-The primary track conditions on a bank of twenty affect-neutral content subjects
-(`data/content_bank.txt`), so content is independent of emotion by construction. **AffectBench**
-backs a secondary *text* track: it is built on demand from GoEmotions [@demszky2020] under the
-official Ekman grouping — single-label examples mapped to seven Ekman categories, deduplicated,
-sampled per class from the **test** split (so items do not overlap model training splits), and
-interleaved so any prefix stays balanced. The build records realized per-class counts and a
-content hash; a datasheet (`data/DATASHEET.md`) documents composition, splits, and licensing. A
-hand-authored sample ships only as a test fixture and can never produce a reported number —
-`load_benchmark` has no default path. Because GoEmotions is *text* emotion, the text track is
-scoped to text-prompt controllability; image-grounded affect (EmoSet/FI) is used to validate the
-probe (§7).
+The experiment conditions on a bank of twenty affect-neutral content subjects
+(`data/content_bank.txt`), so content is independent of emotion by construction. We additionally
+*provide* **AffectBench** as a text benchmark for a future text-conditioned track (not run here):
+it is built on demand from GoEmotions [@demszky2020] under the official Ekman grouping —
+single-label examples mapped to seven Ekman categories, deduplicated, sampled per class from the
+**test** split (so items do not overlap model training splits), and interleaved so any prefix
+stays balanced. The build records realized per-class counts and a content hash; a datasheet
+(`data/DATASHEET.md`) documents composition, splits, and licensing, and `load_benchmark` is the
+loader (no default path, so a run never silently uses a sample). A hand-authored sample ships
+only as a test fixture and can never produce a reported number. Because GoEmotions is *text*
+emotion, that track would be scoped to text-prompt controllability; image-grounded affect
+(EmoSet/FI) is used to validate the probe (§7).
 
 ## 5. Evaluation
 
@@ -95,7 +96,7 @@ construction). For each tier we report:
   affect. On neutral content the intended valence/arousal is the per-emotion prior, so this is a
   *between-emotion* check (does conditioning on "joy" raise recovered valence above "sadness"?),
   not within-emotion grounding; we report it but do not headline it. Continuous, text-grounded
-  valence/arousal is exercised only on the secondary text track. Because the affect tier's cues
+  valence/arousal would be exercised on the text-conditioned track (future work). Because the affect tier's cues
   are derived from that same prior on neutral content, the affect-vs-emotion delta measures the
   marginal value of palette/lighting cues, not of independent affect grounding.
 - **CLIP-T** — image/text alignment, to confirm content is preserved.
