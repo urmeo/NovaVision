@@ -64,7 +64,7 @@ def test_paired_test_detects_difference():
     b = [0, 0, 0, 0, 0, 0, 0, 0]
     res = paired_bootstrap_test(a, b)
     assert res["mean_diff"] == 1.0
-    assert res["p_value"] < 0.05
+    assert 0 < res["p_value"] < 0.05  # +1 smoothing: never exactly 0
 
 
 def test_paired_test_no_difference():

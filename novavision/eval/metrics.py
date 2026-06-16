@@ -142,7 +142,8 @@ def paired_bootstrap_test(
     resampled = diff[rng.integers(0, len(diff), size=(n, len(diff)))].mean(axis=1)
     lo, hi = np.quantile(resampled, [0.025, 0.975])
     centered = resampled - resampled.mean()
-    p = float((np.abs(centered) >= abs(diff.mean())).mean())
+    # +1 smoothing: the minimum reportable p is 1/(n+1), never exactly 0.
+    p = float((1 + np.sum(np.abs(centered) >= abs(diff.mean()))) / (n + 1))
     return {
         "mean_diff": float(diff.mean()),
         "ci_low": float(lo),
