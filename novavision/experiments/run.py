@@ -134,7 +134,8 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -
                 prompt, width=width, height=height, seed=seed, negative_prompt=NEGATIVE_PROMPT
             )
             rec = probe.recover(image)
-            records.append(_record(probe.name, "scene", "", emotion, sk, rec, pv, pa, 0.0))
+            # No input content, so CLIP-T against content is undefined here.
+            records.append(_record(probe.name, "scene", "", emotion, sk, rec, pv, pa, float("nan")))
     return records
 
 
@@ -166,6 +167,7 @@ def _summarize(records) -> dict:
         lo, hi = bootstrap_ci(correct)
         iv, rv = _col(sub, "intended_valence"), _col(sub, "recovered_valence")
         ia, ra = _col(sub, "intended_arousal"), _col(sub, "recovered_arousal")
+        clip = [r["clip_t"] for r in sub if r["clip_t"] == r["clip_t"]]  # drop nan
         summary[tier] = {
             "accuracy": round(accuracy(y_true, y_pred), 4),
             "accuracy_ci": [round(lo, 4), round(hi, 4)],
@@ -174,7 +176,7 @@ def _summarize(records) -> dict:
             "valence_rho": round(spearman(iv, rv), 4),
             "arousal_r": round(pearson(ia, ra), 4),
             "arousal_rho": round(spearman(ia, ra), 4),
-            "clip_t": round(sum(r["clip_t"] for r in sub) / len(sub), 4),
+            "clip_t": round(sum(clip) / len(clip), 4) if clip else float("nan"),
             "n": len(sub),
         }
     summary["chance"] = round(1 / len(EMOTIONS), 4)
