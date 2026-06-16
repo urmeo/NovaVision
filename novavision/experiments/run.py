@@ -53,6 +53,7 @@ def run_experiment(
     out: str = "results",
     width: int = 512,
     height: int = 512,
+    device: str | None = None,
     diffusion_model: str = "stabilityai/sd-turbo",
     clip_model: str = "openai/clip-vit-base-patch32",
 ) -> dict:
@@ -61,8 +62,11 @@ def run_experiment(
     if contents:
         bank = bank[:contents]
 
-    gen = get_backend(backend, model_id=diffusion_model)
-    probe = CLIPProbe(model_id=clip_model, revision=CLIP_REVISION)
+    kwargs = {"model_id": diffusion_model}
+    if device:
+        kwargs["device"] = device
+    gen = get_backend(backend, **kwargs)
+    probe = CLIPProbe(model_id=clip_model, device=device, revision=CLIP_REVISION)
 
     records = _content_records(bank, gen, probe, style, seeds, base_seed, width, height)
 
@@ -245,6 +249,7 @@ def main() -> None:
     parser.add_argument("--clip-model", default="openai/clip-vit-base-patch32")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
+    parser.add_argument("--device", default=None, help="cpu, cuda, or mps; auto if unset")
     parser.add_argument("--out", default="results")
     args = parser.parse_args()
 
@@ -258,6 +263,7 @@ def main() -> None:
         out=args.out,
         width=args.width,
         height=args.height,
+        device=args.device,
         diffusion_model=args.diffusion_model,
         clip_model=args.clip_model,
     )
