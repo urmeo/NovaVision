@@ -183,7 +183,7 @@ def _summarize(records) -> dict:
 
 def _contrasts(records) -> dict:
     """Paired bootstrap on per-item recovery correctness between tiers."""
-    by_key = {}
+    by_key: dict[tuple, dict[str, int]] = {}
     for r in records:
         key = (r["content"], r["intended"], r["seed"])
         by_key.setdefault(key, {})[r["tier"]] = int(r["intended"] == r["predicted"])
