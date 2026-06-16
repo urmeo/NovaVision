@@ -1,10 +1,18 @@
 # Data card
 
-## `affectbench_sample.csv` — offline sample (hand-authored)
+## `tests/fixtures/affectbench_sample.csv` — test fixture (hand-authored)
 
 56 sentences, 8 per Ekman class (anger, disgust, fear, joy, neutral, sadness, surprise).
-These are **hand-authored synthetic** sentences written for this project, used for offline
-demos and the test suite. They are **not** GoEmotions text. Columns: `text`, `emotion`.
+These are **hand-authored synthetic** sentences written for this project, used **only** by
+the test suite and offline demos. They are **not** GoEmotions text and must never back a
+reported result — `load_benchmark` has no default path, so a run cannot fall back to them.
+Columns: `text`, `emotion`.
+
+## `content_bank.txt` — neutral content prompts
+
+Twenty depictable, affect-neutral subjects (a city street, a tree in a field, a portrait).
+The decoupled controllability track renders each subject under every intended emotion, so
+recovered emotion is attributable to the conditioning rather than the scene.
 
 ## AffectBench — full benchmark (derived from GoEmotions)
 
