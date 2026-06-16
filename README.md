@@ -45,10 +45,10 @@ are reported with bootstrap confidence intervals and a paired significance test.
   <img src="screenshots/emotion_analysis.png" alt="Emotion analysis" width="780">
 </p>
 
-- **AffectBench** is built from GoEmotions under the official Ekman mapping — sampled from the
-  test split, deduplicated, balance-checked, and shipped with a datasheet (`data/DATASHEET.md`).
-- The primary track renders neutral content under each intended emotion, so the score reflects
-  conditioning rather than scene content.
+- The experiment renders neutral content (`data/content_bank.txt`) under each intended emotion,
+  so the score reflects conditioning rather than scene content.
+- **AffectBench** — a GoEmotions-derived text benchmark (test split, deduplicated, balance-checked,
+  datasheeted in `data/DATASHEET.md`) — is provided for a future text-conditioned track.
 - Scored on recovery accuracy (with bootstrap 95% CIs), macro-F1, valence/arousal correlation
   (Pearson r and Spearman ρ), and CLIP-T; tier deltas get a paired significance test.
 - A probe-validation and human-study harness (`novavision.eval.human_study`) checks the CLIP
@@ -69,7 +69,7 @@ are reported with bootstrap confidence intervals and a paired significance test.
 
 - [ ] Scale the human study (3+ raters) and report Cohen's κ against the probe
 - [ ] Independently-trained image-emotion probe to fully remove probe/conditioning overlap
-- [ ] Image-grounded conditioning (EmoSet/FI) alongside the GoEmotions text track
+- [ ] A GoEmotions text-conditioned track, and image-grounded conditioning (EmoSet/FI)
 - [ ] Mixed and compound emotions beyond the Ekman set
 
 ## License

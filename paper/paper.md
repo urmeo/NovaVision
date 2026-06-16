@@ -170,7 +170,7 @@ canonical run. Until then this section states the protocol, not results.
   floor bound how much recovery this could explain, but an independently-trained image-emotion
   probe (the `Probe` interface is swappable) would remove the residual overlap entirely.
 - On neutral content the intended valence/arousal is the per-emotion prior, so the reported VA
-  correlation is between-emotion; within-emotion grounding is exercised only on the text track.
+  correlation is between-emotion; within-emotion grounding would need the text-conditioned track.
 - The Ekman set omits mixed and compound affect, and `disgust` is the scarcest class under the
   Ekman collapse of GoEmotions.
 
