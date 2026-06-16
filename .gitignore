@@ -103,6 +103,3 @@ results/paper/human_study/images/
 
 # Superseded pre-rebuild report (contains stale, non-reproducible numbers)
 Report.pdf
-
-# Unreferenced demo media (kept locally, out of the repo)
-screenshots/
