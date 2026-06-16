@@ -47,8 +47,8 @@ def macro_f1(y_true: Sequence[str], y_pred: Sequence[str], labels: Sequence[str]
 
 
 def pearson(x: Sequence[float], y: Sequence[float]) -> float:
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float)
-    if len(x) < 2 or x.std() == 0 or y.std() == 0:
+    xa = np.asarray(x, dtype=float)
+    ya = np.asarray(y, dtype=float)
+    if len(xa) < 2 or xa.std() == 0 or ya.std() == 0:
         return 0.0
-    return float(np.corrcoef(x, y)[0, 1])
+    return float(np.corrcoef(xa, ya)[0, 1])
