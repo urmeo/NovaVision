@@ -96,8 +96,9 @@ Thumbs.db
 # Project specific
 *.log
 outputs/
-results/
-!results/paper/          # canonical run that backs the paper is tracked
+# Ignore every run dir except the canonical paper run, which is tracked.
+results/*
+!results/paper/
 results/paper/human_study/images/
 
 # Superseded pre-rebuild report (contains stale, non-reproducible numbers)
