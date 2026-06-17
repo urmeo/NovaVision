@@ -50,10 +50,14 @@ are reported with bootstrap confidence intervals and a paired significance test.
 - The **text** track (`--track text`) conditions on **AffectBench** — a GoEmotions-derived
   benchmark (test split, deduplicated, balance-checked, datasheeted in `data/DATASHEET.md`) —
   with text-grounded valence/arousal and a shuffled-emotion floor.
+- Conditions: `raw` (control), `naive` (bare emotion word), `emotion` (engineered modifier),
+  `affect` (+ valence/arousal), plus a floor (`scene` or `shuffled`).
 - Scored on recovery accuracy (with bootstrap 95% CIs), macro-F1, valence/arousal correlation
   (Pearson r and Spearman ρ), and CLIP-T; tier deltas get a paired significance test.
-- A probe-validation and human-study harness (`novavision.eval.human_study`) checks the CLIP
-  proxy against people (Cohen's κ).
+- The recovery probe is **validated** against a labelled set (`make validate-probe`): CLIP
+  ViT-B/32 zero-shot recovers emotion at only **29% accuracy** — a weak instrument that bounds
+  every recovery score. An independent non-CLIP probe (`--probe hf`) and a human study
+  (`novavision.eval.human_study`, Cohen's κ) are wired in.
 - Confusion matrices and valence/arousal plots are written to `results/`; `make paper`
   regenerates the paper tables from `results/paper/results.json`.
 - Method details in the paper, `paper/paper.md`.
@@ -68,8 +72,9 @@ are reported with bootstrap confidence intervals and a paired significance test.
 
 ## Future scope
 
+- [ ] A stronger recovery probe — the CLIP ViT-B/32 zero-shot probe is weak (29% accuracy)
 - [ ] Scale the human study (3+ raters) and report Cohen's κ against the probe
-- [ ] Independently-trained image-emotion probe to fully remove probe/conditioning overlap
+- [ ] Scene-affect probe validation on EmoSet (the harness already supports it)
 - [ ] Image-grounded conditioning (EmoSet/FI) for the image-affect claim
 - [ ] Mixed and compound emotions beyond the Ekman set
 
