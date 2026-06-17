@@ -72,3 +72,18 @@ class NovaVision:
             prompt, width=width, height=height, seed=seed, negative_prompt=NEGATIVE_PROMPT
         )
         return Result(image, prompt, analysis, tier, style, seed, self.backend.name)
+
+
+def build_pipeline(settings=None) -> NovaVision:
+    """Construct the pipeline from settings — the one factory both entry points use.
+
+    Heavy backends stay lazy (no model loads here), so importing this is cheap; the
+    Flask API and the Gradio app call it instead of assembling the pipeline by hand,
+    which keeps their wiring identical (one source of truth).
+    """
+    from novavision.config import get_settings
+
+    cfg = settings or get_settings()
+    kwargs = {"model_id": cfg.diffusion_model} if cfg.backend == "diffusers" else {}
+    backend = get_backend(cfg.backend, **kwargs)
+    return NovaVision(backend=backend, analyzer=EmotionAnalyzer(cfg.emotion_model))
