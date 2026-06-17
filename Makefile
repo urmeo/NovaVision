@@ -25,16 +25,31 @@ benchmark:              # build full AffectBench from GoEmotions
 smoke:                  # quick real run (run: make setup setup-ml; downloads models)
 	python -m novavision.experiments.run --backend diffusers --contents 2 --seeds 1 --out results/smoke
 
-reproduce:              # canonical content-track run (run: make setup setup-ml; downloads models)
+pilot:                  # the committed CPU pilot (256-px, 2 subjects, 1 seed -> n=14)
+	python -m novavision.experiments.run --backend diffusers --contents 2 --seeds 1 \
+	  --width 256 --height 256 --out results/paper
+
+reproduce:              # canonical content-track run, 512-px (needs a GPU / non-memory-bound box)
 	python -m novavision.experiments.run --backend diffusers --seeds 3 --out results/paper
 
 text:                   # text-conditioned run on AffectBench (run: make benchmark first)
 	python -m novavision.experiments.run --backend diffusers --track text \
 	  --benchmark data/affectbench.csv --seeds 3 --out results/text
 
-validate-probe:         # measure the probe's known error on a labelled set
+validate-probe:         # probe error on FACES (out-of-domain proxy)
 	python -m novavision.eval.validate_probe --hf-dataset FastJobs/Visual_Emotional_Analysis \
 	  --n 200 --out results/paper/probe_validation.json
+
+validate-probe-scene:   # probe error IN-DOMAIN on EmoSet scenes (the real ceiling)
+	python -m novavision.eval.validate_probe --hf-dataset xodhks/EmoSet118K \
+	  --n 400 --split train --seed 0 --out results/paper/probe_validation_scene.json
+
+robustness:             # cross-probe check: rerun with an independent non-CLIP probe
+	python -m novavision.experiments.run --backend diffusers --contents 4 --seeds 1 \
+	  --probe hf --probe-model $(PROBE_MODEL) --out results/robustness
+
+resummarize:            # refresh metrics/diagnostics/figures from existing records (no regen)
+	python scripts/resummarize.py --results results/paper/results.json
 
 paper:                  # regenerate Table 1/2 from the canonical results
 	python scripts/report.py --results results/paper/results.json --out paper/tables.md
