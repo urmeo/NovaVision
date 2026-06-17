@@ -80,6 +80,17 @@ def test_rate_limit_returns_429(client):
     assert client.post("/api/analyze", json={"text": "hello again"}).status_code == 429
 
 
+def test_rotating_xff_does_not_bypass_rate_limit(client, monkeypatch):
+    # Without a trusted proxy, the limiter must key on remote_addr, not spoofable XFF.
+    monkeypatch.delenv("NOVA_TRUST_PROXY", raising=False)
+    from novavision import serving
+
+    server._rate_limiter = serving.RateLimiter(max_requests=1)
+    a = client.post("/api/analyze", json={"text": "hello"}, headers={"X-Forwarded-For": "1.1.1.1"})
+    b = client.post("/api/analyze", json={"text": "world"}, headers={"X-Forwarded-For": "2.2.2.2"})
+    assert a.status_code == 200 and b.status_code == 429
+
+
 def test_busy_returns_429(client):
     from novavision import serving
 
