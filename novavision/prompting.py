@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from novavision.taxonomy import NEUTRAL
 
-TIERS = ("raw", "emotion", "affect")
+TIERS = ("raw", "naive", "emotion", "affect")
 FLOORS = ("scene",)
 
 STYLE_PRESETS = {
@@ -90,6 +90,8 @@ def build_prompt(
 
     if tier == "raw":
         parts = [content, style_desc, QUALITY]
+    elif tier == "naive":  # bare emotion word
+        parts = [content, emotion, style_desc, QUALITY]
     elif tier == "emotion":
         parts = [content, mood, style_desc, QUALITY]
     elif tier == "affect":
