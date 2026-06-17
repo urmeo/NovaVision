@@ -39,7 +39,7 @@ agreement.
 
 ## Data
 
-`novavision/data/build_benchmark.py` maps single-label GoEmotions to the seven Ekman categories
+`novavision/data/build_benchmark.py` maps single-label GoEmotions to six Ekman emotions plus neutral
 (`taxonomy.GOEMOTIONS_TO_EKMAN`), dedups, samples the **test** split, and writes a manifest with
 realized per-class counts. `data/content_bank.txt` holds the neutral subjects for the decoupled
 track. A hand-authored sample (test fixture) and a demo lexicon ship for offline use (see

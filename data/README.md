@@ -14,6 +14,12 @@ Twenty depictable, affect-neutral subjects (a city street, a tree in a field, a 
 The decoupled controllability track renders each subject under every intended emotion, so
 recovered emotion is attributable to the conditioning rather than the scene.
 
+**Selection criteria** (to avoid content→emotion confounds): each subject is (i) concrete and
+depictable by a text-to-image model, (ii) affect-neutral on its own — no inherently happy
+(wedding) or threatening (warzone) content, (iii) compatible with every emotion's mood modifier,
+and (iv) varied across scene types (urban, nature, interior, person, object) so results are not
+tied to one visual domain. They are hand-authored for this project.
+
 ## AffectBench — text benchmark (derived from GoEmotions)
 
 Built on demand, not committed. Full composition, splits, and licensing are in the
@@ -35,5 +41,7 @@ use and tests. It is illustrative, not empirical norms. For research, replace it
 
 ## Licensing
 
-Project code: MIT. Derived data inherits its source's terms (GoEmotions: Apache-2.0;
-Warriner norms / NRC-VAD: per their respective licenses).
+Project code: MIT. The shipped demo lexicon is original to NovaVision (MIT). Derived/external
+data inherits its source's terms (GoEmotions: Apache-2.0; Warriner norms / NRC-VAD: per their
+respective licenses). Full model + data + lexicon terms are in
+[`../THIRD_PARTY_LICENSES.md`](../THIRD_PARTY_LICENSES.md).
