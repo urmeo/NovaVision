@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 from novavision.affect.analyzer import EmotionAnalyzer
@@ -106,7 +107,7 @@ def run_experiment(
         if not benchmark:
             raise ValueError("The text track requires --benchmark.")
         rows = load_benchmark(benchmark)
-        if limit:
+        if limit is not None:
             rows = rows[:limit]
         analyzer = EmotionAnalyzer(model_name=emotion_model)
         records = _text_records(
@@ -115,7 +116,7 @@ def run_experiment(
         n_items = len(rows)
     else:
         bank = load_content_bank()
-        if contents:
+        if contents is not None:
             bank = bank[:contents]
         records = _content_records(bank, gen, probe_obj, style, seeds, base_seed, width, height)
         n_items = len(bank)
@@ -244,7 +245,8 @@ def _summarize(records, conditions) -> dict:
         lo, hi = bootstrap_ci(correct)
         iv, rv = _col(sub, "intended_valence"), _col(sub, "recovered_valence")
         ia, ra = _col(sub, "intended_arousal"), _col(sub, "recovered_arousal")
-        clip = [r["clip_t"] for r in sub if r["clip_t"] == r["clip_t"]]  # drop nan
+        # drop nan and null (sanitized nan in a re-read results.json)
+        clip = [r["clip_t"] for r in sub if _finite(r["clip_t"])]
         vlo, vhi = bootstrap_corr_ci(iv, rv)
         alo, ahi = bootstrap_corr_ci(ia, ra)
         summary[tier] = {
@@ -331,6 +333,26 @@ def _col(rows, key):
     return [r[key] for r in rows]
 
 
+def _finite(x) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def json_safe(obj):
+    """Replace non-finite floats (nan/inf) with null so output is valid RFC-8259 JSON."""
+    if isinstance(obj, float):
+        return obj if math.isfinite(obj) else None
+    if isinstance(obj, dict):
+        return {k: json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [json_safe(v) for v in obj]
+    return obj
+
+
+def dump_results(payload: dict, path) -> None:
+    """Write results.json as standards-compliant JSON (no bare NaN tokens)."""
+    Path(path).write_text(json.dumps(json_safe(payload), indent=2, allow_nan=False))
+
+
 def _write(out, records, metrics, contrasts, manifest, conditions) -> None:
     out_dir = Path(out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -340,7 +362,7 @@ def _write(out, records, metrics, contrasts, manifest, conditions) -> None:
         "contrasts": contrasts,
         "records": records,
     }
-    (out_dir / "results.json").write_text(json.dumps(payload, indent=2))
+    dump_results(payload, out_dir / "results.json")
     _write_figures(out_dir, records, metrics, conditions)
 
 
