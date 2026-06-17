@@ -105,6 +105,8 @@ def build(
     sampled = _curate(examples, n_per_class, seed)
     rows = _interleave(sampled)
 
+    from novavision.data import sha256
+
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8", newline="") as fh:
@@ -125,6 +127,7 @@ def build(
         "underfilled": short,
         "balanced": not short,
         "dropped_train_overlap": dropped_overlap,
+        "sha256": sha256(out_path),
     }
     out_path.with_suffix(".manifest.json").write_text(json.dumps(manifest, indent=2))
     if short:
