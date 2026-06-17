@@ -54,6 +54,15 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
     gen = gen or get_backend(cfg["backend"], model_id=cfg["diffusion_model"])
     picked = _sample_records(data["records"], n, seed)
 
+    # Content-track only: text-track records carry sentences (not bank subjects) and lack the
+    # row index needed to reproduce the exact rated image. Fail clearly instead of crashing.
+    unknown = next((r["content"] for r in picked if r["content"] not in bank), None)
+    if unknown is not None:
+        raise ValueError(
+            "human_study build supports the content track only; got a record whose content is "
+            f"not in data/content_bank.txt ({unknown!r}). Build the sheet from a content-track run."
+        )
+
     study = results_dir / "human_study"
     images = study / "images"
     images.mkdir(parents=True, exist_ok=True)
@@ -84,15 +93,23 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
 
 
 def analyze(ratings_csv: str | Path, key_csv: str | Path) -> dict:
-    ratings = {int(r["id"]): r["emotion"].strip().lower() for r in _read_csv(ratings_csv)}
-    key = {int(r["id"]): r for r in _read_csv(key_csv)}
+    from novavision.eval.validate_probe import EKMAN_ALIASES
 
-    ids = [i for i in key if ratings.get(i)]
+    raw = {int(r["id"]): r["emotion"].strip().lower() for r in _read_csv(ratings_csv)}
+    # Absorb synonyms/typos (happy->joy, sad->sadness) so one bad cell can't void the sheet.
+    ratings = {i: EKMAN_ALIASES.get(v, v) for i, v in raw.items() if v}
+    key = {int(r["id"]): r for r in _read_csv(key_csv)}
+    known = set(EMOTIONS)
+
+    ids = [i for i in key if ratings.get(i) in known]
+    unscored = sorted(i for i in key if ratings.get(i) and ratings[i] not in known)
     human = [ratings[i] for i in ids]
     probe = [key[i]["probe"] for i in ids]
     intended = [key[i]["intended"] for i in ids]
     return {
         "n_rated": len(ids),
+        "n_unscored": len(unscored),
+        "unscored_ids": unscored,
         "human_vs_probe_kappa": round(cohen_kappa(human, probe, EMOTIONS), 4),
         "human_vs_intended_acc": round(accuracy(human, intended), 4),
         "probe_vs_intended_acc": round(accuracy(probe, intended), 4),
