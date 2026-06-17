@@ -91,6 +91,24 @@ def test_run_experiment_content_track(tmp_path, monkeypatch):
     assert (tmp_path / "figures" / "accuracy.png").exists()
     for tier in ("raw", "emotion", "affect", "scene"):
         assert tier in result["metrics"]
+    # results.json must be standards-compliant JSON (no bare NaN tokens).
+    import json
+
+    txt = (tmp_path / "results.json").read_text()
+    json.loads(txt, parse_constant=lambda _: (_ for _ in ()).throw(ValueError("non-finite")))
+
+
+def test_json_safe_replaces_non_finite():
+    out = run.json_safe({"a": float("nan"), "b": [1.0, float("inf")], "c": "x", "d": 2})
+    assert out == {"a": None, "b": [1.0, None], "c": "x", "d": 2}
+    __import__("json").dumps(out, allow_nan=False)  # must not raise
+
+
+def test_contents_zero_means_zero_not_all(tmp_path, monkeypatch):
+    monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
+    result = run.run_experiment(backend="null", contents=0, seeds=1, out=str(tmp_path))
+    # 0 subjects -> no conditioning-tier records; only the scene floor remains.
+    assert "raw" not in result["metrics"] and "scene" in result["metrics"]
 
 
 def test_run_experiment_text_track(tmp_path, monkeypatch):
