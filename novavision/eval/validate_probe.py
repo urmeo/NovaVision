@@ -17,6 +17,50 @@ from novavision.taxonomy import EMOTIONS
 
 _EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 
+# Aliases from common image-emotion datasets to the Ekman set.
+EKMAN_ALIASES = {
+    "happy": "joy",
+    "happiness": "joy",
+    "amusement": "joy",
+    "contentment": "joy",
+    "excitement": "joy",
+    "joy": "joy",
+    "sad": "sadness",
+    "sadness": "sadness",
+    "anger": "anger",
+    "angry": "anger",
+    "disgust": "disgust",
+    "fear": "fear",
+    "surprise": "surprise",
+    "awe": "surprise",
+    "neutral": "neutral",
+}
+
+
+def load_hf_dataset(name: str, n: int = 200, split: str = "train", seed: int = 0):
+    """Sample (image, ekman_label) pairs from a labelled HF image dataset."""
+    import random
+
+    from datasets import load_dataset
+
+    ds = load_dataset(name, split=split)
+    feat = ds.features.get("label")
+    names = getattr(feat, "names", None)
+
+    order = list(range(len(ds)))
+    random.Random(seed).shuffle(order)
+    pairs: list = []
+    for i in order:
+        if len(pairs) >= n:
+            break
+        ex = ds[i]
+        raw = ex["label"]
+        label = names[raw] if names and isinstance(raw, int) else raw
+        ekman = EKMAN_ALIASES.get(str(label).lower())
+        if ekman in set(EMOTIONS):
+            pairs.append((ex["image"].convert("RGB"), ekman))
+    return pairs
+
 
 def load_image_folder(root: str | Path) -> list[tuple[Path, str]]:
     """Images under ``root/<ekman_emotion>/*`` → (path, label) pairs."""
@@ -34,13 +78,14 @@ def load_image_folder(root: str | Path) -> list[tuple[Path, str]]:
     return pairs
 
 
-def validate(probe, pairs: list[tuple[Path, str]]) -> dict:
+def validate(probe, pairs: list) -> dict:
+    """pairs are (image-or-path, ekman_label)."""
     from PIL import Image
 
     y_true, y_pred = [], []
-    for path, label in pairs:
-        with Image.open(path) as im:
-            rec = probe.recover(im.convert("RGB"))
+    for item, label in pairs:
+        img = item if isinstance(item, Image.Image) else Image.open(item).convert("RGB")
+        rec = probe.recover(img)
         y_true.append(label)
         y_pred.append(rec.emotion)
 
@@ -57,7 +102,9 @@ def validate(probe, pairs: list[tuple[Path, str]]) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate a probe on labelled images")
-    parser.add_argument("--images-dir", required=True, help="root/<emotion>/*.jpg")
+    parser.add_argument("--images-dir", default=None, help="root/<emotion>/*.jpg")
+    parser.add_argument("--hf-dataset", default=None, help="labelled HF image dataset")
+    parser.add_argument("--n", type=int, default=200, help="sample size for --hf-dataset")
     parser.add_argument("--clip-model", default="openai/clip-vit-base-patch32")
     parser.add_argument("--out", default="results/probe_validation.json")
     args = parser.parse_args()
@@ -65,8 +112,16 @@ def main() -> None:
     from novavision.config import CLIP_REVISION
     from novavision.eval.probes import CLIPProbe
 
+    if args.hf_dataset:
+        pairs = load_hf_dataset(args.hf_dataset, n=args.n)
+    elif args.images_dir:
+        pairs = load_image_folder(args.images_dir)
+    else:
+        parser.error("pass --hf-dataset or --images-dir")
+
     probe = CLIPProbe(model_id=args.clip_model, revision=CLIP_REVISION)
-    report = validate(probe, load_image_folder(args.images_dir))
+    report = validate(probe, pairs)
+    report["source"] = args.hf_dataset or args.images_dir
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(report, indent=2))
     print(json.dumps({k: v for k, v in report.items() if k != "confusion"}, indent=2))
