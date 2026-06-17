@@ -66,8 +66,8 @@ and a validated probe, so a number means something rather than flattering the me
 2. **Ground** — valence and arousal are estimated from an affect lexicon, blended with the
    emotion prior by word coverage: `v = c·v_lex + (1−c)·v_prior`.
 3. **Condition** — image content stays independent of the emotion; emotion enters only as a
-   modifier over three tiers (raw, emotion, affect). The tiers are the ablation, so recovery is
-   attributable to the conditioning, not a canned scene.
+   modifier over four tiers (raw, naive, emotion, affect). The tiers are the ablation, so recovery
+   is attributable to the conditioning, not a canned scene.
 4. **Generate** — Stable Diffusion Turbo renders the image from a fixed seed.
 5. **Recover** — a swappable probe (CLIP ViT-B/32 by default) reads the emotion and graded
    valence/arousal back from the image and compares to the intended label.
