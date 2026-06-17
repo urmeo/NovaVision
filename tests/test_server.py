@@ -23,8 +23,14 @@ class FakePipeline:
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    from novavision import serving
+
     server._pipeline = FakePipeline()
+    # Fresh, permissive guards per test so limiter state never leaks between tests.
+    server._rate_limiter = serving.RateLimiter(max_requests=1000)
+    server._gen_guard = serving.ConcurrencyGuard(max_concurrent=4)
+    monkeypatch.delenv("NOVA_API_TOKEN", raising=False)
     return server.app.test_client()
 
 
@@ -52,3 +58,37 @@ def test_generate_ok(client):
 
 def test_index_served(client):
     assert client.get("/").status_code == 200
+
+
+def test_repo_root_not_exposed(client):
+    # static_folder is the dedicated static/ dir, so source/config never serve.
+    for leak in ("/server.py", "/config.py", "/.env", "/results/paper/results.json"):
+        assert client.get(leak).status_code == 404
+
+
+def test_rate_limit_returns_429(client):
+    from novavision import serving
+
+    server._rate_limiter = serving.RateLimiter(max_requests=1)
+    assert client.post("/api/analyze", json={"text": "hello there"}).status_code == 200
+    assert client.post("/api/analyze", json={"text": "hello again"}).status_code == 429
+
+
+def test_busy_returns_429(client):
+    from novavision import serving
+
+    server._gen_guard = serving.ConcurrencyGuard(max_concurrent=1)
+    server._gen_guard.acquire()  # occupy the only slot
+    resp = client.post("/api/generate", json={"text": "i feel great"})
+    assert resp.status_code == 429
+
+
+def test_generate_requires_token_when_set(client, monkeypatch):
+    monkeypatch.setenv("NOVA_API_TOKEN", "s3cret")
+    assert client.post("/api/generate", json={"text": "i feel great"}).status_code == 401
+    ok = client.post(
+        "/api/generate",
+        json={"text": "i feel great"},
+        headers={"Authorization": "Bearer s3cret"},
+    )
+    assert ok.status_code == 200
