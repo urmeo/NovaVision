@@ -22,6 +22,24 @@ DATASET = "google-research-datasets/go_emotions"
 DEFAULT_REVISION = "add492243ff905527e67aeb8b80c082af02207c3"
 
 
+def _normalize(text: str) -> str:
+    """Case/whitespace-insensitive key for duplicate detection."""
+    return " ".join(text.lower().split())
+
+
+def _drop_overlap(
+    examples: list[tuple[str, str]], exclude_norms: set[str]
+) -> list[tuple[str, str]]:
+    """Remove examples whose normalised text appears in ``exclude_norms``.
+
+    Used to subtract the train split from the evaluation pool so a benchmark item
+    can never be one a model also saw at training time (cross-split leakage).
+    """
+    if not exclude_norms:
+        return examples
+    return [(t, e) for t, e in examples if _normalize(t) not in exclude_norms]
+
+
 def _curate(examples: list[tuple[str, str]], n_per_class: int, seed: int) -> dict[str, list[str]]:
     """Single-label, deduplicated, balanced per-class sampling.
 
@@ -32,7 +50,7 @@ def _curate(examples: list[tuple[str, str]], n_per_class: int, seed: int) -> dic
     seen: set[str] = set()
     for text, emotion in examples:
         text = text.strip()
-        norm = " ".join(text.lower().split())
+        norm = _normalize(text)
         if not text or norm in seen or emotion not in set(EMOTIONS):
             continue
         seen.add(norm)
@@ -63,6 +81,7 @@ def build(
     seed: int = 0,
     split: str = "test",
     revision: str = DEFAULT_REVISION,
+    drop_train_overlap: bool = True,
 ) -> Path:
     from datasets import load_dataset
 
@@ -73,6 +92,15 @@ def build(
         for row in dataset
         if len(row["labels"]) == 1
     ]
+
+    # Cross-split hygiene: drop any eval item that also appears in the train split,
+    # so no benchmark sentence is one a model could have been trained on.
+    before = len(examples)
+    if drop_train_overlap and split != "train":
+        train = load_dataset(DATASET, "simplified", split="train", revision=revision)
+        train_norms = {_normalize(row["text"]) for row in train}
+        examples = _drop_overlap(examples, train_norms)
+    dropped_overlap = before - len(examples)
 
     sampled = _curate(examples, n_per_class, seed)
     rows = _interleave(sampled)
@@ -96,6 +124,7 @@ def build(
         "total": len(rows),
         "underfilled": short,
         "balanced": not short,
+        "dropped_train_overlap": dropped_overlap,
     }
     out_path.with_suffix(".manifest.json").write_text(json.dumps(manifest, indent=2))
     if short:
@@ -109,8 +138,15 @@ def main() -> None:
     parser.add_argument("--out", default="data/affectbench.csv")
     parser.add_argument("--split", default="test")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--keep-train-overlap",
+        action="store_true",
+        help="do NOT subtract the train split (disables cross-split dedup)",
+    )
     args = parser.parse_args()
-    path = build(args.n, args.out, args.seed, args.split)
+    path = build(
+        args.n, args.out, args.seed, args.split, drop_train_overlap=not args.keep_train_overlap
+    )
     print(f"Wrote {path} and {path.with_suffix('.manifest.json')}")
 
 
