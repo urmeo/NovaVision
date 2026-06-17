@@ -36,11 +36,18 @@ from novavision.generation import get_backend
 from novavision.prompting import NEGATIVE_PROMPT, build_prompt
 from novavision.taxonomy import EMOTIONS, prior
 
+TIERS = ("raw", "naive", "emotion", "affect")
 CONDITIONS = {
-    "content": ("raw", "emotion", "affect", "scene"),
-    "text": ("raw", "emotion", "affect", "shuffled"),
+    "content": (*TIERS, "scene"),
+    "text": (*TIERS, "shuffled"),
 }
-CONTRASTS = (("emotion", "raw"), ("affect", "emotion"), ("affect", "raw"))
+CONTRASTS = (
+    ("naive", "raw"),
+    ("emotion", "naive"),
+    ("emotion", "raw"),
+    ("affect", "emotion"),
+    ("affect", "raw"),
+)
 
 
 def _seed(base: int, ci: int, ei: int, sk: int) -> int:
@@ -143,7 +150,7 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -
                 seed = _seed(base_seed, ci, ei, sk)
                 step += 1
                 print(f"[{step}/{total}] {emotion} :: {content[:30]}", flush=True)
-                for tier in ("raw", "emotion", "affect"):
+                for tier in TIERS:
                     image = _render(gen, content, emotion, pv, pa, style, tier, seed, width, height)
                     rec = probe.recover(image)
                     clip_t = probe.clip_t(image, content)
@@ -175,7 +182,7 @@ def _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, he
             step += 1
             print(f"[{step}/{total}] {gold} :: {text[:30]}", flush=True)
             seed = _seed(base_seed, ri, gi, sk)
-            for tier in ("raw", "emotion", "affect"):
+            for tier in TIERS:
                 image = _render(gen, text, gold, iv, ia, style, tier, seed, width, height)
                 rec = probe.recover(image)
                 clip_t = probe.clip_t(image, text)
