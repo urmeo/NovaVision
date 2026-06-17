@@ -11,6 +11,7 @@ from novavision.eval.metrics import (
     majority_baseline,
     paired_bootstrap_test,
     pearson,
+    permutation_test,
     prediction_collapse,
     spearman,
 )
@@ -94,6 +95,24 @@ def test_prediction_collapse_flags_degenerate_probe():
     # A healthy, varied probe: 2 of each over 6 -> rate 1/3, all 3 labels used.
     healthy = prediction_collapse(["a", "b", "c", "a", "b", "c"])
     assert round(healthy["rate"], 4) == 0.3333 and healthy["distinct"] == 3
+
+
+def test_permutation_test_detects_real_signal():
+    labels = ["a", "b", "c", "d", "e", "f", "g"] * 4
+    # Perfect recovery -> far above the shuffled-label null, tiny p.
+    perfect = permutation_test(labels, labels, n=500)
+    assert perfect["accuracy"] == 1.0
+    assert perfect["p_value"] < 0.01
+    assert perfect["null_mean"] < 0.3  # random targets ~ chance
+
+
+def test_permutation_test_flags_circular_chance():
+    # Predictions ignore the target (always 'a') -> recovery == shuffled baseline.
+    truth = ["a", "b", "c", "d", "e", "f", "g"] * 4
+    pred = ["a"] * len(truth)
+    res = permutation_test(truth, pred, n=500)
+    assert res["p_value"] > 0.2  # indistinguishable from random targets
+    assert math.isnan(permutation_test(["a"], ["a"])["p_value"])
 
 
 def test_bootstrap_corr_ci_brackets_and_widens_at_small_n():
