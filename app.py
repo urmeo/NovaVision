@@ -39,7 +39,9 @@ demo = gr.Interface(
 if __name__ == "__main__":
     import os
 
-    # 0.0.0.0 for Spaces; override HOST=127.0.0.1 for a private local run.
-    host = os.getenv("HOST", "0.0.0.0")
+    from novavision.serving import resolve_host
+
+    # Localhost by default; binds 0.0.0.0 only on NOVA_PUBLIC=1 or a real Spaces sandbox.
+    host = resolve_host()
     port = int(os.getenv("PORT", "7860"))
     demo.launch(server_name=host, server_port=port)
