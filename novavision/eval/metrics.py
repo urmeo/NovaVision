@@ -6,6 +6,7 @@ Undefined cases return ``nan`` rather than ``0.0`` so a degenerate input
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Sequence
 
 import numpy as np
@@ -41,6 +42,35 @@ def confusion_matrix(
     for t, p in zip(y_true, y_pred):
         matrix[index[t], index[p]] += 1
     return matrix
+
+
+def majority_baseline(y_true: Sequence[str]) -> float:
+    """Accuracy of the degenerate classifier that always predicts one label.
+
+    A probe that has collapsed to a single output (the failure mode the floors
+    are meant to expose) scores exactly this. Recovery is only evidence of signal
+    if it clears this baseline, not merely chance. On balanced labels the two
+    coincide, which is precisely why a chance-level result is uninformative.
+    """
+    if not y_true:
+        return float("nan")
+    counts = Counter(y_true)
+    return max(counts.values()) / len(y_true)
+
+
+def prediction_collapse(y_pred: Sequence[str]) -> dict:
+    """How concentrated a probe's predictions are — a degeneracy diagnostic.
+
+    Returns the probe's most frequent output, the fraction of items it was
+    assigned (``rate``: 1.0 means the probe predicted one label for everything),
+    and the count of ``distinct`` labels used. A high rate / low distinct count
+    means a reported accuracy reflects the probe's pathology, not the generator.
+    """
+    if not y_pred:
+        return {"label": "", "rate": float("nan"), "distinct": 0}
+    counts = Counter(y_pred)
+    label, top = counts.most_common(1)[0]
+    return {"label": label, "rate": top / len(y_pred), "distinct": len(counts)}
 
 
 def macro_f1(y_true: Sequence[str], y_pred: Sequence[str], labels: Sequence[str]) -> float:
@@ -102,6 +132,39 @@ def _rank(a: np.ndarray) -> np.ndarray:
     sums = np.zeros(len(counts))
     np.add.at(sums, inverse, ranks)
     return (sums / counts)[inverse]
+
+
+def bootstrap_corr_ci(
+    x: Sequence[float],
+    y: Sequence[float],
+    *,
+    method: str = "spearman",
+    n: int = 2000,
+    alpha: float = 0.05,
+    seed: int = 0,
+) -> tuple[float, float]:
+    """Percentile bootstrap CI for a correlation, resampling item pairs.
+
+    A point correlation on a handful of items (e.g. n=14) is noise dressed as a
+    measurement; the CI makes that uncertainty explicit so the reader is not
+    invited to over-read three reported decimals.
+    """
+    corr = spearman if method == "spearman" else pearson
+    xa = np.asarray(x, dtype=float)
+    ya = np.asarray(y, dtype=float)
+    if len(xa) < 3:
+        return float("nan"), float("nan")
+    rng = np.random.default_rng(seed)
+    vals = []
+    for _ in range(n):
+        idx = rng.integers(0, len(xa), size=len(xa))
+        r = corr(xa[idx].tolist(), ya[idx].tolist())
+        if r == r:  # drop degenerate resamples (constant signal -> nan)
+            vals.append(r)
+    if len(vals) < 2:
+        return float("nan"), float("nan")
+    lo, hi = np.quantile(vals, [alpha / 2, 1 - alpha / 2])
+    return float(lo), float(hi)
 
 
 def bootstrap_ci(
