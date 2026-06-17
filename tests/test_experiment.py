@@ -41,6 +41,23 @@ def test_summarize_reports_ci_and_chance():
     assert metrics["chance"] == round(1 / len(EMOTIONS), 4)
 
 
+def test_summarize_reports_probe_collapse_and_baseline():
+    # A degenerate probe: predicts the WRONG-but-constant label for every item.
+    records = _records("raw", correct=False)
+    metrics = run._summarize(records, run.CONDITIONS["content"])
+    # majority-class baseline is reported next to accuracy so chance is not mistaken for signal
+    assert "majority_baseline" in metrics["raw"]
+    # per-tier prediction-collapse diagnostic
+    assert metrics["raw"]["collapse"]["distinct"] >= 1
+    # global probe-health diagnostic over the conditioning tiers
+    health = metrics["probe_health"]
+    assert health["n_labels"] == len(EMOTIONS)
+    assert 0.0 <= health["majority_rate"] <= 1.0
+    # VA correlations carry bootstrap CIs, not bare point estimates
+    assert len(metrics["raw"]["valence_rho_ci"]) == 2
+    assert len(metrics["raw"]["arousal_rho_ci"]) == 2
+
+
 def test_contrasts_detect_lift():
     records = _records("emotion", correct=True) + _records("raw", correct=False)
     contrasts = run._contrasts(records)
