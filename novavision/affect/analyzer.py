@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass
 
 from novavision.affect.lexicon import AffectLexicon
@@ -34,25 +35,30 @@ class EmotionAnalyzer:
         self.revision = revision
         self._lexicon = lexicon
         self._classifier = None
+        self._lock = threading.Lock()
 
     @property
     def lexicon(self) -> AffectLexicon:
         if self._lexicon is None:
-            self._lexicon = AffectLexicon.load()
+            with self._lock:  # double-checked: one load under concurrent first calls
+                if self._lexicon is None:
+                    self._lexicon = AffectLexicon.load()
         return self._lexicon
 
     @property
     def classifier(self):
         if self._classifier is None:
-            from transformers import pipeline
+            with self._lock:
+                if self._classifier is None:
+                    from transformers import pipeline
 
-            self._classifier = pipeline(
-                "text-classification",
-                model=self.model_name,
-                revision=self.revision,
-                top_k=None,
-                device=-1,
-            )
+                    self._classifier = pipeline(
+                        "text-classification",
+                        model=self.model_name,
+                        revision=self.revision,
+                        top_k=None,
+                        device=-1,
+                    )
         return self._classifier
 
     def analyze(self, text: str) -> EmotionAnalysis:
