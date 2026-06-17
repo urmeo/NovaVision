@@ -25,7 +25,7 @@
       "height": 256
     },
     "reanalysis": {
-      "git_sha": "cc5257a7db7f2bc8f8b857b0a648c6756c7b2d59",
+      "git_sha": "3df5ba59bc270f045ac0c3508b99e397d30579f5",
       "note": "metrics/diagnostics recomputed from the original records; no images regenerated",
       "packages": {
         "numpy": "2.4.6"
@@ -171,7 +171,7 @@
         0.9901
       ],
       "arousal_mae": 0.2232,
-      "clip_t": NaN,
+      "clip_t": null,
       "majority_baseline": 0.1429,
       "collapse": {
         "label": "neutral",
@@ -775,7 +775,7 @@
       "intended_arousal": 0.85,
       "recovered_valence": -0.004913586009235166,
       "recovered_arousal": 0.5230137430766695,
-      "clip_t": NaN
+      "clip_t": null
     },
     {
       "probe": "clip:clip-vit-base-patch32",
@@ -788,7 +788,7 @@
       "intended_arousal": 0.5,
       "recovered_valence": 0.059278245995359025,
       "recovered_arousal": 0.504323132342138,
-      "clip_t": NaN
+      "clip_t": null
     },
     {
       "probe": "clip:clip-vit-base-patch32",
@@ -801,7 +801,7 @@
       "intended_arousal": 0.8,
       "recovered_valence": 0.07578133172677554,
       "recovered_arousal": 0.4483402923213702,
-      "clip_t": NaN
+      "clip_t": null
     },
     {
       "probe": "clip:clip-vit-base-patch32",
@@ -814,7 +814,7 @@
       "intended_arousal": 0.7,
       "recovered_valence": 0.14366118896185248,
       "recovered_arousal": 0.4858427068598771,
-      "clip_t": NaN
+      "clip_t": null
     },
     {
       "probe": "clip:clip-vit-base-patch32",
@@ -827,7 +827,7 @@
       "intended_arousal": 0.3,
       "recovered_valence": 0.10414380703453466,
       "recovered_arousal": 0.4695379698557719,
-      "clip_t": NaN
+      "clip_t": null
     },
     {
       "probe": "clip:clip-vit-base-patch32",
@@ -840,7 +840,7 @@
       "intended_arousal": 0.3,
       "recovered_valence": 0.04018742560729904,
       "recovered_arousal": 0.4804620531050715,
-      "clip_t": NaN
+      "clip_t": null
     },
     {
       "probe": "clip:clip-vit-base-patch32",
@@ -853,7 +853,7 @@
       "intended_arousal": 0.85,
       "recovered_valence": 0.0501815591008504,
       "recovered_arousal": 0.5344997573690928,
-      "clip_t": NaN
+      "clip_t": null
     }
   ]
 }
