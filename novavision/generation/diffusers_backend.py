@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+
 from PIL import Image
 
 from novavision.config import DIFFUSION_REVISION
@@ -35,21 +37,24 @@ class DiffusersBackend(ImageBackend):
         self.steps = steps
         self.revision = revision
         self._pipe = None
+        self._lock = threading.Lock()
 
     @property
     def pipe(self):
         if self._pipe is None:
-            import torch
-            from diffusers import AutoPipelineForText2Image
+            with self._lock:  # double-checked: don't load the multi-GB pipe twice under concurrency
+                if self._pipe is None:
+                    import torch
+                    from diffusers import AutoPipelineForText2Image
 
-            self.dtype = "float16" if self.device == "cuda" else "float32"
-            dtype = torch.float16 if self.device == "cuda" else torch.float32
-            pipe = AutoPipelineForText2Image.from_pretrained(
-                self.model_id, torch_dtype=dtype, revision=self.revision
-            )
-            pipe = pipe.to(self.device)
-            pipe.set_progress_bar_config(disable=True)
-            self._pipe = pipe
+                    self.dtype = "float16" if self.device == "cuda" else "float32"
+                    dtype = torch.float16 if self.device == "cuda" else torch.float32
+                    pipe = AutoPipelineForText2Image.from_pretrained(
+                        self.model_id, torch_dtype=dtype, revision=self.revision
+                    )
+                    pipe = pipe.to(self.device)
+                    pipe.set_progress_bar_config(disable=True)
+                    self._pipe = pipe
         return self._pipe
 
     def generate(
