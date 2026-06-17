@@ -67,7 +67,13 @@ def _valid_text(data) -> tuple[str, str | None]:
 
 
 def _client_ip() -> str:
-    return request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0]
+    # X-Forwarded-For is client-spoofable; only trust it behind a configured proxy, else an
+    # attacker could rotate the header to bypass the per-IP rate limit.
+    if os.getenv("NOVA_TRUST_PROXY", "").strip().lower() in {"1", "true", "yes", "on"}:
+        xff = request.headers.get("X-Forwarded-For")
+        if xff:
+            return xff.split(",")[0].strip()
+    return request.remote_addr or "unknown"
 
 
 def _rate_limited():
