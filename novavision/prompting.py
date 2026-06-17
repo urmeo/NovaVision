@@ -47,6 +47,10 @@ EMOTION_SCENES = {
 
 QUALITY = "masterpiece, highly detailed, sharp focus, professional"
 
+# Valence/arousal bucket boundaries for the palette/lighting mapping (circumplex thirds).
+VALENCE_POSITIVE, VALENCE_NEGATIVE = 0.33, -0.33
+AROUSAL_HIGH, AROUSAL_LOW = 0.66, 0.33
+
 NEGATIVE_PROMPT = (
     "watermark, text, signature, logo, blurry, low quality, distorted, "
     "deformed, bad anatomy, cropped, jpeg artifacts, lowres"
@@ -61,16 +65,16 @@ def va_descriptors(valence: float, arousal: float) -> str:
     ``emotion`` contrast there measures palette/lighting strength only. Independent,
     text-grounded valence/arousal is exercised on the text track.
     """
-    if valence >= 0.33:
+    if valence >= VALENCE_POSITIVE:
         palette = "warm vibrant palette, golden tones"
-    elif valence <= -0.33:
+    elif valence <= VALENCE_NEGATIVE:
         palette = "cool desaturated palette, muted blue-grey tones"
     else:
         palette = "balanced natural palette"
 
-    if arousal >= 0.66:
+    if arousal >= AROUSAL_HIGH:
         light = "dramatic high-contrast lighting, dynamic composition"
-    elif arousal <= 0.33:
+    elif arousal <= AROUSAL_LOW:
         light = "soft gentle lighting, calm still composition"
     else:
         light = "even lighting, steady composition"
