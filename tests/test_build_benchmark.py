@@ -1,4 +1,4 @@
-from novavision.data.build_benchmark import _curate, _interleave
+from novavision.data.build_benchmark import _curate, _drop_overlap, _interleave, _normalize
 from novavision.taxonomy import EMOTIONS
 
 
@@ -26,3 +26,13 @@ def test_interleave_prefix_is_stratified():
     rows = _interleave(sampled)
     # First len(EMOTIONS) rows cover every class once.
     assert {e for _, e in rows[: len(EMOTIONS)]} == set(EMOTIONS)
+
+
+def test_drop_overlap_removes_cross_split_leakage():
+    examples = [("Loved it!", "joy"), ("so scared", "fear"), ("unique line", "joy")]
+    train_norms = {_normalize("loved it!"), _normalize("SO   scared")}
+    kept = _drop_overlap(examples, train_norms)
+    # train-overlapping items dropped, case/space-insensitive
+    assert kept == [("unique line", "joy")]
+    # No exclusion set -> passthrough.
+    assert _drop_overlap(examples, set()) == examples
