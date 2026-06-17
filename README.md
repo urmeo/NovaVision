@@ -57,7 +57,7 @@ and a validated probe, so a number means something rather than flattering the me
   <img src="screenshots/how_it_works.png" alt="Pipeline" width="780">
 </p>
 
-1. **Detect** — DistilRoBERTa scores the seven Ekman emotions in the text.
+1. **Detect** — DistilRoBERTa scores the six Ekman emotions plus neutral (seven labels) in the text.
 2. **Ground** — valence and arousal are estimated from an affect lexicon, blended with the
    emotion prior by word coverage: `v = c·v_lex + (1−c)·v_prior`.
 3. **Condition** — image content stays independent of the emotion; emotion enters only as a
@@ -136,4 +136,7 @@ so a powered run is only worth it once the probe is fixed. In priority order:
 
 ## License
 
-[MIT](LICENSE)
+Code is [MIT](LICENSE). **This covers the source only — not the model weights, datasets, or
+affect norms** the code downloads or calls, which keep their own terms (several non-commercial).
+See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md); notably SD-Turbo needs a Stability AI
+membership for commercial use, and any NRC-VAD lexicon you supply is non-commercial.
