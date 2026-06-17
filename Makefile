@@ -1,4 +1,4 @@
-.PHONY: setup setup-ml test lint format app benchmark reproduce text smoke paper
+.PHONY: setup setup-ml test lint format app benchmark reproduce text validate-probe smoke paper
 
 setup:                  # tests, lint, benchmark build
 	python -m pip install -e ".[dev,research]"
@@ -31,6 +31,10 @@ reproduce:              # canonical content-track run (run: make setup setup-ml;
 text:                   # text-conditioned run on AffectBench (run: make benchmark first)
 	python -m novavision.experiments.run --backend diffusers --track text \
 	  --benchmark data/affectbench.csv --seeds 3 --out results/text
+
+validate-probe:         # measure the probe's known error on a labelled set
+	python -m novavision.eval.validate_probe --hf-dataset FastJobs/Visual_Emotional_Analysis \
+	  --n 200 --out results/paper/probe_validation.json
 
 paper:                  # regenerate Table 1/2 from the canonical results
 	python scripts/report.py --results results/paper/results.json --out paper/tables.md
