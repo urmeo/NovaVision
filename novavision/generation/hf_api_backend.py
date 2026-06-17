@@ -14,7 +14,7 @@ class HFApiBackend(ImageBackend):
 
     name = "hf-api"
 
-    def __init__(self, model_id: str = "black-forest-labs/FLUX.1-dev", token: str | None = None):
+    def __init__(self, model_id: str = "stabilityai/sd-turbo", token: str | None = None):
         self.token = token or os.getenv("HF_TOKEN")
         if not self.token:
             raise ValueError("HF_TOKEN not set")
