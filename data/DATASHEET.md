@@ -12,8 +12,9 @@ rather than from hand-written examples.
 
 ## Composition
 
-- **Instances.** Short English sentences, each labelled with one of seven Ekman
-  emotions: anger, disgust, fear, joy, neutral, sadness, surprise.
+- **Instances.** Short English sentences, each labelled with one of the six Ekman
+  emotions plus neutral (seven classes): anger, disgust, fear, joy, sadness,
+  surprise, and neutral.
 - **Source.** Derived from GoEmotions (Demszky et al., 2020), `simplified`
   config, using only single-label examples mapped to Ekman via the dataset's
   official grouping (`novavision/taxonomy.py:GOEMOTIONS_TO_EKMAN`).
