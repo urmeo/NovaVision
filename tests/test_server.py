@@ -56,6 +56,12 @@ def test_generate_ok(client):
     assert data["seed"] == 5
 
 
+def test_control_chars_stripped():
+    text, err = server._valid_text({"text": "hello\x00\x07 there\x1f"})
+    assert err is None
+    assert all(c not in text for c in "\x00\x07\x1f")
+
+
 def test_index_served(client):
     assert client.get("/").status_code == 200
 
