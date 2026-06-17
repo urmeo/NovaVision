@@ -66,7 +66,10 @@ rendered under every emotion. Conditioning increases over three tiers, which for
 - **emotion** — adds a mood modifier for $e$.
 - **affect** — also injects valence/arousal cues (palette, lighting), grounded in continuous
   affect ($v = c\,v_{lex} + (1-c)\,v_{prior}$, lexicon-weighted and blended with the circumplex
-  prior by coverage $c$).
+  prior by coverage $c$). This blend is a **heuristic**, not a fitted model: $c$ is the lexical
+  coverage of the input, and the convex combination is not yet validated against held-out VAD
+  norms. Its sensitivity is ablatable by forcing $c=0$ (prior only) or $c=1$ (lexicon only); we
+  flag this as an open validity question, not a tuned result.
 
 **Floors and controls.** Two conditions bound the claim. **raw** is the *negative* control (no
 emotion → recovery should sit at chance, $1/7$). **scene** renders a fixed per-emotion template
@@ -106,8 +109,9 @@ The primary track conditions on a bank of twenty affect-neutral content subjects
 (`data/content_bank.txt`), so content is independent of emotion by construction. A secondary
 **text** track (§5) conditions on **AffectBench**, where valence/arousal are grounded in the
 sentence rather than the emotion prior. AffectBench is built on demand from GoEmotions
-[@demszky2020] under the official Ekman grouping — single-label examples mapped to seven Ekman
-categories, sampled per class from the **test** split, and interleaved so any prefix stays
+[@demszky2020] under the official Ekman grouping — single-label examples mapped to the six Ekman
+emotions plus neutral (seven classes), sampled per class from the **test** split, and
+interleaved so any prefix stays
 balanced. Two dedup passes protect hygiene: exact duplicates are removed *within* the sample, and
 any item whose normalised text also appears in the **train** split is subtracted (`build_benchmark`
 default; the dropped count is logged), so no benchmark sentence is one a model could have trained
@@ -132,9 +136,10 @@ it, so a high value means the modifier overrides the sentence rather than the se
 through. For each tier we report:
 
 - **Recovery accuracy / macro-F1** — recovered vs. intended emotion, with **bootstrap 95% CIs**.
-- **Valence/arousal correlation** — Pearson $r$ and Spearman $\rho$ between intended and probed
-  affect. On the content track the intended valence/arousal is the per-emotion prior, so this is
-  a *between-emotion* check (does conditioning on "joy" raise recovered valence above "sadness"?)
+- **Valence/arousal correlation and error** — Pearson $r$, Spearman $\rho$ (both with bootstrap
+  CIs), and **MAE** between intended and probed affect, the last for an interpretable scale. On
+  the content track the intended valence/arousal is the per-emotion prior, so this is a
+  *between-emotion* check (does conditioning on "joy" raise recovered valence above "sadness"?)
   and the affect-vs-emotion delta only measures palette/lighting cues; the **text track** is
   where continuous, text-grounded valence/arousal makes affect grounding an independent,
   testable variable.
