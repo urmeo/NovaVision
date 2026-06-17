@@ -32,6 +32,38 @@ def accuracy(y_true: Sequence[str], y_pred: Sequence[str]) -> float:
     return correct / len(y_true)
 
 
+def permutation_test(
+    y_true: Sequence[str], y_pred: Sequence[str], *, n: int = 2000, seed: int = 0
+) -> dict[str, float | list[float]]:
+    """Shuffled-label control for circularity: is recovery above random targets?
+
+    The recovery metric writes an emotion into the prompt and reads one back, so a
+    high score could reflect prompt/probe agreement rather than image content. This
+    permutes the intended labels many times and recomputes accuracy to build the
+    null distribution of recovery under *random* targets — the circularity
+    baseline. Returns the observed accuracy, the null mean and 95% interval, and a
+    one-sided p-value ``P(null >= observed)``. A small p means recovery tracks the
+    real image/label correspondence, not chance agreement; ``p`` near 1 means the
+    headline is indistinguishable from shuffled labels.
+    """
+    yt = np.asarray(list(y_true))
+    yp = np.asarray(list(y_pred))
+    if len(yt) < 2:
+        nan = float("nan")
+        return {"accuracy": nan, "null_mean": nan, "null_ci": [nan, nan], "p_value": nan}
+    observed = float(np.mean(yt == yp))
+    rng = np.random.default_rng(seed)
+    null = np.array([float(np.mean(rng.permutation(yt) == yp)) for _ in range(n)])
+    lo, hi = np.quantile(null, [0.025, 0.975])
+    p = float((1 + np.sum(null >= observed)) / (n + 1))  # +1 smoothing
+    return {
+        "accuracy": round(observed, 4),
+        "null_mean": round(float(null.mean()), 4),
+        "null_ci": [round(float(lo), 4), round(float(hi), 4)],
+        "p_value": round(p, 4),
+    }
+
+
 def confusion_matrix(
     y_true: Sequence[str], y_pred: Sequence[str], labels: Sequence[str]
 ) -> np.ndarray:
