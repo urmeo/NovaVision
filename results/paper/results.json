@@ -23,6 +23,13 @@
       "base_seed": 0,
       "width": 256,
       "height": 256
+    },
+    "reanalysis": {
+      "git_sha": "b7d945d623744c11cb07f45deff95029fac40f6b",
+      "note": "metrics/diagnostics recomputed from the original records; no images regenerated",
+      "packages": {
+        "numpy": "2.4.6"
+      }
     }
   },
   "metrics": {
@@ -35,9 +42,23 @@
       "macro_f1": 0.0381,
       "valence_r": 0.1829,
       "valence_rho": 0.076,
+      "valence_rho_ci": [
+        -0.4706,
+        0.5525
+      ],
       "arousal_r": 0.4025,
       "arousal_rho": 0.5458,
+      "arousal_rho_ci": [
+        -0.0049,
+        0.9021
+      ],
       "clip_t": 0.2804,
+      "majority_baseline": 0.1429,
+      "collapse": {
+        "label": "neutral",
+        "rate": 0.9286,
+        "distinct": 2
+      },
       "n": 14
     },
     "emotion": {
@@ -49,9 +70,23 @@
       "macro_f1": 0.1122,
       "valence_r": 0.5172,
       "valence_rho": 0.4738,
+      "valence_rho_ci": [
+        -0.025,
+        0.7789
+      ],
       "arousal_r": 0.3845,
       "arousal_rho": 0.4737,
+      "arousal_rho_ci": [
+        -0.0319,
+        0.8025
+      ],
       "clip_t": 0.2738,
+      "majority_baseline": 0.1429,
+      "collapse": {
+        "label": "neutral",
+        "rate": 0.8571,
+        "distinct": 2
+      },
       "n": 14
     },
     "affect": {
@@ -63,9 +98,23 @@
       "macro_f1": 0.1333,
       "valence_r": 0.3743,
       "valence_rho": 0.2414,
+      "valence_rho_ci": [
+        -0.3003,
+        0.6454
+      ],
       "arousal_r": 0.5077,
       "arousal_rho": 0.618,
+      "arousal_rho_ci": [
+        0.1878,
+        0.8556
+      ],
       "clip_t": 0.2695,
+      "majority_baseline": 0.1429,
+      "collapse": {
+        "label": "neutral",
+        "rate": 0.9286,
+        "distinct": 2
+      },
       "n": 14
     },
     "scene": {
@@ -77,12 +126,32 @@
       "macro_f1": 0.1837,
       "valence_r": 0.6651,
       "valence_rho": 0.4144,
+      "valence_rho_ci": [
+        -0.6262,
+        1.0
+      ],
       "arousal_r": 0.4018,
       "arousal_rho": 0.5819,
+      "arousal_rho_ci": [
+        -0.434,
+        0.9901
+      ],
       "clip_t": NaN,
+      "majority_baseline": 0.1429,
+      "collapse": {
+        "label": "neutral",
+        "rate": 0.8571,
+        "distinct": 2
+      },
       "n": 7
     },
-    "chance": 0.1429
+    "chance": 0.1429,
+    "probe_health": {
+      "majority_label": "neutral",
+      "majority_rate": 0.9048,
+      "distinct_labels": 2,
+      "n_labels": 7
+    }
   },
   "contrasts": {
     "emotion_vs_raw": {
