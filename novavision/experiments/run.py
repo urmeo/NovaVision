@@ -30,6 +30,7 @@ from novavision.eval.metrics import (
     majority_baseline,
     paired_bootstrap_test,
     pearson,
+    permutation_test,
     prediction_collapse,
     spearman,
 )
@@ -258,6 +259,7 @@ def _summarize(records, conditions) -> dict:
             "clip_t": round(sum(clip) / len(clip), 4) if clip else float("nan"),
             "majority_baseline": round(majority_baseline(y_true), 4),
             "collapse": _round_collapse(prediction_collapse(y_pred)),
+            "shuffled_control": permutation_test(y_true, y_pred),
             "n": len(sub),
         }
     summary["chance"] = round(1 / len(EMOTIONS), 4)

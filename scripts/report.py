@@ -22,6 +22,24 @@ def _rho(m: dict, key: str) -> str:
     return _fmt(rho)
 
 
+def _shuffled_note(metrics: dict) -> str:
+    """Circularity check: does any conditioning tier beat the shuffled-label null?"""
+    parts = []
+    for cond in ("naive", "emotion", "affect"):
+        sc = (metrics.get(cond) or {}).get("shuffled_control")
+        if sc:
+            parts.append(f"{cond} p={sc['p_value']:.2f}")
+    if not parts:
+        return ""
+    null = (metrics.get("emotion") or metrics.get("affect") or {}).get("shuffled_control", {})
+    base = f" (null mean {null['null_mean']:.3f})" if null else ""
+    return (
+        "**Shuffled-label control:** one-sided permutation test of recovery vs randomly "
+        f"reassigned target emotions{base} — {', '.join(parts)}. A p near 1 means recovery is "
+        "indistinguishable from the circularity baseline, i.e. not above chance label agreement."
+    )
+
+
 def metrics_table(metrics: dict) -> str:
     head = "| Condition | Accuracy [95% CI] | Macro-F1 | Valence ρ†‡ | Arousal ρ†‡ | CLIP-T | n |"
     rule = "|" + "---|" * 7
@@ -55,6 +73,9 @@ def metrics_table(metrics: dict) -> str:
             f"'{health['majority_label']}' for {health['majority_rate']:.0%} of items — every "
             "recovery number must be read against this degeneracy."
         )
+    shuffled = _shuffled_note(metrics)
+    if shuffled:
+        lines.append(shuffled)
     lines.append(
         "† On neutral content the intended valence/arousal is the per-emotion prior, so these "
         "correlations reflect between-emotion separation, not within-emotion grounding."

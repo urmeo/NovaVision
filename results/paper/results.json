@@ -25,7 +25,7 @@
       "height": 256
     },
     "reanalysis": {
-      "git_sha": "b7d945d623744c11cb07f45deff95029fac40f6b",
+      "git_sha": "2d879e8de19b6e4bae65c3776fcd8fe6d1e54ec0",
       "note": "metrics/diagnostics recomputed from the original records; no images regenerated",
       "packages": {
         "numpy": "2.4.6"
@@ -59,6 +59,15 @@
         "rate": 0.9286,
         "distinct": 2
       },
+      "shuffled_control": {
+        "accuracy": 0.1429,
+        "null_mean": 0.143,
+        "null_ci": [
+          0.0714,
+          0.2143
+        ],
+        "p_value": 0.8566
+      },
       "n": 14
     },
     "emotion": {
@@ -86,6 +95,15 @@
         "label": "neutral",
         "rate": 0.8571,
         "distinct": 2
+      },
+      "shuffled_control": {
+        "accuracy": 0.2143,
+        "null_mean": 0.1418,
+        "null_ci": [
+          0.0714,
+          0.2143
+        ],
+        "p_value": 0.2259
       },
       "n": 14
     },
@@ -115,6 +133,15 @@
         "rate": 0.9286,
         "distinct": 2
       },
+      "shuffled_control": {
+        "accuracy": 0.2143,
+        "null_mean": 0.1416,
+        "null_ci": [
+          0.0714,
+          0.2143
+        ],
+        "p_value": 0.1369
+      },
       "n": 14
     },
     "scene": {
@@ -142,6 +169,15 @@
         "label": "neutral",
         "rate": 0.8571,
         "distinct": 2
+      },
+      "shuffled_control": {
+        "accuracy": 0.2857,
+        "null_mean": 0.1428,
+        "null_ci": [
+          0.0,
+          0.2857
+        ],
+        "p_value": 0.1449
       },
       "n": 7
     },
