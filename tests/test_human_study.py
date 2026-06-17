@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from novavision.eval import human_study
 from novavision.eval.metrics import cohen_kappa
 from novavision.taxonomy import EMOTIONS
@@ -65,3 +67,59 @@ def test_build_sheet_and_analyze(tmp_path):
     result = human_study.analyze(rated, study / "key.csv")
     assert result["n_rated"] == 7
     assert result["human_vs_probe_kappa"] == 1.0
+
+
+def test_build_sheet_rejects_text_track_clearly(tmp_path):
+    # Text-track records carry sentences, not bank subjects: clear error, not a cryptic ValueError.
+    payload = {
+        "manifest": {
+            "config": {
+                "backend": "null",
+                "diffusion_model": "stabilityai/sd-turbo",
+                "base_seed": 0,
+                "width": 64,
+                "height": 64,
+            }
+        },
+        "records": [
+            {
+                "tier": "emotion",
+                "content": "a terrible storm hit the village",
+                "intended": "fear",
+                "seed": 0,
+                "predicted": "fear",
+                "intended_valence": -0.7,
+                "intended_arousal": 0.8,
+                "recovered_valence": -0.5,
+                "recovered_arousal": 0.6,
+                "clip_t": 0.2,
+            }
+        ],
+    }
+    (tmp_path / "results.json").write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="content track only"):
+        human_study.build_sheet(tmp_path, n=1, seed=0)
+
+
+def test_analyze_skips_out_of_vocab_rating(tmp_path):
+    key = tmp_path / "key.csv"
+    human_study._write_csv(
+        key,
+        ["id", "intended", "probe"],
+        [
+            {"id": 0, "intended": "joy", "probe": "joy"},
+            {"id": 1, "intended": "anger", "probe": "anger"},
+        ],
+    )
+    rated = tmp_path / "rated.csv"
+    # 'happy' is an alias -> joy (scored); 'banana' is unknown -> skipped, not a crash.
+    human_study._write_csv(
+        rated,
+        ["id", "image", "emotion"],
+        [
+            {"id": 0, "image": "", "emotion": "happy"},
+            {"id": 1, "image": "", "emotion": "banana"},
+        ],
+    )
+    res = human_study.analyze(rated, key)
+    assert res["n_rated"] == 1 and res["n_unscored"] == 1 and res["unscored_ids"] == [1]

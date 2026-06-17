@@ -20,6 +20,14 @@ def test_negative_text_has_negative_valence(lex):
     assert lex.score("I am sad lonely and hopeless").valence < -0.3
 
 
+def test_load_strips_field_whitespace(tmp_path):
+    # Padded header must be skipped; a trailing-space word must still match (no silent miss).
+    f = tmp_path / "lex.tsv"
+    f.write_text("word \tvalence\tarousal\nzephyrword \t 0.8 \t 0.6 \n", encoding="utf-8")
+    s = AffectLexicon.load(f).score("zephyrword")
+    assert s.coverage == 1.0 and s.valence == 0.8
+
+
 def test_anger_has_high_arousal(lex):
     assert lex.score("furious rage outraged").arousal > 0.7
 
