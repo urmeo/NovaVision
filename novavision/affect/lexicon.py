@@ -98,8 +98,8 @@ class AffectLexicon:
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
-                parts = line.split("\t")
-                if len(parts) < 3 or parts[0] == "word":
+                parts = [p.strip() for p in line.split("\t")]
+                if len(parts) < 3 or parts[0].lower() == "word":
                     continue
                 word, valence, arousal = parts[:3]
                 try:
