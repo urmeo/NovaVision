@@ -1,5 +1,10 @@
 # NovaVision
 
+[![CI](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9%E2%80%933.12-blue.svg)](pyproject.toml)
+[![Code style: ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://docs.astral.sh/ruff/)
+
 Text-to-image generation conditioned on the emotion of a sentence — with a **reproducible
 protocol and evaluation harness** that measures whether the generated image actually conveys that
 emotion, designed around the failure modes that make such a measurement easy to fake.
@@ -79,6 +84,25 @@ differences come with bootstrap confidence intervals and a paired significance t
 <p align="center">
   <img src="screenshots/emotion_analysis.png" alt="Emotion analysis" width="780">
 </p>
+
+### Results at a glance (committed CPU pilot, n=14/tier)
+
+<p align="center">
+  <img src="results/paper/figures/accuracy.png" alt="Recovery accuracy by condition vs chance" width="560">
+</p>
+
+| Condition | Recovery acc [95% CI] | Shuffled-label *p* | Reading |
+|---|---|---|---|
+| `raw` (neg. control) | 0.143 [0.00, 0.36] | 0.86 | sits exactly at chance |
+| `emotion` | 0.214 [0.00, 0.43] | **0.23** | not above the circularity baseline |
+| `affect` | 0.214 [0.00, 0.43] | **0.14** | not above the circularity baseline |
+| `scene` (pos. control) | 0.286 [0.00, 0.58] | 0.14 | highest, but still n.s. |
+
+> **Honest headline:** this pilot is a *null*. The CLIP probe collapses onto `neutral` (90% of
+> images, 2/7 labels), and **no tier beats the shuffled-label control** — so recovery is currently
+> indistinguishable from chance label agreement. The protocol, floors, and diagnostics work; the
+> instrument is too weak to claim controllability, and the powered run is withheld until a stronger
+> probe clears the in-domain ceiling. Numbers regenerate via `make pilot && make paper`.
 
 - The **content** track renders neutral content (`data/content_bank.txt`) under each intended
   emotion, so the score reflects conditioning rather than scene content.
