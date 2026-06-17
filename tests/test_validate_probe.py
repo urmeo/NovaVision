@@ -38,3 +38,17 @@ def test_validate_reports_accuracy(tmp_path):
     assert report["n"] == 2
     assert report["accuracy"] == 0.5  # joy right, anger wrong
     assert len(report["confusion"]) == len(EMOTIONS)
+
+
+def test_validate_accepts_pil_images():
+    pairs = [(Image.new("RGB", (8, 8)), "joy"), (Image.new("RGB", (8, 8)), "fear")]
+    report = validate_probe.validate(FakeProbe(), pairs)
+    assert report["n"] == 2
+    assert report["accuracy"] == 0.5
+
+
+def test_ekman_aliases_cover_common_labels():
+    aliases = validate_probe.EKMAN_ALIASES
+    assert aliases["happy"] == "joy" and aliases["happiness"] == "joy"
+    assert aliases["awe"] == "surprise" and aliases["sad"] == "sadness"
+    assert set(aliases.values()) <= set(EMOTIONS)
