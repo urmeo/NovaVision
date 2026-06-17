@@ -2,23 +2,34 @@
 
 from __future__ import annotations
 
+import logging
+
 import gradio as gr
 
-from novavision.affect.analyzer import EmotionAnalyzer
-from novavision.config import get_settings
-from novavision.generation import get_backend
-from novavision.pipeline import NovaVision
+from novavision.pipeline import build_pipeline
 from novavision.prompting import STYLE_PRESETS
 
-_cfg = get_settings()
-_kwargs = {"model_id": _cfg.diffusion_model} if _cfg.backend == "diffusers" else {}
-_nova = NovaVision(get_backend(_cfg.backend, **_kwargs), EmotionAnalyzer(_cfg.emotion_model))
+logger = logging.getLogger("novavision.app")
+
+_nova = None
+
+
+def _pipeline():
+    # Lazy: no model or backend is built at import time.
+    global _nova
+    if _nova is None:
+        _nova = build_pipeline()
+    return _nova
 
 
 def generate(text: str, style: str, seed: int):
     if not text.strip():
         raise gr.Error("Please enter some text.")
-    result = _nova.auto_run(text, style=style, seed=int(seed))
+    try:
+        result = _pipeline().auto_run(text, style=style, seed=int(seed))
+    except Exception:
+        logger.exception("generation failed")
+        raise gr.Error("Generation failed. Please try again.") from None
     a = result.analysis
     label = f"{a.primary} ({a.confidence:.0%}) · valence {a.valence:+.2f} · arousal {a.arousal:.2f}"
     return result.image, label, result.prompt
