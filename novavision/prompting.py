@@ -54,7 +54,13 @@ NEGATIVE_PROMPT = (
 
 
 def va_descriptors(valence: float, arousal: float) -> str:
-    """Map valence/arousal to palette and lighting cues."""
+    """Map valence/arousal to palette and lighting cues.
+
+    On the content track the valence/arousal passed here is the per-emotion prior,
+    so these cues are a deterministic function of the emotion — the ``affect`` vs
+    ``emotion`` contrast there measures palette/lighting strength only. Independent,
+    text-grounded valence/arousal is exercised on the text track.
+    """
     if valence >= 0.33:
         palette = "warm vibrant palette, golden tones"
     elif valence <= -0.33:
