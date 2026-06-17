@@ -6,16 +6,14 @@ import base64
 import logging
 import os
 import random
+import re
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
 
-from novavision.affect.analyzer import EmotionAnalyzer
-from novavision.config import get_settings
-from novavision.generation import get_backend
-from novavision.pipeline import NovaVision
+from novavision.pipeline import NovaVision, build_pipeline
 from novavision.serving import ConcurrencyGuard, RateLimiter, env_int, resolve_host, token_ok
 
 logging.basicConfig(level=logging.INFO)
@@ -48,10 +46,7 @@ _pipeline: NovaVision | None = None
 def pipeline() -> NovaVision:
     global _pipeline
     if _pipeline is None:
-        cfg = get_settings()
-        kwargs = {"model_id": cfg.diffusion_model} if cfg.backend == "diffusers" else {}
-        backend = get_backend(cfg.backend, **kwargs)
-        _pipeline = NovaVision(backend=backend, analyzer=EmotionAnalyzer(cfg.emotion_model))
+        _pipeline = build_pipeline()
     return _pipeline
 
 
@@ -60,8 +55,12 @@ def _emotion_list(scores: dict[str, float]):
     return [{"name": name, "score": round(score * 100, 1)} for name, score in ranked]
 
 
+_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
+
+
 def _valid_text(data) -> tuple[str, str | None]:
-    text = (data or {}).get("text", "").strip()
+    # Strip control characters before length-checking the prompt.
+    text = _CONTROL_CHARS.sub(" ", (data or {}).get("text", "")).strip()
     if not (MIN_TEXT <= len(text) <= MAX_TEXT):
         return text, f"Text must be {MIN_TEXT}-{MAX_TEXT} characters."
     return text, None
