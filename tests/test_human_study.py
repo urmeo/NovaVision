@@ -69,35 +69,52 @@ def test_build_sheet_and_analyze(tmp_path):
     assert result["human_vs_probe_kappa"] == 1.0
 
 
-def test_build_sheet_rejects_text_track_clearly(tmp_path):
-    # Text-track records carry sentences, not bank subjects: clear error, not a cryptic ValueError.
-    payload = {
+def _text_record(with_index: bool) -> dict:
+    r = {
+        "tier": "emotion",
+        "content": "a terrible storm hit the village",
+        "intended": "fear",
+        "seed": 0,
+        "predicted": "fear",
+        "intended_valence": -0.7,
+        "intended_arousal": 0.8,
+        "recovered_valence": -0.5,
+        "recovered_arousal": 0.6,
+        "clip_t": 0.2,
+    }
+    if with_index:
+        r["index"] = 3
+    return r
+
+
+def _text_payload(record) -> dict:
+    return {
         "manifest": {
             "config": {
                 "backend": "null",
                 "diffusion_model": "stabilityai/sd-turbo",
                 "base_seed": 0,
-                "width": 64,
-                "height": 64,
+                "width": 32,
+                "height": 32,
             }
         },
-        "records": [
-            {
-                "tier": "emotion",
-                "content": "a terrible storm hit the village",
-                "intended": "fear",
-                "seed": 0,
-                "predicted": "fear",
-                "intended_valence": -0.7,
-                "intended_arousal": 0.8,
-                "recovered_valence": -0.5,
-                "recovered_arousal": 0.6,
-                "clip_t": 0.2,
-            }
-        ],
+        "records": [record],
     }
-    (tmp_path / "results.json").write_text(json.dumps(payload))
-    with pytest.raises(ValueError, match="content track only"):
+
+
+def test_build_sheet_text_track_with_index(tmp_path):
+    # New text-track records carry a row index, so the image is reproducible.
+    (tmp_path / "results.json").write_text(json.dumps(_text_payload(_text_record(with_index=True))))
+    study = human_study.build_sheet(tmp_path, n=1, seed=0)
+    assert len(list((study / "images").glob("*.png"))) == 1
+
+
+def test_build_sheet_rejects_unreproducible_record(tmp_path):
+    # Pre-index text-track record (no index, content not in bank): clear error, not a crash.
+    (tmp_path / "results.json").write_text(
+        json.dumps(_text_payload(_text_record(with_index=False)))
+    )
+    with pytest.raises(ValueError, match="Cannot reproduce"):
         human_study.build_sheet(tmp_path, n=1, seed=0)
 
 

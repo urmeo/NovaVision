@@ -161,7 +161,9 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -
                     rec = probe.recover(image)
                     clip_t = probe.clip_t(image, content)
                     records.append(
-                        _record(probe.name, tier, content, emotion, sk, rec, pv, pa, clip_t)
+                        _record(
+                            probe.name, tier, content, emotion, sk, rec, pv, pa, clip_t, index=ci
+                        )
                     )
 
     # scene floor
@@ -193,7 +195,9 @@ def _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, he
                 rec = probe.recover(image)
                 clip_t = probe.clip_t(image, text)
                 records.append(
-                    _record(probe.name, tier, text, gold, sk, rec, iv, ia, clip_t, a.primary)
+                    _record(
+                        probe.name, tier, text, gold, sk, rec, iv, ia, clip_t, a.primary, index=ri
+                    )
                 )
 
             # shuffled floor: condition on a wrong emotion, score against it
@@ -204,7 +208,19 @@ def _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, he
             rec = probe.recover(image)
             clip_t = probe.clip_t(image, text)
             records.append(
-                _record(probe.name, "shuffled", text, wrong, sk, rec, wv, wa, clip_t, a.primary)
+                _record(
+                    probe.name,
+                    "shuffled",
+                    text,
+                    wrong,
+                    sk,
+                    rec,
+                    wv,
+                    wa,
+                    clip_t,
+                    a.primary,
+                    index=ri,
+                )
             )
     return records
 
@@ -216,11 +232,14 @@ def _render(gen, content, emotion, v, a, style, tier, seed, width, height):
     )
 
 
-def _record(probe, tier, content, emotion, sk, rec, pv, pa, clip_t, classified=None) -> dict:
+def _record(
+    probe, tier, content, emotion, sk, rec, pv, pa, clip_t, classified=None, index=0
+) -> dict:
     return {
         "probe": probe,
         "tier": tier,
         "content": content,
+        "index": index,  # content/row position; the seed salt, so any image can be reproduced
         "intended": emotion,
         "classified": classified,
         "seed": sk,
