@@ -24,10 +24,13 @@ from novavision.eval import figures
 from novavision.eval.metrics import (
     accuracy,
     bootstrap_ci,
+    bootstrap_corr_ci,
     confusion_matrix,
     macro_f1,
+    majority_baseline,
     paired_bootstrap_test,
     pearson,
+    prediction_collapse,
     spearman,
 )
 from novavision.eval.probes import CLIPProbe, HFImageClassifierProbe
@@ -240,22 +243,50 @@ def _summarize(records, conditions) -> dict:
         iv, rv = _col(sub, "intended_valence"), _col(sub, "recovered_valence")
         ia, ra = _col(sub, "intended_arousal"), _col(sub, "recovered_arousal")
         clip = [r["clip_t"] for r in sub if r["clip_t"] == r["clip_t"]]  # drop nan
+        vlo, vhi = bootstrap_corr_ci(iv, rv)
+        alo, ahi = bootstrap_corr_ci(ia, ra)
         summary[tier] = {
             "accuracy": round(accuracy(y_true, y_pred), 4),
             "accuracy_ci": [round(lo, 4), round(hi, 4)],
             "macro_f1": round(macro_f1(y_true, y_pred, EMOTIONS), 4),
             "valence_r": round(pearson(iv, rv), 4),
             "valence_rho": round(spearman(iv, rv), 4),
+            "valence_rho_ci": [round(vlo, 4), round(vhi, 4)],
             "arousal_r": round(pearson(ia, ra), 4),
             "arousal_rho": round(spearman(ia, ra), 4),
+            "arousal_rho_ci": [round(alo, 4), round(ahi, 4)],
             "clip_t": round(sum(clip) / len(clip), 4) if clip else float("nan"),
+            "majority_baseline": round(majority_baseline(y_true), 4),
+            "collapse": _round_collapse(prediction_collapse(y_pred)),
             "n": len(sub),
         }
     summary["chance"] = round(1 / len(EMOTIONS), 4)
+    summary["probe_health"] = _probe_health(records)
     cls = _classification_accuracy(records)
     if cls is not None:
         summary["classification_accuracy"] = cls
     return summary
+
+
+def _round_collapse(c: dict) -> dict:
+    return {"label": c["label"], "rate": round(float(c["rate"]), 4), "distinct": c["distinct"]}
+
+
+def _probe_health(records) -> dict:
+    """Probe-degeneracy diagnostic over the conditioning tiers (floors excluded).
+
+    If the probe collapses onto one label, recovery at chance is the trivial
+    consequence of that collapse, not evidence the floors discriminate — so this
+    is reported next to every headline number.
+    """
+    preds = [r["predicted"] for r in records if r["tier"] in TIERS]
+    c = prediction_collapse(preds)
+    return {
+        "majority_label": c["label"],
+        "majority_rate": round(float(c["rate"]), 4),
+        "distinct_labels": c["distinct"],
+        "n_labels": len(EMOTIONS),
+    }
 
 
 def _classification_accuracy(records) -> float | None:
@@ -297,9 +328,7 @@ def _col(rows, key):
 
 def _write(out, records, metrics, contrasts, manifest, conditions) -> None:
     out_dir = Path(out)
-    fig_dir = out_dir / "figures"
-    fig_dir.mkdir(parents=True, exist_ok=True)
-
+    out_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "manifest": manifest,
         "metrics": metrics,
@@ -307,7 +336,17 @@ def _write(out, records, metrics, contrasts, manifest, conditions) -> None:
         "records": records,
     }
     (out_dir / "results.json").write_text(json.dumps(payload, indent=2))
+    _write_figures(out_dir, records, metrics, conditions)
 
+
+def _write_figures(out_dir, records, metrics, conditions) -> None:
+    """Render the accuracy, per-tier confusion, and VA-scatter figures.
+
+    Pure function of the records and summary, so it is reused to refresh figures
+    from an existing run without regenerating any images (see scripts/resummarize).
+    """
+    fig_dir = Path(out_dir) / "figures"
+    fig_dir.mkdir(parents=True, exist_ok=True)
     acc = {t: metrics[t]["accuracy"] for t in conditions if t in metrics}
     figures.plot_accuracy(acc, fig_dir / "accuracy.png", chance=metrics["chance"])
     for tier in conditions:
