@@ -14,9 +14,10 @@ text ─► EmotionAnalyzer ─► (emotion, valence, arousal) ─► build_prom
    blended with the emotion's circumplex prior by lexical coverage. So affect is *measured
    from text*, not read from a constant per emotion.
 2. **Prompt synthesis** (`prompting.py`) — content stays independent of the emotion; emotion is
-   layered on as a modifier over three tiers: `raw` (content only), `emotion` (adds a mood
-   modifier), `affect` (adds valence/arousal palette and lighting). A `scene` floor renders the
-   old fixed per-emotion template with no content, to measure pure template recognition.
+   layered on as a modifier over four tiers: `raw` (content only), `naive` (bare emotion word,
+   the baseline), `emotion` (adds a mood modifier), `affect` (adds valence/arousal palette and
+   lighting). A `scene` floor renders the old fixed per-emotion template with no content, to
+   measure pure template recognition.
 3. **Backends** (`generation/`) — a common `ImageBackend` interface with three
    implementations: `null` (deterministic, offline, for tests), `diffusers` (local, seedable,
    revision-pinned), `hf-api` (hosted). Selected by `BACKEND`.
