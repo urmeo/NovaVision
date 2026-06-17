@@ -45,6 +45,22 @@ realized per-class counts. `data/content_bank.txt` holds the neutral subjects fo
 track. A hand-authored sample (test fixture) and a demo lexicon ship for offline use (see
 `data/README.md`, `data/DATASHEET.md`).
 
+## Scope and known limits
+
+- **Protocol + harness, not a system-ranking benchmark.** The artifact is the evaluation
+  protocol plus AffectBench (a frozen *text* set). Cross-system comparison is a capability of the
+  harness (`--diffusion-model`, `--style`, `--probe`), not a delivered result.
+- **The recovery probe bounds everything.** `eval/validate_probe.py` reports the probe's known
+  error both out-of-domain (faces) and in-domain (EmoSet scenes), and every run emits a
+  `probe_health` diagnostic (label diversity, majority-collapse rate). A probe that collapses
+  onto one label scores at chance on `raw` *trivially*, so recovery is only informative above the
+  `majority_baseline`, which is reported next to it.
+- **The content track tests cue strength, not independent affect.** On neutral content the
+  `affect` tier's valence/arousal cues are a deterministic function of the emotion prior, so
+  `affect` vs `emotion` there measures palette/lighting only. Independent, text-grounded VA is
+  tested on the **text** track. `scene` acts as a positive control (a probe that reads *any*
+  affect should score highest there); `raw` is the negative control (chance).
+
 ## Design notes
 
 - **Heavy deps are lazy.** Importing the package needs only numpy/pillow; torch, transformers,
