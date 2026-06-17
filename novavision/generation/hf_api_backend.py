@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import threading
 
 from PIL import Image
 
@@ -20,13 +21,16 @@ class HFApiBackend(ImageBackend):
             raise ValueError("HF_TOKEN not set")
         self.model_id = model_id
         self._client = None
+        self._lock = threading.Lock()
 
     @property
     def client(self):
         if self._client is None:
-            from huggingface_hub import InferenceClient
+            with self._lock:  # double-checked: don't build two clients under concurrency
+                if self._client is None:
+                    from huggingface_hub import InferenceClient
 
-            self._client = InferenceClient(token=self.token)
+                    self._client = InferenceClient(token=self.token)
         return self._client
 
     def generate(
@@ -38,4 +42,14 @@ class HFApiBackend(ImageBackend):
         seed: int = 0,
         negative_prompt: str | None = None,
     ) -> Image.Image:
-        return self.client.text_to_image(prompt, model=self.model_id, width=width, height=height)
+        # Turbo runs with guidance off, so a negative prompt is a no-op there (mirrors
+        # DiffusersBackend); forward it only for non-turbo models, plus the seed.
+        turbo = "turbo" in self.model_id.lower()
+        return self.client.text_to_image(
+            prompt,
+            model=self.model_id,
+            width=width,
+            height=height,
+            negative_prompt=None if turbo else negative_prompt,
+            seed=seed,
+        )
