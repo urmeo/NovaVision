@@ -39,7 +39,7 @@ def resummarize(results_path: str | Path) -> dict:
         "note": "metrics/diagnostics recomputed from the original records; no images regenerated",
         "packages": {pkg: _version(pkg) for pkg in ("numpy",)},
     }
-    path.write_text(json.dumps(payload, indent=2))
+    run_mod.dump_results(payload, path)
     run_mod._write_figures(path.parent, records, payload["metrics"], conditions)
     return payload
 
