@@ -100,6 +100,14 @@ differences come with bootstrap confidence intervals and a paired significance t
   - `make validate-probe-scene` runs the same check in-domain on EmoSet; an independent non-CLIP
     probe (`--probe hf`, `make robustness`) and a human study (`novavision.eval.human_study`,
     Cohen's κ) slot into the same interface to cross-check the headline.
+- **Circularity is bounded, not assumed.** Because the prompt writes an emotion word and a CLIP
+  probe reads one back, every run reports a **shuffled-label control** — a permutation test of
+  recovery against randomly reassigned targets. On the committed pilot *no tier beats it*
+  (`emotion` p=0.23, `affect` p=0.14), so recovery is indistinguishable from chance label
+  agreement. Decoupled content + the independent `--probe hf` close the rest of the gap.
+- **Baselines:** `naive` (append the emotion word) is the in-harness baseline; EmoGen /
+  EmotiCrafter / CoEmoGen are the external systems the harness can swap in (`--diffusion-model`),
+  not yet run.
 - Confusion matrices and valence/arousal plots are written to `results/`; `make paper`
   regenerates the paper tables from `results/paper/results.json`.
 - Method details in the paper, `paper/paper.md`.
