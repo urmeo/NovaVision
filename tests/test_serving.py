@@ -32,6 +32,22 @@ def test_token_ok_enforced_when_set(monkeypatch):
     assert serving.token_ok(None) is False
 
 
+def test_token_ok_handles_non_ascii(monkeypatch):
+    # hmac.compare_digest rejects non-ASCII str; we compare bytes, so this must not raise.
+    monkeypatch.setenv("NOVA_API_TOKEN", "clé-secrète")
+    assert serving.token_ok("clé-secrète") is True
+    assert serving.token_ok("wrong") is False
+
+
+def test_rate_limiter_evicts_stale_keys():
+    rl = serving.RateLimiter(max_requests=1, window_seconds=10, gc_threshold=2)
+    # Flood distinct keys with timestamps that all expire by the time we sweep.
+    for i in range(10):
+        rl.allow(f"ip-{i}", now=0.0)
+    rl.allow("trigger", now=100.0)  # past the window -> sweep drops the stale flood
+    assert len(rl._hits) <= 2
+
+
 def test_rate_limiter_blocks_over_budget():
     rl = serving.RateLimiter(max_requests=2, window_seconds=60)
     assert rl.allow("ip", now=0.0) is True
