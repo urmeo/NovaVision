@@ -4,13 +4,20 @@ from novavision.prompting import EMOTION_SCENES, TIERS, build_prompt, va_descrip
 
 
 def test_tiers():
-    assert TIERS == ("raw", "emotion", "affect")
+    assert TIERS == ("raw", "naive", "emotion", "affect")
 
 
 def test_raw_keeps_content_and_skips_emotion():
     prompt = build_prompt("a red bicycle", emotion="joy", tier="raw")
     assert "a red bicycle" in prompt
     assert "mood" not in prompt
+
+
+def test_naive_adds_bare_emotion_word():
+    prompt = build_prompt("a city street", emotion="joy", tier="naive")
+    assert "a city street" in prompt
+    assert "joy" in prompt
+    assert "mood" not in prompt  # bare word, not the engineered modifier
 
 
 def test_emotion_tier_keeps_content_and_adds_mood():
