@@ -26,7 +26,7 @@ def load_benchmark(path: str | Path) -> list[dict[str, str]]:
         raise FileNotFoundError(f"Benchmark not found: {path}")
 
     rows: list[dict[str, str]] = []
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8-sig") as fh:  # tolerate an Excel/Sheets BOM
         reader = csv.DictReader(fh)
         if reader.fieldnames is None or {"text", "emotion"} - set(reader.fieldnames):
             raise ValueError(f"{path} must have 'text' and 'emotion' columns")
