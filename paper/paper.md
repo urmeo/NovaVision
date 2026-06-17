@@ -18,9 +18,11 @@ written to match it, "recovery" becomes a tautology. We make the protocol honest
 the headline number is bounded by two floors a tautology cannot beat: a no-emotion control
 (chance) and a template-only ceiling (pure scene recognition). We report every tier with
 bootstrap confidence intervals and a paired significance test, and release **AffectBench**, a
-frozen, datasheeted GoEmotions-derived benchmark, for a text-conditioned track. The contribution is the protocol and
-artifact — designed around its failure modes — not a single controllability score; we also ship
-probe-validation and human-study harnesses so the proxy can be checked against people.
+frozen, datasheeted GoEmotions-derived benchmark, for a text-conditioned track. The contribution
+is the protocol and artifact — designed around its failure modes — not a single controllability
+score. We also validate the recovery probe and find that CLIP zero-shot is a **weak instrument**
+(29% accuracy, near-random on five of seven emotions) — a ceiling every recovery number must be
+read against.
 
 ## 1. Introduction
 
@@ -161,19 +163,28 @@ provides it, on a machine not memory-constrained.
 
 ## 7. Probe validation and human study
 
-The probe is a proxy for perceived emotion, and two harnesses are provided to bound how far it
-can be trusted. `novavision.eval.validate_probe` runs the probe on a labelled image-emotion set
-(FI/EmoSet, mapped to the Ekman labels) and reports accuracy and confusion as the instrument's
-known error. `novavision.eval.human_study` regenerates a stratified sample of images
-deterministically, collects labels from three or more raters, and reports human-vs-probe
-agreement (Cohen's $\kappa$) and human-vs-intended accuracy. Both harnesses ship with tests; the
-populated numbers require the labelled set and the rater pass, and are reported alongside the
-canonical run. Until then this section states the protocol, not results.
+The probe is a proxy for perceived emotion, so we measure how far it can be trusted.
+`novavision.eval.validate_probe` runs the default CLIP ViT-B/32 probe on a held-out labelled
+emotion set ($n=200$) and reports its accuracy and confusion as the instrument's *known error*.
+**The result is sobering and important: the probe recovers the Ekman emotion at only 29.0%
+accuracy (macro-F1 0.22)** — barely twice chance ($1/7$). Per-class recall is bimodal: it is
+usable for `neutral` (0.81) and `anger` (0.61) but **near-random for surprise (0.04), fear
+(0.06), sadness (0.08), and disgust (0.13)**. The instrument is therefore reliable for two of
+seven emotions and weak for the rest, and **every recovery number in §6 must be read through
+this ceiling** — a small or null controllability effect is fully consistent with a probe that
+cannot see five of the seven categories. This directly motivates the independent, non-CLIP probe
+(`--probe hf`) and a stronger backbone (ViT-L/14). (Caveat: this labelled set is
+facial-expression imagery, a proxy for the scene affect we generate; scene-affect validation on
+EmoSet uses the same harness and is the next step — the public dataset server was intermittently
+unavailable at submission.) `novavision.eval.human_study` adds the human leg — regenerate a
+stratified sample, collect labels from three or more raters, report human-vs-probe Cohen's
+$\kappa$ — and is wired but unrun (needs raters).
 
 ## 8. Limitations
 
-- CLIP recovery is a proxy for human perception; the §7 harnesses bound it, but a populated
-  human study would strengthen it.
+- CLIP recovery is a proxy for human perception, and §7 shows it is a **weak** one (29.0%
+  accuracy, near-random on five of seven emotions); the headline metric inherits that ceiling
+  until a stronger or independent probe is validated and a human study is run.
 - Mood modifiers and the CLIP probe share affective vocabulary; the `raw` control and `scene`
   floor bound how much recovery this could explain, and an independent non-CLIP probe
   (`--probe hf`) removes the residual overlap once validated against a labelled image set.
