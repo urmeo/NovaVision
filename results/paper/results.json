@@ -25,7 +25,7 @@
       "height": 256
     },
     "reanalysis": {
-      "git_sha": "2d879e8de19b6e4bae65c3776fcd8fe6d1e54ec0",
+      "git_sha": "cc5257a7db7f2bc8f8b857b0a648c6756c7b2d59",
       "note": "metrics/diagnostics recomputed from the original records; no images regenerated",
       "packages": {
         "numpy": "2.4.6"
@@ -46,12 +46,14 @@
         -0.4706,
         0.5525
       ],
+      "valence_mae": 0.5573,
       "arousal_r": 0.4025,
       "arousal_rho": 0.5458,
       "arousal_rho_ci": [
         -0.0049,
         0.9021
       ],
+      "arousal_mae": 0.2224,
       "clip_t": 0.2804,
       "majority_baseline": 0.1429,
       "collapse": {
@@ -83,12 +85,14 @@
         -0.025,
         0.7789
       ],
+      "valence_mae": 0.5521,
       "arousal_r": 0.3845,
       "arousal_rho": 0.4737,
       "arousal_rho_ci": [
         -0.0319,
         0.8025
       ],
+      "arousal_mae": 0.2223,
       "clip_t": 0.2738,
       "majority_baseline": 0.1429,
       "collapse": {
@@ -120,12 +124,14 @@
         -0.3003,
         0.6454
       ],
+      "valence_mae": 0.5468,
       "arousal_r": 0.5077,
       "arousal_rho": 0.618,
       "arousal_rho_ci": [
         0.1878,
         0.8556
       ],
+      "arousal_mae": 0.2212,
       "clip_t": 0.2695,
       "majority_baseline": 0.1429,
       "collapse": {
@@ -157,12 +163,14 @@
         -0.6262,
         1.0
       ],
+      "valence_mae": 0.5544,
       "arousal_r": 0.4018,
       "arousal_rho": 0.5819,
       "arousal_rho_ci": [
         -0.434,
         0.9901
       ],
+      "arousal_mae": 0.2232,
       "clip_t": NaN,
       "majority_baseline": 0.1429,
       "collapse": {

@@ -27,6 +27,8 @@ def _git_sha() -> str:
 
 def build_manifest(**config) -> dict:
     """Everything a reader needs to reconstruct the environment and run."""
+    from novavision.config import CLIP_REVISION, DIFFUSION_REVISION, EMOTION_REVISION
+
     return {
         "git_sha": _git_sha(),
         "python": sys.version.split()[0],
@@ -34,6 +36,11 @@ def build_manifest(**config) -> dict:
         "packages": {
             pkg: _version(pkg)
             for pkg in ("torch", "transformers", "diffusers", "numpy", "datasets", "pillow")
+        },
+        "model_revisions": {
+            "emotion": EMOTION_REVISION,
+            "diffusion": DIFFUSION_REVISION,
+            "clip": CLIP_REVISION,
         },
         "config": config,
     }

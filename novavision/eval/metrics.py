@@ -138,6 +138,15 @@ def cohen_kappa(a: Sequence[str], b: Sequence[str], labels: Sequence[str]) -> fl
     return float((po - pe) / (1 - pe))
 
 
+def mae(x: Sequence[float], y: Sequence[float]) -> float:
+    """Mean absolute error — an interpretable companion to the VA correlations."""
+    xa = np.asarray(x, dtype=float)
+    ya = np.asarray(y, dtype=float)
+    if len(xa) == 0:
+        return float("nan")
+    return float(np.mean(np.abs(xa - ya)))
+
+
 def pearson(x: Sequence[float], y: Sequence[float]) -> float:
     xa = np.asarray(x, dtype=float)
     ya = np.asarray(y, dtype=float)
