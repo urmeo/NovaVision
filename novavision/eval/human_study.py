@@ -19,7 +19,7 @@ from novavision.data import load_content_bank
 from novavision.eval.metrics import accuracy, cohen_kappa
 from novavision.generation import get_backend
 from novavision.prompting import NEGATIVE_PROMPT, build_prompt
-from novavision.taxonomy import EMOTIONS, prior
+from novavision.taxonomy import EMOTIONS
 
 
 def _sample_records(records: list[dict], n: int, seed: int) -> list[dict]:
@@ -42,6 +42,22 @@ def _sample_records(records: list[dict], n: int, seed: int) -> list[dict]:
     return picked
 
 
+def _record_index(r: dict, bank: list[str]) -> int:
+    """The content/row position used as the seed salt, for reproducing the image.
+
+    New runs store it as ``index`` (so both tracks work); older pre-index runs fall
+    back to the content-bank position, which only exists for the content track.
+    """
+    if "index" in r:
+        return int(r["index"])
+    if r["content"] in bank:
+        return bank.index(r["content"])
+    raise ValueError(
+        "Cannot reproduce this image: the record has no 'index' and its content is not a "
+        f"content-bank subject ({r['content']!r}). Rebuild from a run produced by the current code."
+    )
+
+
 def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -> Path:
     results_dir = Path(results_dir)
     data = json.loads((results_dir / "results.json").read_text())
@@ -54,31 +70,29 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
     gen = gen or get_backend(cfg["backend"], model_id=cfg["diffusion_model"])
     picked = _sample_records(data["records"], n, seed)
 
-    # Content-track only: text-track records carry sentences (not bank subjects) and lack the
-    # row index needed to reproduce the exact rated image. Fail clearly instead of crashing.
-    unknown = next((r["content"] for r in picked if r["content"] not in bank), None)
-    if unknown is not None:
-        raise ValueError(
-            "human_study build supports the content track only; got a record whose content is "
-            f"not in data/content_bank.txt ({unknown!r}). Build the sheet from a content-track run."
-        )
-
     study = results_dir / "human_study"
     images = study / "images"
     images.mkdir(parents=True, exist_ok=True)
 
     sheet, key = [], []
     for i, r in enumerate(picked):
-        ci, ei = bank.index(r["content"]), EMOTIONS.index(r["intended"])
-        pv, pa = prior(r["intended"])
+        idx = _record_index(r, bank)  # seed salt, works for both tracks
+        ei = EMOTIONS.index(r["intended"])
+        # Use the record's own valence/arousal (text-grounded on the text track,
+        # the prior on the content track) so the image reproduces exactly.
         prompt = build_prompt(
-            r["content"], emotion=r["intended"], valence=pv, arousal=pa, style=style, tier=r["tier"]
+            r["content"],
+            emotion=r["intended"],
+            valence=r["intended_valence"],
+            arousal=r["intended_arousal"],
+            style=style,
+            tier=r["tier"],
         )
         image = gen.generate(
             prompt,
             width=cfg["width"],
             height=cfg["height"],
-            seed=_seed(cfg["base_seed"], ci, ei, r["seed"]),
+            seed=_seed(cfg["base_seed"], idx, ei, r["seed"]),
             negative_prompt=NEGATIVE_PROMPT,
         )
         rel = f"images/{i:03d}.png"
