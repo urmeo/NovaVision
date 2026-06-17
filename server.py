@@ -8,6 +8,7 @@ import os
 import random
 from datetime import datetime, timezone
 from io import BytesIO
+from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
 
@@ -15,13 +16,18 @@ from novavision.affect.analyzer import EmotionAnalyzer
 from novavision.config import get_settings
 from novavision.generation import get_backend
 from novavision.pipeline import NovaVision
+from novavision.serving import ConcurrencyGuard, RateLimiter, env_int, resolve_host, token_ok
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("novavision.server")
 
 MIN_TEXT, MAX_TEXT = 3, 2000
 
-app = Flask(__name__, static_folder=".")
+# Serve only the dedicated web asset directory — never the repo root, which would
+# expose source, configs, and benchmark data.
+_STATIC = Path(__file__).resolve().parent / "static"
+
+app = Flask(__name__, static_folder=str(_STATIC), static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # cap request body
 
 # CORS is off by default (same-origin SPA). Enable by listing origins in CORS_ORIGINS.
@@ -30,6 +36,11 @@ if _origins:
     from flask_cors import CORS
 
     CORS(app, origins=[o.strip() for o in _origins.split(",")])
+
+# Per-IP rate limit and a concurrency cap so a public bind cannot turn the GPU
+# generate route into a trivial DoS amplifier. Both are tunable by env.
+_rate_limiter = RateLimiter(env_int("NOVA_RATE_LIMIT", 30))
+_gen_guard = ConcurrencyGuard(env_int("NOVA_MAX_CONCURRENCY", 2))
 
 _pipeline: NovaVision | None = None
 
@@ -56,13 +67,32 @@ def _valid_text(data) -> tuple[str, str | None]:
     return text, None
 
 
+def _client_ip() -> str:
+    return request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0]
+
+
+def _rate_limited():
+    if not _rate_limiter.allow(_client_ip()):
+        return jsonify({"error": "Rate limit exceeded. Try again shortly."}), 429
+    return None
+
+
+def _bearer_token() -> str | None:
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[len("Bearer ") :].strip()
+    return request.headers.get("X-API-Token") or None
+
+
 @app.route("/")
 def index():
-    return send_from_directory(".", "index.html")
+    return send_from_directory(app.static_folder, "index.html")
 
 
 @app.route("/api/analyze", methods=["POST"])
 def analyze():
+    if (limited := _rate_limited()) is not None:
+        return limited
     text, error = _valid_text(request.get_json(silent=True))
     if error:
         return jsonify({"error": error}), 400
@@ -87,6 +117,10 @@ def analyze():
 
 @app.route("/api/generate", methods=["POST"])
 def generate():
+    if not token_ok(_bearer_token()):
+        return jsonify({"error": "Unauthorized."}), 401
+    if (limited := _rate_limited()) is not None:
+        return limited
     data = request.get_json(silent=True)
     text, error = _valid_text(data)
     if error:
@@ -99,11 +133,16 @@ def generate():
     except (TypeError, ValueError):
         return jsonify({"error": "seed must be an integer."}), 400
 
+    # Concurrency cap: shed load rather than queue requests behind a slow GPU job.
+    if not _gen_guard.acquire():
+        return jsonify({"error": "Server busy. Try again shortly."}), 429
     try:
         result = pipeline().auto_run(text, style=style, seed=seed)
     except Exception:
         logger.exception("generation failed")
         return jsonify({"error": "Generation failed."}), 500
+    finally:
+        _gen_guard.release()
 
     buffer = BytesIO()
     result.image.save(buffer, format="PNG")
@@ -128,6 +167,9 @@ def generate():
 
 
 if __name__ == "__main__":
-    host = os.getenv("HOST", "127.0.0.1")
+    # Localhost unless NOVA_PUBLIC=1 (or a Spaces sandbox) is set; see novavision.serving.
+    host = resolve_host()
     port = int(os.getenv("PORT", "8000"))
+    if host == "0.0.0.0":  # noqa: S104 - explicit operator opt-in
+        logger.warning("Binding 0.0.0.0 (public). Set NOVA_API_TOKEN to protect /api/generate.")
     app.run(host=host, port=port)
