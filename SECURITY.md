@@ -20,7 +20,9 @@ Do not open public issues for security problems.
 - **Generate route is protected.** `/api/generate` enforces a per-IP rate limit
   (`NOVA_RATE_LIMIT`, default 30/min), a concurrency cap (`NOVA_MAX_CONCURRENCY`, default 2, which
   sheds load rather than queueing), and an optional bearer token (`NOVA_API_TOKEN`) — set the
-  token whenever you bind publicly.
+  token whenever you bind publicly. The rate-limit key is `request.remote_addr`;
+  `X-Forwarded-For` is trusted only when `NOVA_TRUST_PROXY=1` (set it only behind a real reverse
+  proxy, since the header is otherwise client-spoofable).
 - **No repo-root exposure.** Flask serves only the dedicated `static/` directory, never the
   project root, so source, configs, and data are not downloadable.
 - **CORS** is disabled by default (same-origin). Set `CORS_ORIGINS` to allow specific domains.
