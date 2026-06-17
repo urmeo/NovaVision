@@ -6,15 +6,24 @@ import argparse
 import json
 from pathlib import Path
 
-CONDITIONS = ("raw", "emotion", "affect", "scene")
+CONDITIONS = ("raw", "naive", "emotion", "affect", "scene", "shuffled")
 
 
 def _fmt(x) -> str:
     return "–" if x is None or (isinstance(x, float) and x != x) else f"{x:.3f}"
 
 
+def _rho(m: dict, key: str) -> str:
+    """Correlation with its bootstrap CI when available — never a bare 3-decimal."""
+    rho = m.get(key)
+    ci = m.get(f"{key}_ci")
+    if ci and not (isinstance(ci[0], float) and ci[0] != ci[0]):
+        return f"{_fmt(rho)} [{ci[0]:.2f}, {ci[1]:.2f}]"
+    return _fmt(rho)
+
+
 def metrics_table(metrics: dict) -> str:
-    head = "| Condition | Accuracy [95% CI] | Macro-F1 | Valence ρ† | Arousal ρ† | CLIP-T | n |"
+    head = "| Condition | Accuracy [95% CI] | Macro-F1 | Valence ρ†‡ | Arousal ρ†‡ | CLIP-T | n |"
     rule = "|" + "---|" * 7
     lines = [head, rule]
     for cond in CONDITIONS:
@@ -24,15 +33,35 @@ def metrics_table(metrics: dict) -> str:
         lo, hi = m["accuracy_ci"]
         acc = f"{m['accuracy']:.3f} [{lo:.3f}, {hi:.3f}]"
         lines.append(
-            f"| {cond} | {acc} | {_fmt(m['macro_f1'])} | {_fmt(m.get('valence_rho'))} | "
-            f"{_fmt(m.get('arousal_rho'))} | {_fmt(m['clip_t'])} | {m['n']} |"
+            f"| {cond} | {acc} | {_fmt(m['macro_f1'])} | {_rho(m, 'valence_rho')} | "
+            f"{_rho(m, 'arousal_rho')} | {_fmt(m['clip_t'])} | {m['n']} |"
         )
     chance = metrics.get("chance")
+    base = metrics.get("raw", {}).get("majority_baseline")
     if chance is not None:
-        lines.append(f"\nChance accuracy = {chance:.3f} (1/7).")
+        note = f"\nChance = {chance:.3f} (1/7)"
+        if base is not None:
+            note += f"; majority-class baseline = {base:.3f}"
+        note += (
+            ". A probe collapsed onto one label scores here, so recovery is only "
+            "informative *above* it."
+        )
+        lines.append(note)
+    health = metrics.get("probe_health")
+    if health:
+        lines.append(
+            f"**Probe health:** the probe used {health['distinct_labels']}/{health['n_labels']} "
+            f"emotion labels across the conditioning tiers, predicting "
+            f"'{health['majority_label']}' for {health['majority_rate']:.0%} of items — every "
+            "recovery number must be read against this degeneracy."
+        )
     lines.append(
         "† On neutral content the intended valence/arousal is the per-emotion prior, so these "
         "correlations reflect between-emotion separation, not within-emotion grounding."
+    )
+    lines.append(
+        "‡ ρ is shown with its bootstrap 95% CI; at small n the interval spans most of [-1, 1], "
+        "so the point estimate should not be over-read."
     )
     return "\n".join(lines)
 
