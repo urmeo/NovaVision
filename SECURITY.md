@@ -1,15 +1,21 @@
-# Security
+# Security Policy
 
-## Reporting
+NovaVision is a research artifact: a localhost-by-default Flask app plus an offline Python
+evaluation pipeline. The app binds `127.0.0.1` unless you opt in to a public bind, stores no
+user data, and ships no secrets or API keys. It downloads model weights (SD-Turbo, CLIP, the
+emotion classifier) from Hugging Face via `from_pretrained`; an `HF_TOKEN` is needed only for
+the hosted `hf-api` backend.
 
-Please report vulnerabilities privately via a GitHub security advisory on this repository.
-Do not open public issues for security problems.
+## Supported versions
 
-## Secrets & configuration
+Only the latest main is supported. Fixes land on main; there are no backports.
 
-- No secrets are committed. Configuration is read from environment variables; see `.env.example`.
-- `HF_TOKEN` is needed only for the hosted `hf-api` backend.
-- The full git history is scanned for committed secrets on every push (`gitleaks` in CI).
+## Reporting a vulnerability
+
+Please report privately rather than opening a public issue: use the repository's
+**Security** tab → **Report a vulnerability** to open a private security advisory.
+
+Expect an acknowledgement within a few days.
 
 ## Hardening defaults
 
@@ -31,9 +37,10 @@ Do not open public issues for security problems.
   (safetensors); `pickle.load`/`torch.load`/`weights_only=False`/`shell=True` are blocked by a
   CI test (`tests/test_security.py`).
 - API errors return generic messages; details are logged server-side only.
-- **CI** runs with least-privilege `permissions: contents: read`; no workflow has write scope.
 
-## Sample data
+## Secrets and CI
 
-`tests/fixtures/affectbench_sample.csv` is fictional, hand-authored example content — see
-`data/README.md`. No personal or production data is included anywhere in this repository.
+- No secrets are committed. Configuration is read from environment variables; see `.env.example`.
+- The full git history is scanned for committed secrets on every push (`gitleaks` in CI), and the
+  dependency chain is audited by `pip-audit`.
+- CI runs with least-privilege `permissions: contents: read`; no workflow has write scope.
