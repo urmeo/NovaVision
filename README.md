@@ -11,7 +11,7 @@ NovaVision generates an image from the emotion of a sentence, then checks whethe
 
 ## Results
 
-A CPU pilot: 256-px, 2 content subjects, single seed, n=14 per conditioning tier (n=7 for scene), diffusers backend with `stabilityai/sd-turbo` and `openai/clip-vit-base-patch32`.
+A CPU pilot: 256-px, 2 content subjects, single seed, n=14 per conditioning tier (n=7 for scene), diffusers backend with stabilityai/sd-turbo and openai/clip-vit-base-patch32.
 
 What this pilot reports is not a controllability score, it is a calibration of the instrument. **The committed pilot is an honest null: no conditioning tier beats the shuffled-label control, so recovery is statistically indistinguishable from chance label agreement.** The protocol, floors, and diagnostics all run end to end; the binding limitation is the probe.
 
