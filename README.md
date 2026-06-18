@@ -1,166 +1,116 @@
 # NovaVision
 
-[![CI](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9%E2%80%933.12-blue.svg)](pyproject.toml)
-[![Code style: ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://docs.astral.sh/ruff/)
+NovaVision generates an image from the emotion of a sentence, then checks whether the image actually conveys that emotion by recovering the emotion back from it with a swappable probe and comparing it to what you asked for. It is two things sharing one pipeline, a text-to-art web app and an emotion-controllability benchmark, built around the failure modes that make such a measurement easy to fake, with a frozen text benchmark (AffectBench) and a full write-up behind it.
 
-Text-to-image generation conditioned on the emotion of a sentence — with a **reproducible
-protocol and evaluation harness** that measures whether the generated image actually conveys that
-emotion, designed around the failure modes that make such a measurement easy to fake.
+## Using it
 
-<p align="center">
-  <img src="screenshots/main_interface.png" alt="NovaVision interface" width="860">
-</p>
+- Run `make setup` then `make test` to exercise the deterministic core with no model downloads, then `make setup-ml` and `make app` to launch the web app at http://127.0.0.1:8000 and generate emotion-conditioned images interactively.
+- `make smoke` is a quick end-to-end run (2 subjects, 1 seed); `make pilot` reproduces the committed CPU pilot (n=14 per tier).
+- Build the text benchmark with `make benchmark` (AffectBench from GoEmotions), then run the text-conditioned track with `make text`.
+- For a public deployment, bind explicitly with `NOVA_PUBLIC=1` and set `NOVA_API_TOKEN`, `NOVA_RATE_LIMIT`, and `NOVA_MAX_CONCURRENCY`; the app binds 127.0.0.1 by default.
 
-> **What this is — and isn't.** This is a *protocol* and *harness* for emotion controllability,
-> plus **AffectBench**, a frozen GoEmotions-derived **text** benchmark. It is **not** a
-> system-ranking benchmark: the shipped runs cover one generator (SD-Turbo), one style, and one
-> recovery probe (CLIP ViT-B/32), and the committed result is a small CPU **pilot** reporting an
-> honest **null** (see [Results](#evaluation)). The harness is built to compare generators,
-> styles, and probes (`--diffusion-model`, `--style`, `--probe`), but those comparisons are a
-> capability, not a delivered result. Probe-bounded: CLIP recovery is a weak instrument (see
-> [Probe validation](#evaluation)), so every recovery number is read against its measured error.
+## Results
 
-## Getting started
+A CPU pilot: 256-px, 2 content subjects, single seed, n=14 per conditioning tier (n=7 for scene), diffusers backend with `stabilityai/sd-turbo` and `openai/clip-vit-base-patch32`.
 
-```bash
-git clone https://github.com/urme-b/NovaVision && cd NovaVision
-make setup          # core + dev deps (deterministic core, tests, lint)
-make test           # 73 tests, no models needed (runs in seconds)
+What this pilot reports is not a controllability score, it is a calibration of the instrument. **The committed pilot is an honest null: no conditioning tier beats the shuffled-label control, so recovery is statistically indistinguishable from chance label agreement.** The protocol, floors, and diagnostics all run end to end; the binding limitation is the probe.
 
-# To run the real models (downloads SD-Turbo, CLIP, the emotion classifier):
-make setup-ml
-make app            # launch the web app at http://127.0.0.1:8000
-make smoke          # quick end-to-end benchmark run (2 subjects, 1 seed)
+<img src="results/paper/figures/accuracy.png" alt="Recovery accuracy by conditioning tier against the 1/7 chance line; every confidence interval includes chance" width="560">
 
-# Reproduce the paper artifacts:
-make reproduce      # canonical content-track run -> results/paper/
-make validate-probe-scene   # in-domain probe ceiling on EmoSet
-make paper          # regenerate the paper tables/figures from results
-```
+| Condition | Recovery acc [95% CI] | Macro-F1 | Valence rho [95% CI] | Arousal rho [95% CI] | CLIP-T | Shuffled-label p | n | Reading |
+|---|---|---|---|---|---|---|---|---|
+| `raw` (neg. control) | 0.143 [0.00, 0.357] | 0.038 | 0.076 [-0.47, 0.55] | 0.546 [-0.00, 0.90] | 0.280 | 0.857 | 14 | sits exactly at chance (1/7) |
+| `emotion` | 0.214 [0.00, 0.429] | 0.112 | 0.474 [-0.03, 0.78] | 0.474 [-0.03, 0.80] | 0.274 | 0.226 | 14 | not above the circularity baseline |
+| `affect` | 0.214 [0.00, 0.429] | 0.133 | 0.241 [-0.30, 0.65] | 0.618 [0.19, 0.86] | 0.270 | 0.137 | 14 | not above the circularity baseline |
+| `scene` (pos. control) | 0.286 [0.00, 0.575] | 0.184 | 0.414 [-0.63, 1.00] | 0.582 [-0.43, 0.99] | – | 0.145 | 7 | highest, but still n.s. |
 
-For the exact paper environment, install the pinned lockfile instead:
-`uv pip install -r requirements.lock`.
+Chance = 0.143 (1/7); majority-class baseline = 0.143. Probe health: 2/7 labels used, `neutral` predicted for ~90% of items (majority_rate 0.9048).
 
-## Why it matters
+Paired contrasts (bootstrap on per-item recovery):
 
-Most emotional image generators are judged by eye. NovaVision treats emotion as something to
-verify: it detects the emotion in text, grounds it in continuous valence and arousal,
-conditions the prompt, generates an image, then recovers the emotion from that image with a
-swappable probe and compares it to the original intent. The result is an automatic, reproducible
-*protocol* for emotional controllability — bounded by a no-emotion control, a template ceiling,
-and a validated probe, so a number means something rather than flattering the method.
+| Contrast | Delta accuracy | 95% CI | p |
+|---|---|---|---|
+| emotion vs raw | +0.071 | [0.000, 0.214] | 0.255 |
+| affect vs emotion | +0.000 | [0.000, 0.000] | 1.000 |
+| affect vs raw | +0.071 | [0.000, 0.214] | 0.255 |
 
-<p align="center">
-  <img src="screenshots/demo_preview.gif" alt="Demo" width="860">
-</p>
+<img src="results/paper/figures/confusion_raw.png" alt="Confusion matrix for the raw control tier, showing predictions collapsing onto the neutral row" width="440">
+
+- The `raw` negative control sits exactly at chance (1/7), and `scene` at 0.286 is the highest tier but still *not significant*.
+- The CLIP ViT-B/32 probe **collapses in-domain onto `neutral`**, predicting it for ~90% of generated scenes and using only 2 of 7 labels.
+- The one apparent lift is a single image and *not significant*: emotion over raw is +0.071 (95% CI [0.000, 0.214], p=0.255), and affect adds nothing over emotion (delta 0.000, p=1.000).
+- Out of domain on faces (n=200), CLIP recovers the Ekman emotion at only 29.0% accuracy (macro-F1 0.22), usable for neutral (recall 0.81) and anger (0.61) but near-random for surprise, fear, sadness, and disgust.
+
+The full write-up, figures, and confidence intervals are in [paper/paper.md](paper/paper.md).
 
 ## How it works
 
-<p align="center">
-  <img src="screenshots/how_it_works.png" alt="Pipeline" width="780">
-</p>
+- **Detect:** a DistilRoBERTa classifier (`affect/analyzer.py`) scores the six Ekman emotions plus neutral (seven labels) in the input text.
+- **Ground:** valence and arousal are estimated from an affect lexicon (`affect/lexicon.py`) and blended with the emotion's circumplex prior by lexical coverage c, `v = c·v_lex + (1−c)·v_prior`, so affect is *measured* from text rather than read from a constant.
+- **Condition:** image content stays independent of the emotion; emotion enters only as a modifier over four tiers (raw → naive → emotion → affect). The tiers are the ablation, so recovery is attributable to the conditioning, not a canned scene.
+- **Generate:** Stable Diffusion Turbo renders the image from a fixed, paired-per-item seed through a common `ImageBackend` (null for tests, diffusers for local, hf-api for hosted).
+- **Recover:** a swappable probe (default `CLIPProbe`, `eval/probes.py`) reads the emotion and graded valence/arousal back from the image; recovery only counts when it clears the majority-class baseline and the shuffled-label control with a non-degenerate probe.
 
-1. **Detect** — DistilRoBERTa scores the six Ekman emotions plus neutral (seven labels) in the text.
-2. **Ground** — valence and arousal are estimated from an affect lexicon, blended with the
-   emotion prior by word coverage: `v = c·v_lex + (1−c)·v_prior`.
-3. **Condition** — image content stays independent of the emotion; emotion enters only as a
-   modifier over four tiers (raw, naive, emotion, affect). The tiers are the ablation, so recovery
-   is attributable to the conditioning, not a canned scene.
-4. **Generate** — Stable Diffusion Turbo renders the image from a fixed seed.
-5. **Recover** — a swappable probe (CLIP ViT-B/32 by default) reads the emotion and graded
-   valence/arousal back from the image and compares to the intended label.
+## Method
 
-The claim is bounded on both sides. **raw** is the negative control (no emotion → chance);
-**scene** is the positive control and template ceiling (a fixed per-emotion scene a working probe
-should read easily). Because a probe that has *collapsed* onto one label also scores at chance,
-every run reports a **majority-class baseline** and a **probe-collapse** diagnostic next to the
-numbers — recovery only counts when it clears the baseline with a non-degenerate probe. Tier
-differences come with bootstrap confidence intervals and a paired significance test.
-
-## Evaluation
-
-<p align="center">
-  <img src="screenshots/emotion_analysis.png" alt="Emotion analysis" width="780">
-</p>
-
-### Results at a glance (committed CPU pilot, n=14/tier)
-
-<p align="center">
-  <img src="results/paper/figures/accuracy.png" alt="Recovery accuracy by condition vs chance" width="560">
-</p>
-
-| Condition | Recovery acc [95% CI] | Shuffled-label *p* | Reading |
-|---|---|---|---|
-| `raw` (neg. control) | 0.143 [0.00, 0.36] | 0.86 | sits exactly at chance |
-| `emotion` | 0.214 [0.00, 0.43] | **0.23** | not above the circularity baseline |
-| `affect` | 0.214 [0.00, 0.43] | **0.14** | not above the circularity baseline |
-| `scene` (pos. control) | 0.286 [0.00, 0.58] | 0.14 | highest, but still n.s. |
-
-> **Honest headline:** this pilot is a *null*. The CLIP probe collapses onto `neutral` (90% of
-> images, 2/7 labels), and **no tier beats the shuffled-label control** — so recovery is currently
-> indistinguishable from chance label agreement. The protocol, floors, and diagnostics work; the
-> instrument is too weak to claim controllability, and the powered run is withheld until a stronger
-> probe clears the in-domain ceiling. Numbers regenerate via `make pilot && make paper`.
-
-- The **content** track renders neutral content (`data/content_bank.txt`) under each intended
-  emotion, so the score reflects conditioning rather than scene content.
-- The **text** track (`--track text`) conditions on **AffectBench** — a GoEmotions-derived
-  benchmark (test split, deduplicated, balance-checked, datasheeted in `data/DATASHEET.md`) —
-  with text-grounded valence/arousal and a shuffled-emotion floor.
-- Conditions: `raw` (control), `naive` (bare emotion word), `emotion` (engineered modifier),
-  `affect` (+ valence/arousal), plus a floor (`scene` or `shuffled`).
-- Scored on recovery accuracy (with bootstrap 95% CIs), macro-F1, valence/arousal correlation
-  (Pearson r and Spearman ρ), and CLIP-T; tier deltas get a paired significance test.
-- The recovery probe is **validated** and treated as a known-error instrument, not assumed:
-  - **Out-of-domain (faces, `make validate-probe`):** CLIP ViT-B/32 zero-shot recovers the Ekman
-    emotion at only **29% accuracy** on facial-expression photos.
-  - **In-domain (generated scenes):** every benchmark run emits a `probe_health` diagnostic, and
-    on the committed pilot the probe **collapses onto `neutral` (90% of images, 2 of 7 labels
-    used)** — so the headline numbers are read against a probe that barely discriminates, *in the
-    domain it is actually used*. The 29% faces figure is an out-of-domain proxy, not the operating
-    error.
-  - `make validate-probe-scene` runs the same check in-domain on EmoSet; an independent non-CLIP
-    probe (`--probe hf`, `make robustness`) and a human study (`novavision.eval.human_study`,
-    Cohen's κ) slot into the same interface to cross-check the headline.
-- **Circularity is bounded, not assumed.** Because the prompt writes an emotion word and a CLIP
-  probe reads one back, every run reports a **shuffled-label control** — a permutation test of
-  recovery against randomly reassigned targets. On the committed pilot *no tier beats it*
-  (`emotion` p=0.23, `affect` p=0.14), so recovery is indistinguishable from chance label
-  agreement. Decoupled content + the independent `--probe hf` close the rest of the gap.
-- **Baselines:** `naive` (append the emotion word) is the in-harness baseline; EmoGen /
-  EmotiCrafter / CoEmoGen are the external systems the harness can swap in (`--diffusion-model`),
-  not yet run.
-- Confusion matrices and valence/arousal plots are written to `results/`; `make paper`
-  regenerates the paper tables from `results/paper/results.json`.
-- Method details in the paper, `paper/paper.md`.
+- **Decoupled content.** The depicted subject is never chosen by the emotion (a 20-subject neutral content bank, `data/content_bank.txt`), so any signal must come through the modifier, not the scene.
+- **Two floors bound the claim.** `raw` is the negative control (no emotion, should sit at chance 1/7) and `scene` is the positive control and template ceiling, so scene > raw checks the instrument is not blind.
+- **Shuffled-label control.** A one-sided permutation test (n=2000) of each tier against randomly reassigned targets quantifies the circularity baseline directly; recovery is evidence only when it clears this null.
+- **Probe-collapse diagnostic.** Every run emits `probe_health` (label diversity and majority-collapse rate) and reports the majority-class baseline beside each accuracy, because a collapsed probe scores at chance on raw trivially.
+- **Probe validation as a known-error instrument.** Out-of-domain faces (`make validate-probe`, n=200) record 29.0%; in-domain EmoSet scenes (`make validate-probe-scene`) record the operating ceiling; an independent non-CLIP probe (`--probe hf`, `make robustness`) and a human study (`eval/human_study.py`, Cohen's kappa) slot into the same interface.
+- **Pure-numpy, unit-tested statistics.** Accuracy, macro-F1, confusion, Pearson r and Spearman rho with bootstrap 95% CIs, paired bootstrap contrasts, and Cohen's kappa (`eval/metrics.py`).
+- **Full provenance.** `results.json` logs git SHA, Python and library versions, device, dtype, model and dataset revisions, and the benchmark hash; tables and figures are regenerated by scripts, never hand-written.
+- **AffectBench hygiene.** Single-label GoEmotions mapped to seven Ekman classes from the test split, with within-sample and cross-split dedup so no eval sentence could have been trained on; the build records realized per-class counts and a balanced flag.
 
 ## Tech stack
 
-| Area | Tools |
-|------|-------|
-| ML / NLP | PyTorch, Hugging Face Transformers, Diffusers (SD-Turbo), CLIP |
-| Application | Python, Flask, Gradio |
-| Tooling | pytest, ruff, GitHub Actions, Docker |
+<table width="100%">
+<tr><th align="left" width="14%">Layer</th><th align="left">Tools</th></tr>
+<tr><td>ML / NLP</td><td>PyTorch, Hugging Face Transformers, Diffusers (SD-Turbo), CLIP (ViT-B/32), DistilRoBERTa emotion classifier</td></tr>
+<tr><td>Application</td><td>Python, Flask (server.py), Gradio (app.py), flask-cors</td></tr>
+<tr><td>Data / research</td><td>NumPy, Pillow, pydantic / pydantic-settings, matplotlib, Hugging Face datasets (GoEmotions, EmoSet)</td></tr>
+<tr><td>Tooling / CI</td><td>pytest, ruff (lint + format), mypy, gitleaks, pip-audit, GitHub Actions (Python 3.9-3.12), Docker, uv</td></tr>
+</table>
+
+## Reproduce
+
+```
+make setup          # core + dev deps (deterministic core, tests, lint)
+make test           # the test suite, no models needed (runs in seconds)
+make lint           # ruff check + format
+
+# Run the real models (downloads SD-Turbo, CLIP, the emotion classifier):
+make setup-ml
+make app            # launch the web app at http://127.0.0.1:8000
+make smoke          # quick end-to-end run (2 subjects, 1 seed)
+
+# Reproduce the paper artifacts:
+make pilot          # the committed CPU pilot (256-px, 2 subjects, 1 seed -> n=14)
+make reproduce      # canonical content-track run, 512-px, 3 seeds (needs a GPU box)
+make validate-probe         # probe error on faces (out-of-domain proxy)
+make validate-probe-scene   # in-domain probe ceiling on EmoSet scenes
+make paper          # regenerate the paper tables/figures from results/paper/results.json
+
+# Exact paper environment:
+uv pip install -r requirements.lock
+```
+
+Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **112** tests run without re-downloading models or raw data.
 
 ## Future scope
 
-The honest blocker is the instrument: the recovery probe is too weak to measure in-domain affect,
-so a powered run is only worth it once the probe is fixed. In priority order:
+- [ ] A recovery probe that actually reads generated scenes, validating a stronger or independent probe (`--probe hf`, ViT-L/14) on EmoSet before trusting any recovery number
+- [ ] The powered run (`make reproduce`: 512-px, 20 subjects, 3 seeds, n=420) on a GPU box, once a non-degenerate probe clears the in-domain ceiling
+- [ ] Scale the human study to 3+ raters and report Cohen's kappa against the probe
+- [ ] Cross-system comparison across generators, styles, and probes to turn this into a ranking benchmark, including EmoGen, EmotiCrafter, and CoEmoGen
+- [ ] Mixed and compound emotions beyond the Ekman set
 
-- [ ] **A recovery probe that actually reads generated scenes.** CLIP ViT-B/32 collapses onto
-      `neutral` in-domain; validate a stronger/independent probe (`--probe hf`, ViT-L/14) on
-      EmoSet (`make validate-probe-scene`) *before* trusting any recovery number.
-- [ ] **The powered run** (`make reproduce`: 512-px, 20 subjects, 3 seeds → n=420) on a GPU box,
-      once a non-degenerate probe clears the in-domain ceiling.
-- [ ] Scale the human study (3+ raters) and report Cohen's κ against the probe.
-- [ ] Cross-system comparison (multiple generators/styles/probes) to make this a ranking benchmark.
-- [ ] Mixed and compound emotions beyond the Ekman set.
+## Contributing
+
+- Setup, test, and reproduction steps: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md)
+- Vulnerabilities go through the [security policy](SECURITY.md)
 
 ## License
 
-Code is [MIT](LICENSE). **This covers the source only — not the model weights, datasets, or
-affect norms** the code downloads or calls, which keep their own terms (several non-commercial).
-See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md); notably SD-Turbo needs a Stability AI
-membership for commercial use, and any NRC-VAD lexicon you supply is non-commercial.
+[MIT License](LICENSE)
