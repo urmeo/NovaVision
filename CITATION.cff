@@ -1,11 +1,41 @@
 cff-version: 1.2.0
-message: "If you use NovaVision, please cite it."
+message: "If you use NovaVision, please cite it as below."
+type: software
 title: "NovaVision: A Reproducible Protocol for Measuring Emotion Controllability in Text-to-Image Generation"
 version: 0.3.0
 date-released: 2026-06-17
-license: MIT
+url: "https://github.com/urme-b/NovaVision"
 repository-code: "https://github.com/urme-b/NovaVision"
+license: MIT
 authors:
   - family-names: Bose
     given-names: Urme
     alias: urme-b
+keywords:
+  - emotion
+  - text-to-image
+  - affective-computing
+  - valence-arousal
+  - benchmark
+  - diffusion-models
+  - clip
+  - controllability
+abstract: >-
+  NovaVision is a reproducible protocol and evaluation harness for
+  emotion-conditioned text-to-image generation, designed around the
+  failure modes that make such a measurement easy to fake. It
+  conditions an image on the emotion of a sentence, then recovers the
+  emotion back from the image with a swappable zero-shot probe and
+  compares it to the intended emotion, bounding the headline number by
+  a no-emotion control (chance) and a template-only ceiling so a
+  tautology cannot win. Every tier is reported with bootstrap
+  confidence intervals, a paired significance test, and a
+  shuffled-label permutation control, and AffectBench, a frozen
+  datasheeted GoEmotions-derived text benchmark, is released for a
+  text-conditioned track. The committed result is a small CPU pilot
+  reporting an honest null: the CLIP recovery probe collapses onto
+  neutral in domain and no conditioning tier beats the shuffled-label
+  control, so recovery is currently indistinguishable from chance
+  label agreement. The contribution is the protocol and artifact, not
+  a single controllability score; the powered run is withheld until a
+  stronger probe clears the in-domain ceiling.
