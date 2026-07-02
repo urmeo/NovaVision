@@ -9,6 +9,12 @@ NovaVision generates an image from the emotion of a sentence, then checks whethe
 - Build the text benchmark with `make benchmark` (AffectBench from GoEmotions), then run the text-conditioned track with `make text`.
 - For a public deployment, bind explicitly with `NOVA_PUBLIC=1` and set `NOVA_API_TOKEN`, `NOVA_RATE_LIMIT`, and `NOVA_MAX_CONCURRENCY`; the app binds 127.0.0.1 by default.
 
+## Screenshots
+
+<img src="screenshots/main_interface.png" alt="Main interface: text input with example prompts, live emotion analysis panel, and the artwork pane" width="720">
+
+<img src="screenshots/emotion_analysis.png" alt="Emotion analysis view: primary emotion with confidence, valence and arousal, per-label scores, and the generated prompt" width="720">
+
 ## Results
 
 A CPU pilot: 256-px, 2 content subjects, single seed, n=14 per conditioning tier (n=7 for scene), diffusers backend with stabilityai/sd-turbo and openai/clip-vit-base-patch32.
