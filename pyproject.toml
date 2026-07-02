@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "novavision"
-version = "0.3.0"
+version = "1.0.0"
 description = "Emotion-controllable text-to-image generation and an affect-recovery benchmark"
 readme = "README.md"
 license = { text = "MIT" }
