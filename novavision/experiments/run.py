@@ -56,9 +56,31 @@ CONTRASTS = (
 )
 
 
+# _seed is injective only while ei*13 + sk < 97 and ci*97 + 90 < 100_000, i.e.
+# items <= 1030 and seeds <= 13; beyond that, distinct (item, emotion, seed)
+# triples silently share generator noise. Enforced before every run.
+SEED_MAX_ITEMS = 1030
+SEED_MAX_SEEDS = 13
+
+
 def _seed(base: int, ci: int, ei: int, sk: int) -> int:
-    """Shared per (content, emotion, seed) so tiers are paired on noise."""
+    """Shared per (content, emotion, seed) so tiers are paired on noise.
+
+    The formula is frozen: committed records reproduce their images from it
+    (see ``_record``), so collisions are excluded by bounding the domain
+    (``_check_seed_domain``) rather than by changing the mixing.
+    """
     return base + ((ci * 97 + ei * 13 + sk) % 100_000)
+
+
+def _check_seed_domain(n_items: int, seeds: int) -> None:
+    """Refuse configurations where _seed would stop being collision-free."""
+    if n_items > SEED_MAX_ITEMS or seeds > SEED_MAX_SEEDS:
+        raise ValueError(
+            f"seed mixing is collision-free only up to {SEED_MAX_ITEMS} items and "
+            f"{SEED_MAX_SEEDS} seeds (got {n_items} items, {seeds} seeds); "
+            "shard the run over --base-seed values at least 100000 apart instead"
+        )
 
 
 def _shuffle_emotion(gold: str, seed: int) -> str:
@@ -109,17 +131,19 @@ def run_experiment(
         rows = load_benchmark(benchmark)
         if limit is not None:
             rows = rows[:limit]
+        n_items = len(rows)
+        _check_seed_domain(n_items, seeds)
         analyzer = EmotionAnalyzer(model_name=emotion_model)
         records = _text_records(
             rows, gen, probe_obj, analyzer, style, seeds, base_seed, width, height
         )
-        n_items = len(rows)
     else:
         bank = load_content_bank()
         if contents is not None:
             bank = bank[:contents]
-        records = _content_records(bank, gen, probe_obj, style, seeds, base_seed, width, height)
         n_items = len(bank)
+        _check_seed_domain(n_items, seeds)
+        records = _content_records(bank, gen, probe_obj, style, seeds, base_seed, width, height)
 
     conditions = CONDITIONS[track]
     metrics = _summarize(records, conditions)
