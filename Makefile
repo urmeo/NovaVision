@@ -1,4 +1,4 @@
-.PHONY: setup setup-ml test lint format app benchmark reproduce text validate-probe smoke paper
+.PHONY: setup setup-ml test lint format app benchmark reproduce text validate-probe smoke paper repro-check
 
 setup:                  # tests, lint, benchmark build
 	python -m pip install -e ".[dev,research]"
@@ -47,6 +47,9 @@ validate-probe-scene:   # probe error IN-DOMAIN on EmoSet scenes (the real ceili
 robustness:             # cross-probe check: rerun with an independent non-CLIP probe
 	python -m novavision.experiments.run --backend diffusers --contents 4 --seeds 1 \
 	  --probe hf --probe-model $(PROBE_MODEL) --out results/robustness
+
+repro-check:            # re-derive the committed headline numbers from the committed records (no models)
+	pytest -q tests/test_reproducible_bench.py
 
 resummarize:            # refresh metrics/diagnostics/figures from existing records (no regen)
 	python scripts/resummarize.py --results results/paper/results.json
