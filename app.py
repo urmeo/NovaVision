@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 
 import gradio as gr
 
@@ -12,13 +13,16 @@ from novavision.prompting import STYLE_PRESETS
 logger = logging.getLogger("novavision.app")
 
 _nova = None
+_nova_lock = threading.Lock()
 
 
 def _pipeline():
     # Lazy: no model or backend is built at import time.
     global _nova
     if _nova is None:
-        _nova = build_pipeline()
+        with _nova_lock:  # double-checked: concurrent cold starts must not each load models
+            if _nova is None:
+                _nova = build_pipeline()
     return _nova
 
 
