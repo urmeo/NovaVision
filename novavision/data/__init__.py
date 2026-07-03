@@ -51,12 +51,19 @@ def load_content_bank(path: str | Path | None = None) -> list[str]:
     benchmark attribute recovered emotion to the conditioning, not the scene.
     """
     path = Path(path or CONTENT_BANK_PATH)
-    items = []
+    items: list[str] = []
+    seen: set[str] = set()
     with open(path, encoding="utf-8") as fh:
-        for line in fh:
+        for n, line in enumerate(fh, start=1):
             line = line.strip()
-            if line and not line.startswith("#"):
-                items.append(line)
+            if not line or line.startswith("#"):
+                continue
+            key = " ".join(line.lower().split())
+            if key in seen:
+                # A duplicate silently double-weights that scene in every tier.
+                raise ValueError(f"{path}:{n} duplicate subject: '{line}'")
+            seen.add(key)
+            items.append(line)
     if not items:
         raise ValueError(f"{path} has no content prompts")
     return items

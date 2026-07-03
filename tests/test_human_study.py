@@ -140,3 +140,17 @@ def test_analyze_skips_out_of_vocab_rating(tmp_path):
     )
     res = human_study.analyze(rated, key)
     assert res["n_rated"] == 1 and res["n_unscored"] == 1 and res["unscored_ids"] == [1]
+
+
+def test_build_sheet_refuses_nondeterministic_backend(tmp_path):
+    d = _fake_results(tmp_path)
+    payload = json.loads((d / "results.json").read_text())
+    payload["manifest"]["config"]["backend"] = "hf-api"
+    (d / "results.json").write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="non-deterministic"):
+        human_study.build_sheet(d, n=4, seed=0)
+
+
+def test_build_sheet_reports_per_class_counts(tmp_path):
+    study = human_study.build_sheet(_fake_results(tmp_path), n=4, seed=0)
+    assert "per-class counts" in (study / "README.md").read_text()

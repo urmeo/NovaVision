@@ -37,11 +37,13 @@ class HFApiBackend(ImageBackend):
         self,
         prompt: str,
         *,
-        width: int = 1024,
-        height: int = 1024,
+        width: int = 512,
+        height: int = 512,
         seed: int = 0,
         negative_prompt: str | None = None,
     ) -> Image.Image:
+        # Defaults match DiffusersBackend (512): the two backends must be
+        # comparable when a caller forgets to pass an explicit size.
         # Turbo runs with guidance off, so a negative prompt is a no-op there (mirrors
         # DiffusersBackend); forward it only for non-turbo models, plus the seed.
         turbo = "turbo" in self.model_id.lower()
@@ -51,5 +53,6 @@ class HFApiBackend(ImageBackend):
             width=width,
             height=height,
             negative_prompt=None if turbo else negative_prompt,
-            seed=seed,
+            # Same normalization as DiffusersBackend: the hosted API rejects negatives.
+            seed=int(seed) % (2**63 - 1),
         )
