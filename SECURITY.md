@@ -25,7 +25,7 @@ Expect an acknowledgement within a few days.
   entry points cannot disagree.
 - **Generate route is protected.** `/api/generate` enforces a per-IP rate limit
   (`NOVA_RATE_LIMIT`, default 30/min), a concurrency cap (`NOVA_MAX_CONCURRENCY`, default 2, which
-  sheds load rather than queueing), and an optional bearer token (`NOVA_API_TOKEN`) — set the
+  sheds load rather than queueing), and an optional bearer token (`NOVA_API_TOKEN`): set the
   token whenever you bind publicly. The rate-limit key is `request.remote_addr`;
   `X-Forwarded-For` is trusted only when `NOVA_TRUST_PROXY=1` (set it only behind a real reverse
   proxy, since the header is otherwise client-spoofable).
@@ -44,3 +44,8 @@ Expect an acknowledgement within a few days.
 - The full git history is scanned for committed secrets on every push (`gitleaks` in CI), and the
   dependency chain is audited by `pip-audit`.
 - CI runs with least-privilege `permissions: contents: read`; no workflow has write scope.
+
+## Sample data
+
+`tests/fixtures/affectbench_sample.csv` is fictional, hand-authored example content (see
+`data/README.md`). No personal or production data is included anywhere in this repository.

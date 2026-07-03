@@ -31,7 +31,7 @@ weights. Revisions are also written into every run's manifest
 
 | Role | Model (HF id) | Pinned revision | Base / lineage | License |
 |---|---|---|---|---|
-| Text-to-image generator | `stabilityai/sd-turbo` | `b261bac6fd2cf515557d5d0707481eafa0485ec2` | SD-Turbo, adversarial-diffusion-distilled from Stable Diffusion 2.1 | Stability AI **Community License** — free for research/personal use; **commercial use requires a Stability AI membership** |
+| Text-to-image generator | `stabilityai/sd-turbo` | `b261bac6fd2cf515557d5d0707481eafa0485ec2` | SD-Turbo, adversarial-diffusion-distilled from Stable Diffusion 2.1 | Stability AI **Community License**: free for research/personal use; **commercial use requires a Stability AI membership** |
 | Recovery probe | `openai/clip-vit-base-patch32` | `3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268` | CLIP ViT-B/32 | MIT |
 | Text emotion classifier | `j-hartmann/emotion-english-distilroberta-base` | `0e1cd914e3d46199ed785853e12b57304e04178b` | fine-tuned DistilRoBERTa (base is Apache-2.0) | see the model card for the fine-tuned checkpoint's terms |
 
@@ -55,8 +55,8 @@ are deliberately different so recovery is not the classifier grading itself:
 
 - **Detect (input side):** the DistilRoBERTa classifier scores the six Ekman
   emotions plus neutral in the *input text* (`novavision/affect/analyzer.py`).
-  On the **content** track this is not used to score recovery — the intended
-  label is assigned by construction — it is exercised on the **text** track,
+  On the **content** track this is not used to score recovery (the intended
+  label is assigned by construction); it is exercised on the **text** track,
   where its prediction is logged separately as classification accuracy.
 - **Recover (image side):** the CLIP probe reads emotion and valence/arousal
   back from the *generated image* (`novavision/eval/probes.py`). This is the
@@ -66,7 +66,7 @@ are deliberately different so recovery is not the classifier grading itself:
 
 ## Affect grounding (valence/arousal)
 
-Valence/arousal are not a model output — they are looked up from an affect
+Valence/arousal are not a model output; they are looked up from an affect
 lexicon and blended with the emotion's circumplex prior by lexical coverage
 (`novavision/affect/lexicon.py`). Lexicon provenance:
 
@@ -80,10 +80,10 @@ lexicon and blended with the emotion's circumplex prior by lexical coverage
 
 ## Eval prompt sets
 
-There are two, built by frozen, documented procedures — never hand-picked to
+There are two, built by frozen, documented procedures, never hand-picked to
 move a number.
 
-### Content track — the 20-subject content bank
+### Content track: the 20-subject content bank
 
 - **Source:** `data/content_bank.txt`, a fixed list of twenty **affect-neutral**
   content subjects (e.g. "a city street with buildings").
@@ -96,7 +96,7 @@ move a number.
 - **Committed pilot:** the first 2 subjects × 7 emotions × 1 seed → n=14 per
   conditioning tier (n=7 for `scene`).
 
-### Text track — AffectBench
+### Text track: AffectBench
 
 - **Source:** derived on demand from **GoEmotions** (Demszky et al., 2020),
   `simplified` config, GoEmotions revision pinned, license Apache-2.0.
@@ -110,7 +110,7 @@ move a number.
   seeded shuffle, round-robin interleave to keep any prefix balanced.
 - **Manifest:** the build records the pinned revision, seed, realized per-class
   counts, `dropped_train_overlap`, `total`, a `balanced` flag, and a content
-  hash. Report the realized per-class n with any result — under the Ekman
+  hash. Report the realized per-class n with any result; under the Ekman
   collapse the scarce classes (notably `disgust`) underfill.
 - **Not a reported source:** the hand-authored
   `tests/fixtures/affectbench_sample.csv` is a test fixture only and can never
@@ -121,7 +121,7 @@ move a number.
 Every run writes a manifest to `results/paper/results.json` recording the git
 SHA, Python version, platform, library versions (torch, transformers,
 diffusers, numpy, datasets, pillow), model revisions, device, dtype, config,
-and — for the text track — the benchmark SHA-256. `requirements.lock` pins the
+and, for the text track, the benchmark SHA-256. `requirements.lock` pins the
 exact resolved environment. Tables and figures are regenerated from the
 committed records by `scripts/report.py` / `make paper`, never hand-written, and
 `make repro-check` re-derives the headline numbers from the raw records to guard
