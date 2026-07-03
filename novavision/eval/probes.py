@@ -177,7 +177,7 @@ class CLIPProbe(Probe):
             import torch
 
             means = []
-            for label in EMOTION_PROMPTS:
+            for label in EMOTIONS:  # canonical order, not dict order
                 feats = self._text_features(EMOTION_PROMPTS[label])  # ensemble
                 mean = feats.mean(dim=0)
                 means.append(mean / mean.norm())
@@ -194,7 +194,7 @@ class CLIPProbe(Probe):
         return float(np.dot(probs, [v for _, v in ladder]))
 
     def recover(self, image: Image.Image) -> Recovery:
-        labels = list(EMOTION_PROMPTS)
+        labels = list(EMOTIONS)  # must match _fixed_features stacking order
         emo_feats, val_feats, aro_feats = self._fixed_features()
         img = self._image_features(image)
 
