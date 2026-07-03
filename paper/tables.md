@@ -6,11 +6,11 @@
 | raw | 0.143 [0.000, 0.357] | 0.038 | 0.076 [-0.47, 0.55] | 0.546 [-0.00, 0.90] | 0.280 | 14 |
 | emotion | 0.214 [0.000, 0.429] | 0.112 | 0.474 [-0.03, 0.78] | 0.474 [-0.03, 0.80] | 0.274 | 14 |
 | affect | 0.214 [0.000, 0.429] | 0.133 | 0.241 [-0.30, 0.65] | 0.618 [0.19, 0.86] | 0.270 | 14 |
-| scene | 0.286 [0.000, 0.575] | 0.184 | 0.414 [-0.63, 1.00] | 0.582 [-0.43, 0.99] | – | 7 |
+| scene | 0.286 [0.000, 0.575] | 0.184 | 0.414 [-0.63, 1.00] | 0.582 [-0.43, 0.99] | n/a | 7 |
 
 Chance = 0.143 (1/7); majority-class baseline = 0.143. A probe collapsed onto one label scores here, so recovery is only informative *above* it.
-**Probe health:** the probe used 2/7 emotion labels across the conditioning tiers, predicting 'neutral' for 90% of items — every recovery number must be read against this degeneracy.
-**Shuffled-label control:** one-sided permutation test of recovery vs randomly reassigned target emotions (null mean 0.142) — emotion p=0.23, affect p=0.14. A p near 1 means recovery is indistinguishable from the circularity baseline, i.e. not above chance label agreement.
+**Probe health:** the probe used 2/7 emotion labels across the conditioning tiers, predicting 'neutral' for 90% of items; every recovery number must be read against this degeneracy.
+**Shuffled-label control:** one-sided permutation test of recovery vs randomly reassigned target emotions (null mean 0.142): emotion p=0.23, affect p=0.14. A p near 1 means recovery is indistinguishable from the circularity baseline, i.e. not above chance label agreement.
 † On neutral content the intended valence/arousal is the per-emotion prior, so these correlations reflect between-emotion separation, not within-emotion grounding.
 ‡ ρ is shown with its bootstrap 95% CI; at small n the interval spans most of [-1, 1], so the point estimate should not be over-read.
 
