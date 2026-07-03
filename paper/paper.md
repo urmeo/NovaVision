@@ -260,9 +260,25 @@ emitted with every run shows that, on the scenes the pipeline generates, the CLI
 `neutral` to the large majority of images. A classifier that resolves essentially two of seven
 categories in the measurement domain cannot, even in principle, certify emotional controllability;
 this is why §6 reports a null and why the floors, while necessary, are not sufficient on their own.
-`make validate-probe-scene` runs the same labelled-set check in domain on EmoSet to quantify the
-ceiling directly; an independent non-CLIP probe (`--probe hf`, `make robustness`) and a stronger
-backbone (ViT-L/14) slot into the same interface and are the prerequisite for any powered run.
+
+**In-domain ceiling (real emotional scenes, EmoSet).** `make validate-probe-scene` measures the
+same check on real scene photographs (EmoSet, $n=400$ from the train split, seed 0; labels
+mapped to the Ekman set, which leaves `neutral` unsupported, so macro-F1 averages the six
+supported classes). The default ViT-B/32 recovers **40.3% (macro-F1 0.44)** while still
+emitting all seven labels (most frequent prediction `neutral`, 28.3% of items); ViT-L/14
+reaches **45.5% (macro-F1 0.47)**, also emitting all seven (most frequent `sadness`, 27.8%).
+On faces the same comparison is 29.0% vs. 37.5%. The reports store per-item outcomes, so the
+gap is tested rather than eyeballed: an exact paired McNemar test gives $p=0.038$ in domain
+(discordant items 36 vs. 57) and $p=0.040$ on faces (22 vs. 39), significant per set at 0.05
+with no multiple-comparison correction applied; `scripts/compare_probes.py` regenerates both
+from the committed artifacts. Three consequences. (i) The probes are *not blind on real
+scenes*, so the pilot's collapse onto `neutral` is a property of the *generated* images
+(256-px, 2-step SD-Turbo) interacting with the probe, not of the probe alone; the generator's
+affective weakness is as much a suspect as the instrument. (ii) ViT-L/14 scores significantly
+higher than ViT-B/32 on both sets and is the first candidate for the powered run, alongside
+the independent non-CLIP probe (`--probe hf`, `make robustness`), which remains unmeasured.
+(iii) Even 45.5% is a weak instrument in absolute terms, so every recovery number is still
+read against these measured ceilings. Artifacts: `results/paper/probe_validation*.json`.
 
 `novavision.eval.human_study` adds the human leg: regenerate a stratified sample, collect labels
 from three or more raters, and report human-vs-probe Cohen's $\kappa$. It is wired but unrun
