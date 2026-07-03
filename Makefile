@@ -48,7 +48,7 @@ validate-probe:         # probe error on FACES (out-of-domain proxy)
 	  --n 200 --out results/paper/probe_validation.json
 
 validate-probe-scene:   # probe error IN-DOMAIN on EmoSet scenes (the real ceiling)
-	python -m novavision.eval.validate_probe --hf-dataset xodhks/EmoSet118K \
+	python -m novavision.eval.validate_probe --hf-dataset xodhks/EmoSet118K --label-key emotion \
 	  --n 400 --split train --seed 0 --out results/paper/probe_validation_scene.json
 
 robustness:             # cross-probe check: rerun with an independent non-CLIP probe
