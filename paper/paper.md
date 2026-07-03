@@ -13,7 +13,7 @@
 
 Emotional text-to-image generation is usually judged by inspection, which conflates the emotion
 *intended* by the prompt with the emotion an image actually conveys. A natural automatic
-alternative, condition on an emotion, then recover it from the image with a zero-shot probe,
+alternative (condition on an emotion, then recover it from the image with a zero-shot probe)
 is easy to get wrong: if the conditioning paints a fixed per-emotion scene and the probe is
 written to match it, "recovery" becomes a tautology. We make the protocol honest. Image
 *content* is held independent of the intended emotion, emotion enters only as a modifier, and
@@ -191,7 +191,7 @@ run is in `results/paper/`.
 | scene | 0.286 [0.000, 0.575] | 0.184 | 0.414 [-0.63, 1.00] | 0.582 [-0.43, 0.99] | n/a | 7 |
 
 Chance = 0.143 (1/7); majority-class baseline = 0.143. A probe collapsed onto one label scores here, so recovery is only informative *above* it.
-**Probe health:** the probe used 2/7 emotion labels across the conditioning tiers, predicting 'neutral' for 90% of items, every recovery number must be read against this degeneracy.
+**Probe health:** the probe used 2/7 emotion labels across the conditioning tiers, predicting 'neutral' for 90% of items; every recovery number must be read against this degeneracy.
 **Shuffled-label control:** one-sided permutation test of recovery vs randomly reassigned target emotions (null mean 0.142): emotion p=0.23, affect p=0.14. A p near 1 means recovery is indistinguishable from the circularity baseline, i.e. not above chance label agreement.
 † On neutral content the intended valence/arousal is the per-emotion prior, so these correlations reflect between-emotion separation, not within-emotion grounding.
 ‡ ρ is shown with its bootstrap 95% CI; at small n the interval spans most of [-1, 1], so the point estimate should not be over-read.
@@ -261,9 +261,9 @@ this is why §6 reports a null and why the floors, while necessary, are not suff
 ceiling directly; an independent non-CLIP probe (`--probe hf`, `make robustness`) and a stronger
 backbone (ViT-L/14) slot into the same interface and are the prerequisite for any powered run.
 
-`novavision.eval.human_study` adds the human leg, regenerate a stratified sample, collect labels
-from three or more raters, report human-vs-probe Cohen's $\kappa$, and is wired but unrun (needs
-raters).
+`novavision.eval.human_study` adds the human leg: regenerate a stratified sample, collect labels
+from three or more raters, and report human-vs-probe Cohen's $\kappa$. It is wired but unrun
+(needs raters).
 
 ## 8. Limitations
 
