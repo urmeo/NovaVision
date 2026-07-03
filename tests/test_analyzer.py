@@ -21,8 +21,8 @@ class _Lex(AffectLexicon):
 
 def _analyzer(scores, lex):
     a = EmotionAnalyzer(lexicon=lex)
-    # Inject a fake classifier so no model is loaded.
-    a._classifier = lambda text: [[{"label": k, "score": v} for k, v in scores.items()]]
+    # Inject a fake classifier so no model is loaded (kwargs absorb truncation=True).
+    a._classifier = lambda text, **kw: [[{"label": k, "score": v} for k, v in scores.items()]]
     return a
 
 
@@ -47,11 +47,22 @@ def test_zero_coverage_falls_back_to_prior():
     assert (res.valence, res.arousal) == (round(pv, 4), round(pa, 4))
 
 
-def test_full_coverage_uses_lexicon_only():
+def test_full_coverage_is_capped():
+    # A fully in-lexicon input must not discard the classifier prior entirely.
     lex = _Lex(valence=-0.4, arousal=0.9, coverage=1.0)
     a = _analyzer({"fear": 0.7, "joy": 0.3}, lex)
     res = a.analyze("all words known")
-    assert (res.valence, res.arousal) == (-0.4, 0.9)
+    pv, pa = prior("fear")
+    assert math.isclose(res.valence, 0.8 * -0.4 + 0.2 * pv, abs_tol=1e-4)
+    assert math.isclose(res.arousal, 0.8 * 0.9 + 0.2 * pa, abs_tol=1e-4)
+    assert res.coverage == 1.0  # raw coverage is still reported
+
+
+def test_scores_are_read_only():
+    a = _analyzer({"joy": 1.0}, _Lex(0, 0, 0))
+    res = a.analyze("hello")
+    with pytest.raises(TypeError):
+        res.scores["joy"] = 0.0
 
 
 def test_empty_text_raises():
