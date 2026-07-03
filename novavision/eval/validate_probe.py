@@ -60,18 +60,30 @@ def load_hf_dataset(
     feat = ds.features.get(label_key)
     names = getattr(feat, "names", None)
 
+    # Column-only pass: map every label before touching (and decoding) any image.
+    raw_labels = ds[label_key]
+    labels = [names[r] if names and isinstance(r, int) else r for r in raw_labels]
+    ekman = [EKMAN_ALIASES.get(str(lab).lower()) for lab in labels]
+
     order = list(range(len(ds)))
     random.Random(seed).shuffle(order)
+    known = set(EMOTIONS)
     pairs: list = []
     for i in order:
         if len(pairs) >= n:
             break
-        ex = ds[i]
-        raw = ex[label_key]
-        label = names[raw] if names and isinstance(raw, int) else raw
-        ekman = EKMAN_ALIASES.get(str(label).lower())
-        if ekman in set(EMOTIONS):
-            pairs.append((ex[image_key].convert("RGB"), ekman))
+        if ekman[i] in known:
+            pairs.append((ds[i][image_key].convert("RGB"), ekman[i]))
+    if not pairs:
+        # A silent empty sample would validate nothing and report NaN as if it
+        # were a measurement (EmoSet118K keeps names in its `emotion` column
+        # while `label` is a bare int, exactly this failure).
+        raise ValueError(
+            f"{name}[{split}] column '{label_key}' yielded no Ekman-mappable labels "
+            f"(saw e.g. {sorted({str(lab).lower() for lab in labels})[:8]}); pass "
+            "--label-key with the column that holds label names "
+            "(EmoSet118K: --label-key emotion)"
+        )
     return pairs
 
 
@@ -110,7 +122,26 @@ def validate(probe, pairs: list) -> dict:
         "macro_f1": round(macro_f1(y_true, y_pred, EMOTIONS), 4),
         "labels": list(EMOTIONS),
         "confusion": cm.tolist(),
+        # Per-item outcomes so two probes run on the same sample can be compared
+        # with a paired test (McNemar), not just eyeballed point estimates.
+        "gold": y_true,
+        "predictions": y_pred,
     }
+
+
+def clip_revision_for(args) -> str | None:
+    """The pinned CLIP revision applies only to the model it pins.
+
+    Blindly reusing it would point any other --clip-model at a commit that does
+    not exist in that repo and fail the download.
+    """
+    if args.clip_revision:
+        return args.clip_revision
+    if args.clip_model == "openai/clip-vit-base-patch32":
+        from novavision.config import CLIP_REVISION
+
+        return CLIP_REVISION
+    return None
 
 
 def main() -> None:
@@ -121,24 +152,37 @@ def main() -> None:
     parser.add_argument("--split", default="train", help="HF dataset split")
     parser.add_argument("--revision", default=None, help="HF dataset revision to pin")
     parser.add_argument("--seed", type=int, default=0, help="sampling seed")
+    parser.add_argument("--image-key", default="image", help="HF dataset image column")
+    parser.add_argument("--label-key", default="label", help="HF dataset label column")
     parser.add_argument("--clip-model", default="openai/clip-vit-base-patch32")
+    parser.add_argument(
+        "--clip-revision",
+        default=None,
+        help="model revision; defaults to the pinned revision for the default model only",
+    )
     parser.add_argument("--out", default="results/probe_validation.json")
     args = parser.parse_args()
 
-    from novavision.config import CLIP_REVISION
     from novavision.eval.probes import CLIPProbe
 
     if args.hf_dataset:
         pairs = load_hf_dataset(
-            args.hf_dataset, n=args.n, split=args.split, seed=args.seed, revision=args.revision
+            args.hf_dataset,
+            n=args.n,
+            split=args.split,
+            seed=args.seed,
+            revision=args.revision,
+            image_key=args.image_key,
+            label_key=args.label_key,
         )
     elif args.images_dir:
         pairs = load_image_folder(args.images_dir)
     else:
         parser.error("pass --hf-dataset or --images-dir")
 
-    probe = CLIPProbe(model_id=args.clip_model, revision=CLIP_REVISION)
+    probe = CLIPProbe(model_id=args.clip_model, revision=clip_revision_for(args))
     report = validate(probe, pairs)
+    report["model"] = args.clip_model
     report["source"] = args.hf_dataset or args.images_dir
     # Provenance: make the exact sample behind the number reproducible.
     if args.hf_dataset:

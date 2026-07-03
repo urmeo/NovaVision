@@ -52,3 +52,59 @@ def test_ekman_aliases_cover_common_labels():
     assert aliases["happy"] == "joy" and aliases["happiness"] == "joy"
     assert aliases["awe"] == "surprise" and aliases["sad"] == "sadness"
     assert set(aliases.values()) <= set(EMOTIONS)
+
+
+def test_pinned_clip_revision_only_applies_to_its_model():
+    import argparse
+
+    from novavision.config import CLIP_REVISION
+    from novavision.eval.validate_probe import clip_revision_for
+
+    ns = argparse.Namespace(clip_model="openai/clip-vit-base-patch32", clip_revision=None)
+    assert clip_revision_for(ns) == CLIP_REVISION
+    ns = argparse.Namespace(clip_model="openai/clip-vit-large-patch14", clip_revision=None)
+    assert clip_revision_for(ns) is None  # B/32's pin must not leak onto other models
+    ns = argparse.Namespace(clip_model="openai/clip-vit-large-patch14", clip_revision="abc")
+    assert clip_revision_for(ns) == "abc"
+
+
+class _StubDS:
+    def __init__(self, rows, features):
+        self._rows = rows
+        self.features = features
+
+    def __len__(self):
+        return len(self._rows)
+
+    def __getitem__(self, key):
+        if isinstance(key, str):  # column access, like a real datasets.Dataset
+            return [r[key] for r in self._rows]
+        return self._rows[key]
+
+
+def _stub_datasets(monkeypatch, rows):
+    # Fake the module wholesale: the loader imports it lazily, and the real
+    # `datasets` package is a research extra that CI's test job never installs.
+    import sys
+    import types
+
+    mod = types.SimpleNamespace(load_dataset=lambda *a, **k: _StubDS(rows, {}))
+    monkeypatch.setitem(sys.modules, "datasets", mod)
+
+
+def test_load_hf_dataset_maps_string_label_column(monkeypatch):
+    rows = [
+        {"image": Image.new("RGB", (4, 4)), "emotion": "amusement", "label": 0},
+        {"image": Image.new("RGB", (4, 4)), "emotion": "awe", "label": 1},
+    ]
+    _stub_datasets(monkeypatch, rows)
+    pairs = validate_probe.load_hf_dataset("stub", n=2, label_key="emotion")
+    assert sorted(e for _, e in pairs) == ["joy", "surprise"]
+
+
+def test_load_hf_dataset_fails_loudly_when_nothing_maps(monkeypatch):
+    # EmoSet118K shape: `label` is a bare int with no ClassLabel names.
+    rows = [{"image": Image.new("RGB", (4, 4)), "label": 0}]
+    _stub_datasets(monkeypatch, rows)
+    with pytest.raises(ValueError, match="label-key"):
+        validate_probe.load_hf_dataset("stub", n=1)
