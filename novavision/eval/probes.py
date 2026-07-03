@@ -9,6 +9,7 @@ across more than one of them.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -18,7 +19,6 @@ from novavision.taxonomy import (
     AROUSAL_LADDER,
     EMOTION_PROMPTS,
     EMOTIONS,
-    NEUTRAL,
     VALENCE_LADDER,
     prior,
 )
@@ -72,29 +72,52 @@ class HFImageClassifierProbe(Probe):
         self.device = device
         self.name = f"img:{model_id.rsplit('/', 1)[-1]}"
         self._pipe: Any = None
+        self._top_k: int | None = None
 
     def _load(self):
         if self._pipe is None:
             from transformers import pipeline
 
-            self._pipe = pipeline(
+            pipe = pipeline(
                 "image-classification",
                 model=self.model_id,
                 revision=self.revision,
                 device=0 if self.device == "cuda" else -1,
-                top_k=None,
             )
+            # Assign only after the coverage check, so a failed load stays retryable.
+            self.mapped_labels = self._check_label_coverage(pipe.model.config.id2label)
+            # transformers drops top_k=None and defaults to top 5, which could leave
+            # zero mappable labels for one image; ask for every label explicitly.
+            self._top_k = int(pipe.model.config.num_labels)
+            self._pipe = pipe
+
+    def _check_label_coverage(self, id2label: Mapping) -> list[str]:
+        """Fail at load time if no model label reaches the Ekman set."""
+        mapped = sorted(
+            {self.label_map.get(str(v).lower(), str(v).lower()) for v in id2label.values()}
+            & set(EMOTIONS)
+        )
+        if not mapped:
+            raise ValueError(
+                f"{self.model_id}: none of its labels map to the Ekman set; pass label_map"
+            )
+        return mapped
 
     def recover(self, image: Image.Image) -> Recovery:
         self._load()
         known = set(EMOTIONS)
         scores: dict[str, float] = {}
-        for pred in self._pipe(image):
+        preds = self._pipe(image, top_k=self._top_k) if self._top_k else self._pipe(image)
+        for pred in preds:
             label = pred["label"].lower()
             label = self.label_map.get(label, label)
             if label in known:
                 scores[label] = scores.get(label, 0.0) + float(pred["score"])
-        emotion = max(scores, key=lambda k: scores[k]) if scores else NEUTRAL
+        if not scores:
+            # A silent `neutral` here would be indistinguishable from a genuine
+            # neutral prediction and inflate the collapse diagnostic.
+            raise RuntimeError(f"{self.model_id} produced no Ekman-mappable labels for this image")
+        emotion = max(scores, key=lambda k: scores[k])
         v, a = prior(emotion)
         return Recovery(emotion, v, a, scores)
 
