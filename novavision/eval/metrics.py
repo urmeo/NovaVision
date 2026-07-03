@@ -40,7 +40,7 @@ def permutation_test(
     The recovery metric writes an emotion into the prompt and reads one back, so a
     high score could reflect prompt/probe agreement rather than image content. This
     permutes the intended labels many times and recomputes accuracy to build the
-    null distribution of recovery under *random* targets — the circularity
+    null distribution of recovery under *random* targets, the circularity
     baseline. Returns the observed accuracy, the null mean and 95% interval, and a
     one-sided p-value ``P(null >= observed)``. A small p means recovery tracks the
     real image/label correspondence, not chance agreement; ``p`` near 1 means the
@@ -91,7 +91,7 @@ def majority_baseline(y_true: Sequence[str]) -> float:
 
 
 def prediction_collapse(y_pred: Sequence[str]) -> dict:
-    """How concentrated a probe's predictions are — a degeneracy diagnostic.
+    """How concentrated a probe's predictions are, a degeneracy diagnostic.
 
     Returns the probe's most frequent output, the fraction of items it was
     assigned (``rate``: 1.0 means the probe predicted one label for everything),
@@ -139,7 +139,7 @@ def cohen_kappa(a: Sequence[str], b: Sequence[str], labels: Sequence[str]) -> fl
 
 
 def mae(x: Sequence[float], y: Sequence[float]) -> float:
-    """Mean absolute error — an interpretable companion to the VA correlations."""
+    """Mean absolute error, an interpretable companion to the VA correlations."""
     xa = np.asarray(x, dtype=float)
     ya = np.asarray(y, dtype=float)
     if len(xa) == 0:
