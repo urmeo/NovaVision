@@ -83,9 +83,10 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
-# IDE
+# IDE / local agent tooling
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 
