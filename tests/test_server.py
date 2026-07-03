@@ -109,3 +109,48 @@ def test_generate_requires_token_when_set(client, monkeypatch):
         headers={"Authorization": "Bearer s3cret"},
     )
     assert ok.status_code == 200
+
+
+def test_generate_unknown_style_rejected(client):
+    resp = client.post("/api/generate", json={"text": "i feel great", "style": "<script>"})
+    assert resp.status_code == 400
+    assert "style" in resp.get_json()["error"].lower()
+
+
+def test_generate_seed_must_fit_64_bits(client):
+    ok = client.post("/api/generate", json={"text": "i feel great", "seed": 2**63 - 1})
+    assert ok.status_code == 200
+    for bad in (2**63, -(2**63), 10**30):
+        resp = client.post("/api/generate", json={"text": "i feel great", "seed": bad})
+        assert resp.status_code == 400
+
+
+def test_oversize_body_rejected(client):
+    body = '{"text": "' + "x" * (33 * 1024) + '"}'
+    resp = client.post("/api/analyze", data=body, content_type="application/json")
+    assert resp.status_code == 413
+
+
+def test_worst_case_legal_body_fits_under_cap(client):
+    # 2000 astral chars JSON-escape to ~24 KB on the wire; length is counted in
+    # characters, so this request is legal and must not be rejected by the cap.
+    import json as _json
+
+    body = _json.dumps({"text": "\U0001f600" * 1999, "style": "artistic", "seed": 1})
+    resp = client.post("/api/generate", data=body, content_type="application/json")
+    assert resp.status_code == 200
+
+
+def test_nonstandard_json_seed_literals_rejected(client):
+    # Flask's JSON parser admits Infinity/NaN; they must 400, never 500.
+    for literal in ("Infinity", "-Infinity", "NaN", "true"):
+        body = '{"text": "i feel great", "seed": ' + literal + "}"
+        resp = client.post("/api/generate", data=body, content_type="application/json")
+        assert resp.status_code == 400, literal
+
+
+def test_non_dict_json_bodies_rejected(client):
+    for body in ("[1, 2]", '"abc"', "123", "true"):
+        for route in ("/api/analyze", "/api/generate"):
+            resp = client.post(route, data=body, content_type="application/json")
+            assert resp.status_code == 400, (route, body)
