@@ -30,7 +30,7 @@ jobs:
       - name: Ruff format check
         run: ruff format --check novavision tests scripts server.py app.py
       - name: mypy
-        run: mypy novavision --ignore-missing-imports
+        run: mypy novavision  # flags live in [tool.mypy], shared with local runs
 
   test:
     name: Test (Python ${{ matrix.python-version }})
