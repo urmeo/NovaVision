@@ -51,3 +51,11 @@ def test_hf_api_forwards_negative_prompt_for_non_turbo(monkeypatch):
     bt._client = FakeClient()
     bt.generate("p", width=8, height=8, seed=3, negative_prompt="blurry")
     assert sent["negative_prompt"] is None
+
+
+def test_diffusers_dtype_known_before_first_generation():
+    from novavision.generation.diffusers_backend import DiffusersBackend
+
+    # The manifest reads backend.dtype; it must exist without loading the pipe.
+    assert DiffusersBackend(device="cpu").dtype == "float32"
+    assert DiffusersBackend(device="cuda").dtype == "float16"
