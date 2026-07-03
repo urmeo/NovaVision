@@ -73,3 +73,27 @@ def test_malformed_lexicon_line_raises(tmp_path):
     bad.write_text("word\tvalence\tarousal\nhappy\thigh\t0.5\n")
     with pytest.raises(ValueError):
         AffectLexicon.load(bad)
+
+
+def test_negation_flips_valence():
+    lex = AffectLexicon({"happy": (0.8, 0.7)})
+    assert lex.score("not happy").valence == -0.8
+    assert lex.score("i am never happy").valence == -0.8
+    assert lex.score("happy").valence == 0.8
+
+
+def test_stopwords_are_not_scored_or_counted():
+    lex = AffectLexicon({"happy": (0.8, 0.7), "the": (0.9, 0.9)})
+    s = lex.score("the happy dog")
+    assert s.valence == 0.8  # "the" never scores, even when the lexicon has it
+    assert s.coverage == 0.5  # matched 1 of 2 content words (happy, dog)
+
+
+def test_smart_quote_negation_still_flips():
+    lex = AffectLexicon({"happy": (0.8, 0.7)})
+    assert lex.score("i can’t be happy").valence == -0.8
+
+
+def test_inflection_cannot_stem_into_a_function_word():
+    lex = AffectLexicon({"will": (0.5, 0.5), "happy": (0.8, 0.7)})
+    assert lex.lookup("wills") is None  # "wills" must not score via "will"

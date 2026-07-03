@@ -9,6 +9,29 @@ from pathlib import Path
 
 _TOKEN = re.compile(r"[a-z][a-z']+")
 
+# Function words are never scored: with a research lexicon (e.g. Warriner) they
+# match ("does" even stems to "doe", the deer) and dilute or distort the score.
+# Kept out of the coverage denominator too, so coverage means "fraction of
+# content words matched". Negators are excluded the same way but drive the
+# negation flip below.
+STOPWORDS = frozenset(
+    """
+a an the and or but if because as of at by for with about into onto over under
+again then once here there when where why how all any both each few more most
+other some such than too very just own same so that this these those me my mine
+we us our ours you your yours he him his she her hers it its they them their
+theirs what which who whom am is are was were be been being have has had having
+do does did doing done will would shall should can could may might must ought
+to from in on out off it's i'm i've i'll you're we're they're he's she's that's
+there's
+""".split()
+)
+
+NEGATORS = frozenset(
+    "not no never nor cannot can't don't doesn't didn't isn't wasn't aren't "
+    "weren't won't wouldn't couldn't shouldn't ain't without".split()
+)
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DEFAULT_PATH = _REPO_ROOT / "data" / "lexicon" / "affect_lexicon.tsv"
 
@@ -17,7 +40,7 @@ _DEFAULT_PATH = _REPO_ROOT / "data" / "lexicon" / "affect_lexicon.tsv"
 class AffectScore:
     valence: float
     arousal: float
-    coverage: float  # fraction of tokens matched
+    coverage: float  # fraction of content words matched (stopwords excluded)
 
 
 def _variants(token: str):
@@ -69,25 +92,37 @@ class AffectLexicon:
 
     def lookup(self, word: str) -> tuple[float, float] | None:
         for v in _variants(word.lower()):
+            if v in STOPWORDS or v in NEGATORS:
+                continue  # "wills" must not stem into a scored "will"
             if v in self._entries:
                 return self._entries[v]
         return None
 
     def score(self, text: str) -> AffectScore:
-        tokens = _TOKEN.findall(text.lower())
-        if not tokens:
-            return AffectScore(0.0, 0.5, 0.0)
-
-        hits = [self.lookup(t) for t in tokens]
-        matched = [h for h in hits if h is not None]
+        # Smart quotes (U+2019) would otherwise split "can’t" into can|t and
+        # silently defeat the negation flip on text typed from phones.
+        tokens = _TOKEN.findall(text.lower().replace("’", "'"))
+        matched: list[tuple[float, float]] = []
+        n_content = 0
+        for i, tok in enumerate(tokens):
+            if tok in STOPWORDS or tok in NEGATORS:
+                continue
+            n_content += 1
+            hit = self.lookup(tok)
+            if hit is None:
+                continue
+            v, a = hit
+            # Two-token lookback negation: "not happy" must not score as happy.
+            # Scope and degree ("hardly", "barely") are deliberately unmodeled.
+            if any(t in NEGATORS for t in tokens[max(0, i - 2) : i]):
+                v = -v
+            matched.append((v, a))
         if not matched:
             return AffectScore(0.0, 0.5, 0.0)
 
         valence = sum(v for v, _ in matched) / len(matched)
         arousal = sum(a for _, a in matched) / len(matched)
-        return AffectScore(
-            round(valence, 4), round(arousal, 4), round(len(matched) / len(tokens), 4)
-        )
+        return AffectScore(round(valence, 4), round(arousal, 4), round(len(matched) / n_content, 4))
 
     @classmethod
     def load(cls, path: str | os.PathLike | None = None) -> AffectLexicon:
