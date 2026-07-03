@@ -70,7 +70,7 @@ def metrics_table(metrics: dict) -> str:
         lines.append(
             f"**Probe health:** the probe used {health['distinct_labels']}/{health['n_labels']} "
             f"emotion labels across the conditioning tiers, predicting "
-            f"'{health['majority_label']}' for {health['majority_rate']:.0%} of items, every "
+            f"'{health['majority_label']}' for {health['majority_rate']:.0%} of items; every "
             "recovery number must be read against this degeneracy."
         )
     shuffled = _shuffled_note(metrics)
