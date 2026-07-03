@@ -39,6 +39,13 @@ use and tests. It is illustrative, not empirical norms. For research, replace it
 - **NRC-VAD** (Mohammad, 2018): obtain under its terms and supply as a
   `word<TAB>valence<TAB>arousal` TSV; point `NOVAVISION_LEXICON` at it.
 
+Scoring skips function words (with a research lexicon they would otherwise match and
+distort the average) and applies a two-token negation flip to valence, so "not happy"
+scores negative. Arousal is not adjusted under negation ("not calm" keeps calm's low
+arousal), longer-range negation scope, double negation, and degree adverbs are not
+modeled, and stopwords count toward the two-token window; coverage is the fraction of
+content words matched.
+
 ## Licensing
 
 Project code: MIT. The shipped demo lexicon is original to NovaVision (MIT). Derived/external
