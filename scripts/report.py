@@ -10,11 +10,11 @@ CONDITIONS = ("raw", "naive", "emotion", "affect", "scene", "shuffled")
 
 
 def _fmt(x) -> str:
-    return "–" if x is None or (isinstance(x, float) and x != x) else f"{x:.3f}"
+    return "n/a" if x is None or (isinstance(x, float) and x != x) else f"{x:.3f}"
 
 
 def _rho(m: dict, key: str) -> str:
-    """Correlation with its bootstrap CI when available — never a bare 3-decimal."""
+    """Correlation with its bootstrap CI when available, never a bare 3-decimal."""
     rho = m.get(key)
     ci = m.get(f"{key}_ci")
     if ci and not (isinstance(ci[0], float) and ci[0] != ci[0]):
@@ -35,7 +35,7 @@ def _shuffled_note(metrics: dict) -> str:
     base = f" (null mean {null['null_mean']:.3f})" if null else ""
     return (
         "**Shuffled-label control:** one-sided permutation test of recovery vs randomly "
-        f"reassigned target emotions{base} — {', '.join(parts)}. A p near 1 means recovery is "
+        f"reassigned target emotions{base}: {', '.join(parts)}. A p near 1 means recovery is "
         "indistinguishable from the circularity baseline, i.e. not above chance label agreement."
     )
 
@@ -70,7 +70,7 @@ def metrics_table(metrics: dict) -> str:
         lines.append(
             f"**Probe health:** the probe used {health['distinct_labels']}/{health['n_labels']} "
             f"emotion labels across the conditioning tiers, predicting "
-            f"'{health['majority_label']}' for {health['majority_rate']:.0%} of items — every "
+            f"'{health['majority_label']}' for {health['majority_rate']:.0%} of items, every "
             "recovery number must be read against this degeneracy."
         )
     shuffled = _shuffled_note(metrics)

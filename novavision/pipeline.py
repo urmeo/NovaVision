@@ -75,7 +75,7 @@ class NovaVision:
 
 
 def build_pipeline(settings=None) -> NovaVision:
-    """Construct the pipeline from settings — the one factory both entry points use.
+    """Construct the pipeline from settings, the one factory both entry points use.
 
     Heavy backends stay lazy (no model loads here), so importing this is cheap; the
     Flask API and the Gradio app call it instead of assembling the pipeline by hand,

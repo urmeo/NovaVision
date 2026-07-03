@@ -2,7 +2,7 @@
 
 This repository's [MIT LICENSE](LICENSE) covers **the NovaVision source code only**.
 It does **not** relicense the model weights, datasets, or affect norms the code can
-download or call — those keep their own terms, several of which are **non-commercial**.
+download or call. Those keep their own terms, several of which are **non-commercial**.
 Confirm each before any commercial use.
 
 ## Model weights (downloaded at runtime, not redistributed here)
@@ -14,7 +14,7 @@ Confirm each before any commercial use.
 | `j-hartmann/emotion-english-distilroberta-base` | text emotion classifier | see model card (base DistilRoBERTa is Apache-2.0) | Check the model card for the fine-tuned checkpoint's terms. |
 
 The hosted `hf-api` backend can target any HF text-to-image model; the model you point
-it at carries its own license (e.g. `black-forest-labs/FLUX.1-dev` is non-commercial — it
+it at carries its own license (e.g. `black-forest-labs/FLUX.1-dev` is non-commercial, it
 is **not** a default here).
 
 ## Datasets (downloaded by the user, not redistributed here)
@@ -26,7 +26,7 @@ is **not** a default here).
 
 ## Affect lexicon
 
-- **Shipped file — `data/lexicon/affect_lexicon.tsv`:** a small **original demo lexicon**
+- **Shipped file, `data/lexicon/affect_lexicon.tsv`:** a small **original demo lexicon**
   authored for NovaVision, covered by this repo's MIT license. It is for offline use and
   tests, not a research-grade resource.
 - **Warriner et al. (2013) norms** (`scripts/download_lexicon.py`): fetched by the user
@@ -38,7 +38,7 @@ is **not** a default here).
 
 ## Summary
 
-- **Code:** MIT — reuse freely.
+- **Code:** MIT, reuse freely.
 - **Weights/data/norms:** keep their own terms. For **commercial** use, the binding
   constraints are SD-Turbo (Stability membership) and any non-commercial lexicon you add
   (NRC-VAD). Swap SD-Turbo for a permissively-licensed generator and use a CC-BY/Apache
