@@ -49,6 +49,17 @@ Paired contrasts (bootstrap on per-item recovery):
 
 The full write-up, figures, and confidence intervals are in [paper/paper.md](paper/paper.md).
 
+## Limitations & intended use
+
+Read the headline number as a calibration of the instrument, not a controllability score. The committed pilot is an honest null.
+
+- **The probe is the binding limitation.** Recovery is measured by an off-the-shelf CLIP ViT-B/32 probe, which is a proxy for human perception. It is weak out of domain (29.0% on faces) and *degenerate in domain* — it collapses onto `neutral` on generated scenes, using only 2 of 7 labels. Until a probe is validated to resolve more than two emotions in domain, no recovery number — including a null — is interpretable as controllability, which is why the powered run is deliberately withheld.
+- **A chance-level result is uninformative on its own.** A probe collapsed onto one label scores at the majority-class baseline (= chance on balanced labels) regardless of the image, so "raw at chance" is consistent with both a working protocol and a broken probe. Every number is reported beside its majority baseline and the `probe_health` collapse diagnostic.
+- **Small n.** The committed pilot is n=14 per tier (n=7 for `scene`) at a single seed; bootstrap CIs on valence/arousal span most of [-1, 1] and no tier clears the shuffled-label control. The harness loops seeds and pairs contrasts, but seed variance is only estimated once the powered configuration is run.
+- **"Emotional controllability" is subjective.** The target labels are the six Ekman emotions plus neutral — a coarse, culturally-situated scheme that omits mixed and compound affect; whether a rendered image "conveys" an emotion is a human judgement the CLIP proxy only approximates. Mixed/compound emotions are out of scope.
+- **Emotion-label validity.** The text track derives from GoEmotions, which is Reddit-English with modest Ekman-level inter-annotator agreement (κ ≈ 0.33–0.44) and demographic skew; AffectBench inherits that bias and rare classes (notably `disgust`) are underpowered. Labels are text-emotion labels, not image-affect ground truth.
+- **Not for deployment.** This is a research protocol, harness, and single-generator/single-probe pilot — not a product, an emotion-recognition system, or an affective-state detector. Do not use it to infer, score, or act on any person's emotions, and do not treat its outputs as a validated measure of what an image makes people feel. The web app is a demo of the pipeline, not a service.
+
 ## How it works
 
 - **Detect:** a DistilRoBERTa classifier (`affect/analyzer.py`) scores the six Ekman emotions plus neutral (seven labels) in the input text.
