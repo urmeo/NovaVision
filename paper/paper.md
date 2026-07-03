@@ -7,13 +7,13 @@
 > numbers are a CPU **pilot** (`make pilot`); `make reproduce` is the powered
 > configuration. The pilot's purpose is to show the protocol and its diagnostics run
 > end-to-end and that the recovery probe is currently too weak to support any positive
-> claim — not to report a controllability result.
+> claim, not to report a controllability result.
 
 ## Abstract
 
 Emotional text-to-image generation is usually judged by inspection, which conflates the emotion
 *intended* by the prompt with the emotion an image actually conveys. A natural automatic
-alternative — condition on an emotion, then recover it from the image with a zero-shot probe —
+alternative, condition on an emotion, then recover it from the image with a zero-shot probe,
 is easy to get wrong: if the conditioning paints a fixed per-emotion scene and the probe is
 written to match it, "recovery" becomes a tautology. We make the protocol honest. Image
 *content* is held independent of the intended emotion, emotion enters only as a modifier, and
@@ -21,9 +21,9 @@ the headline number is bounded by two floors a tautology cannot beat: a no-emoti
 (chance) and a template-only ceiling (pure scene recognition). We report every tier with
 bootstrap confidence intervals and a paired significance test, and release **AffectBench**, a
 frozen, datasheeted GoEmotions-derived benchmark, for a text-conditioned track. The contribution
-is the protocol and artifact — designed around its failure modes — not a single controllability
+is the protocol and artifact, designed around its failure modes, not a single controllability
 score. We also validate the recovery probe and find that CLIP zero-shot is a **weak instrument**:
-29% accuracy out of domain (on faces) and, worse, *degenerate in domain* — on the generated
+29% accuracy out of domain (on faces) and, worse, *degenerate in domain*: on the generated
 scenes it collapses onto `neutral` (2 of 7 labels, 90% of items). Every recovery number, including
 our reported null, is read against that ceiling, and we withhold the powered run until the probe
 can see more than two of seven emotions in the domain it is used.
@@ -31,13 +31,13 @@ can see more than two of seven emotions in the domain it is used.
 ## 1. Introduction
 
 Given an intended emotion, does a conditioned generator produce an image whose emotion a probe
-recovers as the intended one — and does that signal come from the *method* rather than from a
+recovers as the intended one, and does that signal come from the *method* rather than from a
 canned scene or a probe written to agree with the prompt? We answer with an automatic protocol
 designed around its own failure modes, rather than a single accuracy number taken at face value.
 
 Our claim is deliberately modest and falsifiable: conditioning must beat a no-emotion control,
 and must add information beyond a fixed template, with the difference significant under a paired
-test. If it does not, we report the null — a rigorous null with a bounded instrument is more
+test. If it does not, we report the null: a rigorous null with a bounded instrument is more
 useful than a circular positive.
 
 ## 2. Related work
@@ -45,9 +45,9 @@ useful than a circular positive.
 Affect is represented with the circumplex model of valence and arousal [@russell1980]. Text
 emotion is read with a DistilRoBERTa classifier [@hartmann2022] and lexical affect with
 empirical norms [@warriner2013; @mohammad2018]. Image-level emotion has its own datasets and
-classifiers — FI [@you2016building], affective classification from psychology/art features
+classifiers: FI [@you2016building], affective classification from psychology/art features
 [@machajdik2010], EMOTIC [@kosti2017emotion], WEBEmo [@panda2018contemplating], ArtEmis [@achlioptas2021artemis], and the
-large-scale EmoSet [@yang2023emoset] — which we use to *validate the probe* rather than to condition.
+large-scale EmoSet [@yang2023emoset], which we use to *validate the probe* rather than to condition.
 Generation uses latent diffusion [@rombach2022; @sauer2023]; emotion-conditioned diffusion such
 as EmoGen [@yang2024emogen], EmotiCrafter [@yang2024emoticrafter], and CoEmoGen [@li2025coemogen]
 motivates the task and supplies the natural baselines for cross-system comparison under our
@@ -62,10 +62,10 @@ intended emotion $e$, the prompt is assembled so that $x$ supplies the depicted 
 supplies only a mood/affect modifier. Content is never selected by $e$; the same content is
 rendered under every emotion. Conditioning increases over four tiers, which form the ablation:
 
-- **raw** — content and style only (no emotion); the *control*.
-- **naive** — appends the bare emotion word (the minimal "emotion adjective" baseline, §5).
-- **emotion** — adds an engineered mood modifier for $e$.
-- **affect** — also injects valence/arousal cues (palette, lighting), grounded in continuous
+- **raw**: content and style only (no emotion); the *control*.
+- **naive**: appends the bare emotion word (the minimal "emotion adjective" baseline, §5).
+- **emotion**: adds an engineered mood modifier for $e$.
+- **affect**: also injects valence/arousal cues (palette, lighting), grounded in continuous
   affect ($v = c\,v_{lex} + (1-c)\,v_{prior}$, lexicon-weighted and blended with the circumplex
   prior by coverage $c$). This blend is a **heuristic**, not a fitted model: $c$ is the lexical
   coverage of the input, and the convex combination is not yet validated against held-out VAD
@@ -74,7 +74,7 @@ rendered under every emotion. Conditioning increases over four tiers, which form
 
 **Floors and controls.** Two conditions bound the claim. **raw** is the *negative* control (no
 emotion → recovery should sit at chance, $1/7$). **scene** renders a fixed per-emotion template
-with *no* content; it measures pure template recognition and doubles as a *positive* control — a
+with *no* content; it measures pure template recognition and doubles as a *positive* control: a
 probe that can read any emotion at all should score highest here, so `scene` $>$ `raw` is the
 sanity check that the instrument is not blind. A method is only credible if it clears the
 negative control and adds signal over the template. Crucially, "raw at chance" is *not* on its
@@ -101,7 +101,7 @@ entirely; validating the headline under this probe is a prerequisite, not an opt
 default CLIP probe is reported only with its measured error (§7). (iii) A **shuffled-label
 control** quantifies the circularity baseline directly: we permute the intended labels and
 recompute recovery to build the null distribution under *random* targets, and report a one-sided
-permutation p-value per tier (§5–6). Recovery is evidence only when it clears this shuffled-label
+permutation p-value per tier (§5 to 6). Recovery is evidence only when it clears this shuffled-label
 null with a non-degenerate probe.
 
 ## 4. AffectBench
@@ -110,7 +110,7 @@ The primary track conditions on a bank of twenty affect-neutral content subjects
 (`data/content_bank.txt`), so content is independent of emotion by construction. A secondary
 **text** track (§5) conditions on **AffectBench**, where valence/arousal are grounded in the
 sentence rather than the emotion prior. AffectBench is built on demand from GoEmotions
-[@demszky2020] under the official Ekman grouping — single-label examples mapped to the six Ekman
+[@demszky2020] under the official Ekman grouping: single-label examples mapped to the six Ekman
 emotions plus neutral (seven classes), sampled per class from the **test** split, and
 interleaved so any prefix stays
 balanced. Two dedup passes protect hygiene: exact duplicates are removed *within* the sample, and
@@ -121,7 +121,7 @@ probe templates, lexicon, and content bank are frozen and never tuned on these i
 (`data/DATASHEET.md`) documents composition, splits, balance, and licensing, and `load_benchmark`
 is the loader (no default path, so a run never silently uses a sample). A hand-authored sample
 ships only as a test fixture and can never produce a reported number. GoEmotions is Reddit-English
-with modest inter-annotator agreement (Ekman-level $\kappa \approx 0.33$–$0.44$), so AffectBench
+with modest inter-annotator agreement (Ekman-level $\kappa \approx 0.33$ to $0.44$), so AffectBench
 inherits that domain skew; results are scoped to *text-prompt* controllability and the realized
 $n$ per class is reported with every run (§8). Image-grounded affect (EmoSet/FI) is used to
 validate the probe (§7), not to condition.
@@ -132,20 +132,20 @@ The **content** track renders neutral content under each intended emotion (conte
 emotion by construction); its floor is `raw` (chance) and `scene` (template only). The **text**
 track conditions on AffectBench sentences using the **gold** emotion (the classifier's
 prediction is logged separately as classification accuracy); valence/arousal are text-grounded
-and continuous, and the floor is `shuffled` — condition on a *wrong* emotion and score against
+and continuous, and the floor is `shuffled`: condition on a *wrong* emotion and score against
 it, so a high value means the modifier overrides the sentence rather than the sentence leaking
 through. For each tier we report:
 
-- **Recovery accuracy / macro-F1** — recovered vs. intended emotion, with **bootstrap 95% CIs**.
-- **Valence/arousal correlation and error** — Pearson $r$, Spearman $\rho$ (both with bootstrap
+- **Recovery accuracy / macro-F1**: recovered vs. intended emotion, with **bootstrap 95% CIs**.
+- **Valence/arousal correlation and error**: Pearson $r$, Spearman $\rho$ (both with bootstrap
   CIs), and **MAE** between intended and probed affect, the last for an interpretable scale. On
   the content track the intended valence/arousal is the per-emotion prior, so this is a
   *between-emotion* check (does conditioning on "joy" raise recovered valence above "sadness"?)
   and the affect-vs-emotion delta only measures palette/lighting cues; the **text track** is
   where continuous, text-grounded valence/arousal makes affect grounding an independent,
   testable variable.
-- **CLIP-T** — image/text alignment, to confirm content is preserved.
-- **Shuffled-label control** — a one-sided permutation test ($n=2000$) of each tier's recovery
+- **CLIP-T**: image/text alignment, to confirm content is preserved.
+- **Shuffled-label control**: a one-sided permutation test ($n=2000$) of each tier's recovery
   against randomly reassigned target emotions, reporting the null mean, 95% interval, and p-value.
   This is the circularity baseline: recovery counts only when it clears the shuffled-label null.
 
@@ -156,8 +156,8 @@ over $S$ seeds (`--seeds`, default $S=3$ in `make reproduce`; the committed pilo
 and the **same seed is shared across tiers per item** so contrasts are paired on generation noise
 and significance is taken over the (item, seed) population, not a single draw.
 
-**Baselines.** The conditioning tiers are an internal ablation, with **`naive`** — appending the
-bare emotion word to the content — serving as the minimal "emotion adjective" baseline that any
+**Baselines.** The conditioning tiers are an internal ablation, with **`naive`**, appending the
+bare emotion word to the content, serving as the minimal "emotion adjective" baseline that any
 method must beat. We do not yet compare against external emotion-conditioned generators
 (EmoGen [@yang2024emogen], EmotiCrafter [@yang2024emoticrafter], CoEmoGen [@li2025coemogen]); the
 harness is built for it (`--diffusion-model`, `--style`, `--probe` swap the system under test
@@ -165,8 +165,8 @@ while holding the protocol fixed), but the shipped runs cover one generator, so 
 shows internal monotonicity, not yet a ranked contribution against the field. Cross-system
 comparison under this protocol is the natural next artifact.
 
-Generator: SD-Turbo. Probe: CLIP ViT-B/32. The full run manifest — library
-versions, git SHA, device, dtype, model revisions, and the benchmark hash — is logged to
+Generator: SD-Turbo. Probe: CLIP ViT-B/32. The full run manifest, library
+versions, git SHA, device, dtype, model revisions, and the benchmark hash, is logged to
 `results/paper/results.json`.
 
 ## 6. Results
@@ -188,11 +188,11 @@ run is in `results/paper/`.
 | raw | 0.143 [0.000, 0.357] | 0.038 | 0.076 [-0.47, 0.55] | 0.546 [-0.00, 0.90] | 0.280 | 14 |
 | emotion | 0.214 [0.000, 0.429] | 0.112 | 0.474 [-0.03, 0.78] | 0.474 [-0.03, 0.80] | 0.274 | 14 |
 | affect | 0.214 [0.000, 0.429] | 0.133 | 0.241 [-0.30, 0.65] | 0.618 [0.19, 0.86] | 0.270 | 14 |
-| scene | 0.286 [0.000, 0.575] | 0.184 | 0.414 [-0.63, 1.00] | 0.582 [-0.43, 0.99] | – | 7 |
+| scene | 0.286 [0.000, 0.575] | 0.184 | 0.414 [-0.63, 1.00] | 0.582 [-0.43, 0.99] | n/a | 7 |
 
 Chance = 0.143 (1/7); majority-class baseline = 0.143. A probe collapsed onto one label scores here, so recovery is only informative *above* it.
-**Probe health:** the probe used 2/7 emotion labels across the conditioning tiers, predicting 'neutral' for 90% of items — every recovery number must be read against this degeneracy.
-**Shuffled-label control:** one-sided permutation test of recovery vs randomly reassigned target emotions (null mean 0.142) — emotion p=0.23, affect p=0.14. A p near 1 means recovery is indistinguishable from the circularity baseline, i.e. not above chance label agreement.
+**Probe health:** the probe used 2/7 emotion labels across the conditioning tiers, predicting 'neutral' for 90% of items, every recovery number must be read against this degeneracy.
+**Shuffled-label control:** one-sided permutation test of recovery vs randomly reassigned target emotions (null mean 0.142): emotion p=0.23, affect p=0.14. A p near 1 means recovery is indistinguishable from the circularity baseline, i.e. not above chance label agreement.
 † On neutral content the intended valence/arousal is the per-emotion prior, so these correlations reflect between-emotion separation, not within-emotion grounding.
 ‡ ρ is shown with its bootstrap 95% CI; at small n the interval spans most of [-1, 1], so the point estimate should not be over-read.
 
@@ -209,7 +209,7 @@ Chance = 0.143 (1/7); majority-class baseline = 0.143. A probe collapsed onto on
 The committed run is a small CPU **pilot** (256-px, 2 content subjects, single seed →
 $n=14$ per tier), produced by `make pilot` at the recorded git SHA; full provenance is in the
 manifest. It is reported not as evidence *for* controllability but as a demonstration that the
-protocol, its floors, and its diagnostics run end-to-end — and, just as importantly, that the
+protocol, its floors, and its diagnostics run end-to-end, and, just as importantly, that the
 **instrument is too weak to draw any positive conclusion from**. Three things to read together:
 
 1. **The probe has collapsed in-domain.** The `probe_health` diagnostic (reported with every run)
@@ -217,14 +217,14 @@ protocol, its floors, and its diagnostics run end-to-end — and, just as import
    predicting `neutral` for the large majority of generated scenes. This single fact governs
    everything below.
 2. **The floors are therefore necessary but not sufficient.** `raw` sits at chance ($0.143$) and
-   the `scene` positive control is the highest condition ($0.286$) — consistent with the design,
+   the `scene` positive control is the highest condition ($0.286$), consistent with the design,
    but note that a probe collapsed onto one label *also* scores chance on `raw` by construction.
    We report the **majority-class baseline** beside the accuracy precisely so this cannot be
    mistaken for the floors discriminating on their own. `scene` $>$ `raw` is the one piece of
    evidence the probe is not *entirely* blind.
 3. **The "lift" is a single item and not significant.** `emotion` over `raw` is $+0.071$
    ($p=0.255$): one extra correct image out of fourteen. `affect` adds nothing over `emotion`
-   ($\Delta=0$) — expected, since on neutral content the affect cues are a deterministic function
+   ($\Delta=0$), expected, since on neutral content the affect cues are a deterministic function
    of the emotion prior (the affect grounding is an independent variable only on the text track).
 4. **No tier beats the shuffled-label control.** The permutation test against randomly reassigned
    targets gives `emotion` $p=0.23$, `affect` $p=0.14$, `scene` $p=0.14$ (null mean $0.142$):
@@ -239,13 +239,13 @@ seven emotions in the domain it is used.
 
 ## 7. Probe validation and human study
 
-The probe is a proxy for perceived emotion, so we measure how far it can be trusted — and we are
+The probe is a proxy for perceived emotion, so we measure how far it can be trusted, and we are
 careful to distinguish *where* it is measured, because a ceiling estimated out of domain does not
 describe the operating error.
 
 **Out-of-domain (faces).** `novavision.eval.validate_probe` runs the default CLIP ViT-B/32 probe
 on a held-out labelled emotion set ($n=200$, facial-expression imagery) and reports its accuracy
-and confusion. The probe recovers the Ekman emotion at only **29.0% accuracy (macro-F1 0.22)** —
+and confusion. The probe recovers the Ekman emotion at only **29.0% accuracy (macro-F1 0.22)**,
 barely twice chance. Per-class recall is bimodal: usable for `neutral` (0.81) and `anger` (0.61)
 but **near-random for surprise (0.04), fear (0.06), sadness (0.08), and disgust (0.13)**. But this
 set is *faces*, not the diffusion-generated *scenes* the benchmark actually probes, so 29% is an
@@ -253,7 +253,7 @@ optimistic out-of-domain proxy, not the operating error.
 
 **In-domain (generated scenes).** The operating error is worse. The `probe_health` diagnostic
 emitted with every run shows that, on the scenes the pipeline generates, the CLIP probe
-**collapses onto `neutral`** — it uses only a small fraction of the seven labels and assigns
+**collapses onto `neutral`**: it uses only a small fraction of the seven labels and assigns
 `neutral` to the large majority of images. A classifier that resolves essentially two of seven
 categories in the measurement domain cannot, even in principle, certify emotional controllability;
 this is why §6 reports a null and why the floors, while necessary, are not sufficient on their own.
@@ -261,16 +261,16 @@ this is why §6 reports a null and why the floors, while necessary, are not suff
 ceiling directly; an independent non-CLIP probe (`--probe hf`, `make robustness`) and a stronger
 backbone (ViT-L/14) slot into the same interface and are the prerequisite for any powered run.
 
-`novavision.eval.human_study` adds the human leg — regenerate a stratified sample, collect labels
-from three or more raters, report human-vs-probe Cohen's $\kappa$ — and is wired but unrun (needs
+`novavision.eval.human_study` adds the human leg, regenerate a stratified sample, collect labels
+from three or more raters, report human-vs-probe Cohen's $\kappa$, and is wired but unrun (needs
 raters).
 
 ## 8. Limitations
 
 - **The instrument is the binding limitation.** CLIP recovery is a proxy for human perception,
-  and §7 shows it is weak out of domain (29.0% on faces) and *degenerate in domain* — it collapses
+  and §7 shows it is weak out of domain (29.0% on faces) and *degenerate in domain*: it collapses
   onto `neutral` on generated scenes. Until a probe is validated to resolve more than two of seven
-  emotions in domain, no recovery number — including a null — is interpretable as controllability,
+  emotions in domain, no recovery number, including a null, is interpretable as controllability,
   and the powered run is deliberately withheld.
 - **A chance-level result is uninformative on its own.** A probe collapsed onto one label scores
   at the majority-class baseline (= chance on balanced labels) regardless of the image, so we
@@ -287,7 +287,7 @@ raters).
   system-ranking benchmark; the only baseline is the internal `naive` (emotion-adjective) tier,
   and cross-system comparison against EmoGen/EmotiCrafter/CoEmoGen is supported but not yet run.
 - **Dataset bias.** The text track derives from GoEmotions, which is Reddit-English with modest
-  Ekman-level inter-annotator agreement ($\kappa \approx 0.33$–$0.44$) and demographic skew;
+  Ekman-level inter-annotator agreement ($\kappa \approx 0.33$ to $0.44$) and demographic skew;
   AffectBench inherits this. The realized per-class $n$ is reported in the build manifest and is
   small for the scarce classes, so text-track numbers should be read as in-domain and underpowered
   for rare emotions.

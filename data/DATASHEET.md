@@ -1,4 +1,4 @@
-# AffectBench — datasheet
+# AffectBench: datasheet
 
 A short data card in the spirit of Gebru et al. (2021), "Datasheets for Datasets".
 
@@ -37,7 +37,7 @@ rather than from hand-written examples.
   round-robin across classes so any prefix stays balanced.
 - The GoEmotions revision is pinned; the manifest stores split, revision, seed,
   realized per-class `counts`, `total`, `dropped_train_overlap`, and a `balanced`
-  flag. **Report the realized per-class `n`** with any result — under the Ekman
+  flag. **Report the realized per-class `n`** with any result. Under the Ekman
   collapse the scarce classes (notably `disgust`) underfill.
 - No tuning touches eval items: the recovery-probe templates, the affect lexicon,
   and the content bank are authored independently and frozen before measurement.
@@ -48,7 +48,7 @@ rather than from hand-written examples.
   AffectBench are therefore scoped to *text-prompt* controllability; for image
   affect, validate the probe against an image-grounded set (see the paper).
 - **Domain bias.** GoEmotions is Reddit-English with demographic skew and modest
-  Ekman-level inter-annotator agreement ($\kappa \approx 0.33$–$0.44$).
+  Ekman-level inter-annotator agreement ($\kappa \approx 0.33$ to $0.44$).
   AffectBench inherits this; it is not a balanced sample of human affect, and
   rare-class results are underpowered.
 - The hand-authored `tests/fixtures/affectbench_sample.csv` is a **test fixture
