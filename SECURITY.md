@@ -32,11 +32,16 @@ Expect an acknowledgement within a few days.
 - **No repo-root exposure.** Flask serves only the dedicated `static/` directory, never the
   project root, so source, configs, and data are not downloadable.
 - **CORS** is disabled by default (same-origin). Set `CORS_ORIGINS` to allow specific domains.
-- Request bodies are capped at 64 KB and input text at 2000 characters.
+- Request bodies are capped at 32 KB (the worst-case wire size of a legal 2000-character
+  text, JSON-escaped) and input text at 2000 characters; `style` must be a known preset and
+  `seed` a signed 64-bit integer, so no unvalidated input is echoed back.
 - **No unsafe deserialization.** Model weights load only via Hugging Face `from_pretrained`
   (safetensors); `pickle.load`/`torch.load`/`weights_only=False`/`shell=True` are blocked by a
   CI test (`tests/test_security.py`).
 - API errors return generic messages; details are logged server-side only.
+- **Production serving.** `python server.py` runs Flask's built-in development server; for any
+  public bind, serve through a real WSGI server instead: `make serve-prod` (gunicorn, installed
+  with the `app` extra), with `BIND=0.0.0.0:8000` only behind your own hardening.
 
 ## Secrets and CI
 

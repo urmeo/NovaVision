@@ -1,4 +1,7 @@
-.PHONY: setup setup-ml test lint format app benchmark reproduce text validate-probe smoke paper repro-check
+.PHONY: setup setup-ml test lint format app serve-prod benchmark reproduce text validate-probe \
+  validate-probe-scene robustness resummarize smoke paper repro-check
+
+BIND ?= 127.0.0.1:8000
 
 setup:                  # tests, lint, benchmark build
 	python -m pip install -e ".[dev,research]"
@@ -18,6 +21,10 @@ format:
 
 app:
 	python server.py
+
+# serve-prod keeps --workers 1: the rate limiter, concurrency cap, and model live per process.
+serve-prod:             # production WSGI serving (app.run is dev-only); BIND=0.0.0.0:8000 to expose
+	python -m gunicorn --workers 1 --threads 4 --timeout 300 --bind $(BIND) server:app
 
 benchmark:              # build full AffectBench from GoEmotions
 	python -m novavision.data.build_benchmark --n 100 --out data/affectbench.csv
