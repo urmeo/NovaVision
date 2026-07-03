@@ -34,6 +34,7 @@ class DiffusersBackend(ImageBackend):
     ):
         self.model_id = model_id
         self.device = device or _pick_device()
+        self.dtype = "float16" if self.device == "cuda" else "float32"
         self.steps = steps
         self.revision = revision
         self._pipe = None
@@ -47,8 +48,7 @@ class DiffusersBackend(ImageBackend):
                     import torch
                     from diffusers import AutoPipelineForText2Image
 
-                    self.dtype = "float16" if self.device == "cuda" else "float32"
-                    dtype = torch.float16 if self.device == "cuda" else torch.float32
+                    dtype = torch.float16 if self.dtype == "float16" else torch.float32
                     pipe = AutoPipelineForText2Image.from_pretrained(
                         self.model_id, torch_dtype=dtype, revision=self.revision
                     )
