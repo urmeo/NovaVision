@@ -91,6 +91,7 @@ make app            # launch the web app at http://127.0.0.1:8000
 make smoke          # quick end-to-end run (2 subjects, 1 seed)
 
 # Reproduce the paper artifacts:
+make repro-check    # re-derive the committed headline numbers from the committed records (no models)
 make pilot          # the committed CPU pilot (256-px, 2 subjects, 1 seed -> n=14)
 make reproduce      # canonical content-track run, 512-px, 3 seeds (needs a GPU box)
 make validate-probe         # probe error on faces (out-of-domain proxy)
@@ -101,7 +102,7 @@ make paper          # regenerate the paper tables/figures from results/paper/res
 uv pip install -r requirements.lock
 ```
 
-Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **112** tests run without re-downloading models or raw data.
+Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **114** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift — so the reported numbers are locked to the outputs they came from.
 
 ## Future scope
 
