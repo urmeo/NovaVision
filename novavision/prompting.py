@@ -2,7 +2,7 @@
 
 The conditioning tiers are the ablation. Critically, the image *content* comes
 from the input (text or a content-bank subject), and emotion is layered on as a
-mood/affect modifier, content is never chosen by the emotion label. That
+mood/affect modifier; content is never chosen by the emotion label. That
 decoupling is what lets recovery be attributed to the conditioning. The old
 fixed per-emotion scenes survive only as a ``scene`` floor that measures how
 much recovery is pure template recognition.
