@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import re
+import threading
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -14,6 +15,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 
 from novavision.pipeline import NovaVision, build_pipeline
+from novavision.prompting import STYLE_PRESETS
 from novavision.serving import ConcurrencyGuard, RateLimiter, env_int, resolve_host, token_ok
 
 logging.basicConfig(level=logging.INFO)
@@ -26,7 +28,11 @@ MIN_TEXT, MAX_TEXT = 3, 2000
 _STATIC = Path(__file__).resolve().parent / "static"
 
 app = Flask(__name__, static_folder=str(_STATIC), static_url_path="")
-app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # cap request body
+# Cap request bodies just above the largest legal payload: 2000 chars of text
+# can reach ~24 KB on the wire when a client JSON-escapes astral characters
+# (😀 is 12 bytes per emoji), plus style/seed overhead. Anything
+# bigger is parser-abuse surface, not a real request.
+app.config["MAX_CONTENT_LENGTH"] = 32 * 1024
 
 # CORS is off by default (same-origin SPA). Enable by listing origins in CORS_ORIGINS.
 _origins = os.getenv("CORS_ORIGINS", "").strip()
@@ -41,12 +47,15 @@ _rate_limiter = RateLimiter(env_int("NOVA_RATE_LIMIT", 30))
 _gen_guard = ConcurrencyGuard(env_int("NOVA_MAX_CONCURRENCY", 2))
 
 _pipeline: NovaVision | None = None
+_pipeline_lock = threading.Lock()
 
 
 def pipeline() -> NovaVision:
     global _pipeline
     if _pipeline is None:
-        _pipeline = build_pipeline()
+        with _pipeline_lock:  # double-checked: concurrent cold starts must not each load models
+            if _pipeline is None:
+                _pipeline = build_pipeline()
     return _pipeline
 
 
@@ -59,8 +68,10 @@ _CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
 
 
 def _valid_text(data) -> tuple[str, str | None]:
+    # A JSON body can legally be a list/str/number; only dicts have fields.
+    data = data if isinstance(data, dict) else {}
     # Strip control characters before length-checking the prompt.
-    text = _CONTROL_CHARS.sub(" ", (data or {}).get("text", "")).strip()
+    text = _CONTROL_CHARS.sub(" ", data.get("text", "")).strip()
     if not (MIN_TEXT <= len(text) <= MAX_TEXT):
         return text, f"Text must be {MIN_TEXT}-{MAX_TEXT} characters."
     return text, None
@@ -122,21 +133,32 @@ def analyze():
 
 @app.route("/api/generate", methods=["POST"])
 def generate():
-    if not token_ok(_bearer_token()):
-        return jsonify({"error": "Unauthorized."}), 401
+    # Rate-limit before auth, so token guesses are throttled like everything else.
     if (limited := _rate_limited()) is not None:
         return limited
+    if not token_ok(_bearer_token()):
+        return jsonify({"error": "Unauthorized."}), 401
     data = request.get_json(silent=True)
+    data = data if isinstance(data, dict) else {}
     text, error = _valid_text(data)
     if error:
         return jsonify({"error": error}), 400
 
-    style = str((data or {}).get("style", "artistic")).lower()
-    raw_seed = (data or {}).get("seed")
-    try:
-        seed = random.randint(0, 2**31 - 1) if raw_seed is None else int(raw_seed)
-    except (TypeError, ValueError):
+    style = str(data.get("style", "artistic")).lower()
+    if style not in STYLE_PRESETS:
+        # Reject rather than fall back: the style is echoed in the response, and an
+        # unvalidated echo is an XSS-shaped gift to any consumer that renders it.
+        return jsonify({"error": f"Unknown style. Choose one of: {', '.join(STYLE_PRESETS)}."}), 400
+    raw_seed = data.get("seed")
+    if isinstance(raw_seed, bool):
         return jsonify({"error": "seed must be an integer."}), 400
+    try:
+        # OverflowError: Flask's JSON parser admits the nonstandard Infinity literal.
+        seed = random.randint(0, 2**31 - 1) if raw_seed is None else int(raw_seed)
+    except (TypeError, ValueError, OverflowError):
+        return jsonify({"error": "seed must be an integer."}), 400
+    if abs(seed) >= 2**63:
+        return jsonify({"error": "seed must fit in a signed 64-bit integer."}), 400
 
     # Concurrency cap: shed load rather than queue requests behind a slow GPU job.
     if not _gen_guard.acquire():
@@ -176,5 +198,9 @@ if __name__ == "__main__":
     host = resolve_host()
     port = int(os.getenv("PORT", "8000"))
     if host == "0.0.0.0":  # noqa: S104 - explicit operator opt-in
-        logger.warning("Binding 0.0.0.0 (public). Set NOVA_API_TOKEN to protect /api/generate.")
+        logger.warning(
+            "Binding 0.0.0.0 (public). Set NOVA_API_TOKEN to protect /api/generate, and "
+            "serve through a real WSGI server (make serve-prod); Flask's built-in "
+            "server is for development only."
+        )
     app.run(host=host, port=port)
