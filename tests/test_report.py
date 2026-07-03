@@ -42,9 +42,9 @@ def test_render_includes_ci_and_significance():
     assert "chance" in out.lower()
 
 
-def test_nan_renders_as_dash():
-    assert report._fmt(float("nan")) == "–"
-    assert report._fmt(None) == "–"
+def test_nan_renders_as_placeholder():
+    assert report._fmt(float("nan")) == "n/a"
+    assert report._fmt(None) == "n/a"
 
 
 def test_inject_replaces_between_markers(tmp_path):

@@ -65,7 +65,7 @@ def env_int(name: str, default: int) -> int:
 
 
 class RateLimiter:
-    """Thread-safe per-key sliding-window limiter — no external dependency."""
+    """Thread-safe per-key sliding-window limiter, no external dependency."""
 
     def __init__(self, max_requests: int, window_seconds: float = 60.0, gc_threshold: int = 4096):
         self.max_requests = max_requests
@@ -113,5 +113,5 @@ class ConcurrencyGuard:
     def release(self) -> None:
         try:
             self._sem.release()
-        except ValueError:  # released more than acquired — ignore
+        except ValueError:  # released more than acquired, ignore
             pass

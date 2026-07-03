@@ -42,7 +42,7 @@ def test_resummarize_adds_collapse_diagnostic_without_touching_records(tmp_path)
 
     payload = resummarize.resummarize(path)
 
-    # Records are untouched — no images were regenerated.
+    # Records are untouched, no images were regenerated.
     assert payload["records"] == before
     # The probe-collapse diagnostic is surfaced from the real records.
     health = payload["metrics"]["probe_health"]
