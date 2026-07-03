@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-app = ["flask>=3.0", "flask-cors>=4.0", "gradio>=4.0", "gunicorn>=21"]
+app = ["flask>=3.0", "flask-cors>=4.0", "gradio>=6,<7", "gunicorn>=21"]
 ml = ["torch>=2.0", "transformers>=4.40", "diffusers>=0.27", "accelerate>=0.30", "huggingface-hub>=0.23"]
 research = ["matplotlib>=3.7", "datasets>=2.18"]
 dev = ["pytest>=8.0", "ruff>=0.5", "matplotlib>=3.7", "flask>=3.0", "flask-cors>=4.0"]
