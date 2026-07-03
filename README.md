@@ -28,7 +28,7 @@ What this pilot reports is not a controllability score, it is a calibration of t
 | `raw` (neg. control) | 0.143 [0.00, 0.357] | 0.038 | 0.076 [-0.47, 0.55] | 0.546 [-0.00, 0.90] | 0.280 | 0.857 | 14 | sits exactly at chance (1/7) |
 | `emotion` | 0.214 [0.00, 0.429] | 0.112 | 0.474 [-0.03, 0.78] | 0.474 [-0.03, 0.80] | 0.274 | 0.226 | 14 | not above the circularity baseline |
 | `affect` | 0.214 [0.00, 0.429] | 0.133 | 0.241 [-0.30, 0.65] | 0.618 [0.19, 0.86] | 0.270 | 0.137 | 14 | not above the circularity baseline |
-| `scene` (pos. control) | 0.286 [0.00, 0.575] | 0.184 | 0.414 [-0.63, 1.00] | 0.582 [-0.43, 0.99] | – | 0.145 | 7 | highest, but still n.s. |
+| `scene` (pos. control) | 0.286 [0.00, 0.575] | 0.184 | 0.414 [-0.63, 1.00] | 0.582 [-0.43, 0.99] | n/a | 0.145 | 7 | highest, but still n.s. |
 
 Chance = 0.143 (1/7); majority-class baseline = 0.143. Probe health: 2/7 labels used, `neutral` predicted for ~90% of items (majority_rate 0.9048).
 
@@ -53,12 +53,12 @@ The full write-up, figures, and confidence intervals are in [paper/paper.md](pap
 
 Read the headline number as a calibration of the instrument, not a controllability score. The committed pilot is an honest null.
 
-- **The probe is the binding limitation.** Recovery is measured by an off-the-shelf CLIP ViT-B/32 probe, which is a proxy for human perception. It is weak out of domain (29.0% on faces) and *degenerate in domain* — it collapses onto `neutral` on generated scenes, using only 2 of 7 labels. Until a probe is validated to resolve more than two emotions in domain, no recovery number — including a null — is interpretable as controllability, which is why the powered run is deliberately withheld.
+- **The probe is the binding limitation.** Recovery is measured by an off-the-shelf CLIP ViT-B/32 probe, which is a proxy for human perception. It is weak out of domain (29.0% on faces) and *degenerate in domain*: it collapses onto `neutral` on generated scenes, using only 2 of 7 labels. Until a probe is validated to resolve more than two emotions in domain, no recovery number, including a null, is interpretable as controllability, which is why the powered run is deliberately withheld.
 - **A chance-level result is uninformative on its own.** A probe collapsed onto one label scores at the majority-class baseline (= chance on balanced labels) regardless of the image, so "raw at chance" is consistent with both a working protocol and a broken probe. Every number is reported beside its majority baseline and the `probe_health` collapse diagnostic.
 - **Small n.** The committed pilot is n=14 per tier (n=7 for `scene`) at a single seed; bootstrap CIs on valence/arousal span most of [-1, 1] and no tier clears the shuffled-label control. The harness loops seeds and pairs contrasts, but seed variance is only estimated once the powered configuration is run.
-- **"Emotional controllability" is subjective.** The target labels are the six Ekman emotions plus neutral — a coarse, culturally-situated scheme that omits mixed and compound affect; whether a rendered image "conveys" an emotion is a human judgement the CLIP proxy only approximates. Mixed/compound emotions are out of scope.
-- **Emotion-label validity.** The text track derives from GoEmotions, which is Reddit-English with modest Ekman-level inter-annotator agreement (κ ≈ 0.33–0.44) and demographic skew; AffectBench inherits that bias and rare classes (notably `disgust`) are underpowered. Labels are text-emotion labels, not image-affect ground truth.
-- **Not for deployment.** This is a research protocol, harness, and single-generator/single-probe pilot — not a product, an emotion-recognition system, or an affective-state detector. Do not use it to infer, score, or act on any person's emotions, and do not treat its outputs as a validated measure of what an image makes people feel. The web app is a demo of the pipeline, not a service.
+- **"Emotional controllability" is subjective.** The target labels are the six Ekman emotions plus neutral: a coarse, culturally-situated scheme that omits mixed and compound affect; whether a rendered image "conveys" an emotion is a human judgement the CLIP proxy only approximates. Mixed/compound emotions are out of scope.
+- **Emotion-label validity.** The text track derives from GoEmotions, which is Reddit-English with modest Ekman-level inter-annotator agreement (κ ≈ 0.33 to 0.44) and demographic skew; AffectBench inherits that bias and rare classes (notably `disgust`) are underpowered. Labels are text-emotion labels, not image-affect ground truth.
+- **Not for deployment.** This is a research protocol, harness, and single-generator/single-probe pilot, not a product, an emotion-recognition system, or an affective-state detector. Do not use it to infer, score, or act on any person's emotions, and do not treat its outputs as a validated measure of what an image makes people feel. The web app is a demo of the pipeline, not a service.
 
 ## How it works
 
@@ -113,7 +113,7 @@ make paper          # regenerate the paper tables/figures from results/paper/res
 uv pip install -r requirements.lock
 ```
 
-Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **114** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift — so the reported numbers are locked to the outputs they came from.
+Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **114** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift, so the reported numbers stay locked to the outputs they came from.
 
 ## Future scope
 
