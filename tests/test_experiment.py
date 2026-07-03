@@ -137,3 +137,22 @@ def test_text_track_requires_benchmark(monkeypatch):
         raise AssertionError("expected ValueError")
     except ValueError:
         pass
+
+
+def test_seed_injective_within_guarded_domain():
+    seen = set()
+    for ci in range(run.SEED_MAX_ITEMS):
+        for ei in range(len(EMOTIONS)):
+            for sk in range(run.SEED_MAX_SEEDS):
+                seen.add(run._seed(0, ci, ei, sk))
+    assert len(seen) == run.SEED_MAX_ITEMS * len(EMOTIONS) * run.SEED_MAX_SEEDS
+
+
+def test_seed_domain_guard():
+    run._check_seed_domain(run.SEED_MAX_ITEMS, run.SEED_MAX_SEEDS)  # boundary is fine
+    for items, seeds in ((run.SEED_MAX_ITEMS + 1, 1), (1, run.SEED_MAX_SEEDS + 1)):
+        try:
+            run._check_seed_domain(items, seeds)
+            raise AssertionError("expected ValueError")
+        except ValueError:
+            pass
