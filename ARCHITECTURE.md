@@ -11,8 +11,9 @@ text ─► EmotionAnalyzer ─► (emotion, valence, arousal) ─► build_prom
 
 1. **EmotionAnalyzer** (`affect/analyzer.py`): DistilRoBERTa gives discrete-emotion scores.
    Valence/arousal come from **AffectLexicon** (`affect/lexicon.py`) over the input words,
-   blended with the emotion's circumplex prior by lexical coverage. So affect is *measured
-   from text*, not read from a constant per emotion.
+   blended with the emotion's circumplex prior by lexical coverage (capped at 0.8, so the
+   prior is never fully discarded). So affect is *measured from text*, not read from a
+   constant per emotion.
 2. **Prompt synthesis** (`prompting.py`): content stays independent of the emotion; emotion is
    layered on as a modifier over four tiers: `raw` (content only), `naive` (bare emotion word,
    the baseline), `emotion` (adds a mood modifier), `affect` (adds valence/arousal palette and
