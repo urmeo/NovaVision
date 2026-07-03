@@ -96,6 +96,11 @@ EMOTION_PROMPTS: dict[str, tuple[str, ...]] = {
     ),
 }
 
+# The CLIP probe zips these keys against its stacked text features; a key-set or
+# order drift against EMOTIONS would silently misalign every label→score mapping.
+assert tuple(EMOTION_PROMPTS) == EMOTIONS
+assert set(EMOTION_PRIORS) == set(EMOTIONS)
+
 # Ordered anchor ladders for graded valence/arousal (expected value over softmax)
 VALENCE_LADDER: tuple[tuple[str, float], ...] = (
     ("a very unpleasant, miserable, repulsive scene", -1.0),
