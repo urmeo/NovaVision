@@ -35,12 +35,15 @@ class EmotionAnalyzer:
         self.revision = revision
         self._lexicon = lexicon
         self._classifier = None
-        self._lock = threading.Lock()
+        # Independent resources get independent locks: neither load can ever
+        # wait on, or re-enter through, the other (Lock is not reentrant).
+        self._lex_lock = threading.Lock()
+        self._clf_lock = threading.Lock()
 
     @property
     def lexicon(self) -> AffectLexicon:
         if self._lexicon is None:
-            with self._lock:  # double-checked: one load under concurrent first calls
+            with self._lex_lock:  # double-checked: one load under concurrent first calls
                 if self._lexicon is None:
                     self._lexicon = AffectLexicon.load()
         return self._lexicon
@@ -48,7 +51,7 @@ class EmotionAnalyzer:
     @property
     def classifier(self):
         if self._classifier is None:
-            with self._lock:
+            with self._clf_lock:
                 if self._classifier is None:
                     from transformers import pipeline
 
