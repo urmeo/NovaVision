@@ -59,3 +59,28 @@ def test_diffusers_dtype_known_before_first_generation():
     # The manifest reads backend.dtype; it must exist without loading the pipe.
     assert DiffusersBackend(device="cpu").dtype == "float32"
     assert DiffusersBackend(device="cuda").dtype == "float16"
+
+
+def test_null_backend_prompt_sensitivity():
+    a = NullBackend().generate("hi", seed=7).tobytes()
+    b = NullBackend().generate("bye", seed=7).tobytes()
+    assert a != b
+
+
+def test_hf_api_default_size_matches_diffusers(monkeypatch):
+    monkeypatch.setenv("HF_TOKEN", "x")
+    from novavision.generation.hf_api_backend import HFApiBackend
+
+    sent = {}
+
+    class FakeClient:
+        def text_to_image(self, prompt, **kw):
+            sent.update(kw)
+            from PIL import Image
+
+            return Image.new("RGB", (8, 8))
+
+    b = HFApiBackend(model_id="stabilityai/sd-turbo")
+    b._client = FakeClient()
+    b.generate("p", seed=1)
+    assert (sent["width"], sent["height"]) == (512, 512)

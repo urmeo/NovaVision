@@ -44,3 +44,10 @@ def test_load_benchmark_tolerates_utf8_bom(tmp_path):
     p = tmp_path / "bom.csv"
     p.write_text("text,emotion\nhello there,joy\n", encoding="utf-8-sig")
     assert load_benchmark(p) == [{"text": "hello there", "emotion": "joy"}]
+
+
+def test_content_bank_rejects_duplicates(tmp_path):
+    bank = tmp_path / "bank.txt"
+    bank.write_text("a tree\na house\nA  tree\n")
+    with pytest.raises(ValueError, match="duplicate"):
+        load_content_bank(bank)

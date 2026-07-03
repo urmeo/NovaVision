@@ -13,6 +13,7 @@ import argparse
 import csv
 import json
 import random
+from collections import Counter
 from pathlib import Path
 
 from novavision.data import load_content_bank
@@ -67,8 +68,18 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
 
     from novavision.experiments.run import _seed
 
+    if gen is None and cfg["backend"] not in ("diffusers", "null"):
+        raise ValueError(
+            f"Backend '{cfg['backend']}' is non-deterministic: rebuilt images would not be "
+            "the images the probe scored. Pass gen= explicitly to override."
+        )
     gen = gen or get_backend(cfg["backend"], model_id=cfg["diffusion_model"])
     picked = _sample_records(data["records"], n, seed)
+    counts = Counter(r["intended"] for r in picked)
+    per_class = {e: counts.get(e, 0) for e in EMOTIONS}
+    # Stratification under-fills silently when a class is scarce in the pool;
+    # surface the realized counts the same way the benchmark builder does.
+    print(f"[human-study] realized per-class counts: {per_class}", flush=True)
 
     study = results_dir / "human_study"
     images = study / "images"
@@ -102,7 +113,9 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
 
     _write_csv(study / "ratings_template.csv", ["id", "image", "emotion"], sheet)
     _write_csv(study / "key.csv", ["id", "intended", "probe"], key)
-    (study / "README.md").write_text(_INSTRUCTIONS.format(labels=", ".join(EMOTIONS)))
+    (study / "README.md").write_text(
+        _INSTRUCTIONS.format(labels=", ".join(EMOTIONS), counts=json.dumps(per_class))
+    )
     return study
 
 
@@ -146,6 +159,9 @@ _INSTRUCTIONS = """# Human study
 
 Open each image in `images/` and, in `ratings_template.csv`, fill the `emotion`
 column with the single best-fitting label from: {labels}.
+
+Realized per-class counts: {counts} (uneven counts mean the run pool
+under-covers a class; report them with any agreement number).
 
 Use three or more independent raters (one sheet each). Then score agreement:
 
