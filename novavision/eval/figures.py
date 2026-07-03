@@ -7,21 +7,37 @@ from pathlib import Path
 import numpy as np
 
 
+def _row_normalize(matrix: np.ndarray) -> np.ndarray:
+    """Row-normalized confusion; a class absent from y_true becomes NaN, not 0.
+
+    Dividing by a clipped row-sum would render an empty row as 0.00 everywhere,
+    indistinguishable from "present but never recovered".
+    """
+    row_n = matrix.sum(axis=1, keepdims=True)
+    norm = np.divide(matrix, row_n.clip(min=1), dtype=float)
+    norm[row_n.ravel() == 0, :] = np.nan
+    return norm
+
+
 def plot_confusion(matrix: np.ndarray, labels, path: str | Path, title: str = "") -> None:
     import matplotlib.pyplot as plt
 
-    norm = matrix / matrix.sum(axis=1, keepdims=True).clip(min=1)
+    row_n = matrix.sum(axis=1, keepdims=True)
+    norm = _row_normalize(matrix)
+    cmap = plt.get_cmap("Blues").with_extremes(bad="#f0f0f0")
     fig, ax = plt.subplots(figsize=(5.5, 5))
-    ax.imshow(norm, cmap="Blues", vmin=0, vmax=1)
+    ax.imshow(np.ma.masked_invalid(norm), cmap=cmap, vmin=0, vmax=1)
     ax.set_xticks(range(len(labels)), labels, rotation=45, ha="right")
-    ax.set_yticks(range(len(labels)), labels)
+    yticklabels = [lab if n else f"{lab} (n=0)" for lab, n in zip(labels, row_n.ravel())]
+    ax.set_yticks(range(len(labels)), yticklabels)
     ax.set_xlabel("recovered")
     ax.set_ylabel("intended")
     if title:
         ax.set_title(title)
     for i in range(len(labels)):
         for j in range(len(labels)):
-            ax.text(j, i, f"{norm[i, j]:.2f}", ha="center", va="center", fontsize=8)
+            cell = "n/a" if row_n[i, 0] == 0 else f"{norm[i, j]:.2f}"
+            ax.text(j, i, cell, ha="center", va="center", fontsize=8)
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
