@@ -67,7 +67,10 @@ rendered under every emotion. Conditioning increases over four tiers, which form
 - **emotion**: adds an engineered mood modifier for $e$.
 - **affect**: also injects valence/arousal cues (palette, lighting), grounded in continuous
   affect ($v = c\,v_{lex} + (1-c)\,v_{prior}$, lexicon-weighted and blended with the circumplex
-  prior by coverage $c$). This blend is a **heuristic**, not a fitted model: $c$ is the lexical
+  prior by coverage $c$, capped at $0.8$ so a fully in-lexicon input never discards the prior;
+  lexicon scoring skips function words and applies a two-token negation flip to valence,
+  leaving arousal unadjusted under negation). This
+  blend is a **heuristic**, not a fitted model: $c$ is the lexical
   coverage of the input, and the convex combination is not yet validated against held-out VAD
   norms. Its sensitivity is ablatable by forcing $c=0$ (prior only) or $c=1$ (lexicon only); we
   flag this as an open validity question, not a tuned result.

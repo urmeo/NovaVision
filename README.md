@@ -2,12 +2,15 @@
 
 NovaVision generates an image from the emotion of a sentence, then checks whether the image actually conveys that emotion by recovering the emotion back from it with a swappable probe and comparing it to what you asked for. It is two things sharing one pipeline, a text-to-art web app and an emotion-controllability benchmark, built around the failure modes that make such a measurement easy to fake, with a frozen text benchmark (AffectBench) and a full write-up behind it.
 
+<img src="screenshots/demo_preview.gif" alt="Typing a sentence, reading its emotion analysis, and generating a matching artwork" width="720">
+
 ## Using it
 
 - Run `make setup` then `make test` to exercise the deterministic core with no model downloads, then `make setup-ml` and `make app` to launch the web app at http://127.0.0.1:8000 and generate emotion-conditioned images interactively.
 - `make smoke` is a quick end-to-end run (2 subjects, 1 seed); `make pilot` reproduces the committed CPU pilot (n=14 per tier).
 - Build the text benchmark with `make benchmark` (AffectBench from GoEmotions), then run the text-conditioned track with `make text`.
-- For a public deployment, bind explicitly with `NOVA_PUBLIC=1` and set `NOVA_API_TOKEN`, `NOVA_RATE_LIMIT`, and `NOVA_MAX_CONCURRENCY`; the app binds 127.0.0.1 by default.
+- For a public deployment, bind explicitly with `NOVA_PUBLIC=1` and set `NOVA_API_TOKEN`, `NOVA_RATE_LIMIT`, and `NOVA_MAX_CONCURRENCY`; the app binds 127.0.0.1 by default. Serve with `make serve-prod` (gunicorn) rather than the built-in development server.
+- Deploying on Hugging Face Spaces: `app.py` is the Gradio entry point; copy the [spaces_config.yaml](spaces_config.yaml) block into the Space's README frontmatter.
 
 ## Screenshots
 
@@ -62,8 +65,10 @@ Read the headline number as a calibration of the instrument, not a controllabili
 
 ## How it works
 
+<img src="screenshots/how_it_works.png" alt="Pipeline diagram: detect the emotion, ground valence/arousal, condition the prompt, generate, recover" width="720">
+
 - **Detect:** a DistilRoBERTa classifier (`affect/analyzer.py`) scores the six Ekman emotions plus neutral (seven labels) in the input text.
-- **Ground:** valence and arousal are estimated from an affect lexicon (`affect/lexicon.py`) and blended with the emotion's circumplex prior by lexical coverage c, `v = c·v_lex + (1−c)·v_prior`, so affect is *measured* from text rather than read from a constant.
+- **Ground:** valence and arousal are estimated from an affect lexicon (`affect/lexicon.py`) and blended with the emotion's circumplex prior by lexical coverage c, `v = c·v_lex + (1−c)·v_prior`, so affect is *measured* from text rather than read from a constant. Function words are skipped, simple negation flips valence, and c is capped at 0.8 so the prior is never fully discarded.
 - **Condition:** image content stays independent of the emotion; emotion enters only as a modifier over four tiers (raw → naive → emotion → affect). The tiers are the ablation, so recovery is attributable to the conditioning, not a canned scene.
 - **Generate:** Stable Diffusion Turbo renders the image from a fixed, paired-per-item seed through a common `ImageBackend` (null for tests, diffusers for local, hf-api for hosted).
 - **Recover:** a swappable probe (default `CLIPProbe`, `eval/probes.py`) reads the emotion and graded valence/arousal back from the image; recovery only counts when it clears the majority-class baseline and the shuffled-label control with a non-degenerate probe.
@@ -113,7 +118,7 @@ make paper          # regenerate the paper tables/figures from results/paper/res
 uv pip install -r requirements.lock
 ```
 
-Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **114** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift, so the reported numbers stay locked to the outputs they came from.
+Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **137** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift, so the reported numbers stay locked to the outputs they came from.
 
 ## Future scope
 
