@@ -45,6 +45,10 @@ def permutation_test(
     one-sided p-value ``P(null >= observed)``. A small p means recovery tracks the
     real image/label correspondence, not chance agreement; ``p`` near 1 means the
     headline is indistinguishable from shuffled labels.
+
+    The fixed default ``seed`` is deliberate (common random numbers): every tier
+    is scored against the same permutation draws of the shared ``y_true``, so
+    tier p-values differ only through the predictions, not Monte-Carlo noise.
     """
     yt = np.asarray(list(y_true))
     yp = np.asarray(list(y_pred))
