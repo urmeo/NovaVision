@@ -9,16 +9,16 @@ NovaVision is two things sharing one core: a text-to-art **app** and an emotion-
 text ─► EmotionAnalyzer ─► (emotion, valence, arousal) ─► build_prompt(tier) ─► ImageBackend ─► image
 ```
 
-1. **EmotionAnalyzer** (`affect/analyzer.py`) — DistilRoBERTa gives discrete-emotion scores.
+1. **EmotionAnalyzer** (`affect/analyzer.py`): DistilRoBERTa gives discrete-emotion scores.
    Valence/arousal come from **AffectLexicon** (`affect/lexicon.py`) over the input words,
    blended with the emotion's circumplex prior by lexical coverage. So affect is *measured
    from text*, not read from a constant per emotion.
-2. **Prompt synthesis** (`prompting.py`) — content stays independent of the emotion; emotion is
+2. **Prompt synthesis** (`prompting.py`): content stays independent of the emotion; emotion is
    layered on as a modifier over four tiers: `raw` (content only), `naive` (bare emotion word,
    the baseline), `emotion` (adds a mood modifier), `affect` (adds valence/arousal palette and
    lighting). A `scene` floor renders the old fixed per-emotion template with no content, to
    measure pure template recognition.
-3. **Backends** (`generation/`) — a common `ImageBackend` interface with three
+3. **Backends** (`generation/`): a common `ImageBackend` interface with three
    implementations: `null` (deterministic, offline, for tests), `diffusers` (local, seedable,
    revision-pinned), `hf-api` (hosted). Selected by `BACKEND`.
 
@@ -32,7 +32,7 @@ intended emotion ◄── compare ──► recovered emotion
 `eval/probes.py` defines a swappable `Probe`; the default `CLIPProbe` runs CLIP zero-shot over a
 per-emotion template ensemble (recovery, logit-scaled) and a graded valence/arousal anchor
 ladder. `eval/metrics.py` computes accuracy, macro-F1, confusion, Pearson/Spearman, bootstrap
-CIs, paired tests, and Cohen's κ — pure numpy, fully unit-tested. `experiments/run.py` runs two
+CIs, paired tests, and Cohen's κ, pure numpy, fully unit-tested. `experiments/run.py` runs two
 tracks (`content` over the neutral bank, `text` over AffectBench) across seeds, computes the
 floors and tier contrasts, and writes `results.json` (with a full provenance manifest) + figures.
 `eval/human_study.py` regenerates a sampled subset for raters and scores human-vs-probe

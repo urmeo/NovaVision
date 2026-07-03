@@ -2,7 +2,7 @@
 
 Refreshes a ``results.json`` produced by an earlier analysis version with the
 current diagnostics (``probe_health``, majority-class baseline, prediction
-collapse, valence/arousal bootstrap CIs) **without regenerating any images** —
+collapse, valence/arousal bootstrap CIs) **without regenerating any images** ,
 the per-image records are the original measured outputs, so the headline numbers
 are preserved and merely re-derived. A tier that was never measured (e.g. one
 added to the code after the run) stays absent. Provenance stays honest: the

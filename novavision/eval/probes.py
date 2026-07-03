@@ -50,7 +50,7 @@ class Probe(ABC):
 
 
 class HFImageClassifierProbe(Probe):
-    """A non-CLIP image-emotion classifier — independent of the prompt vocabulary.
+    """A non-CLIP image-emotion classifier, independent of the prompt vocabulary.
 
     Wraps a HuggingFace image-classification model. Its labels are mapped to the
     Ekman set (identity if already Ekman); valence/arousal fall back to the

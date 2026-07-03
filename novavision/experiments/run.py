@@ -302,7 +302,7 @@ def _probe_health(records) -> dict:
     """Probe-degeneracy diagnostic over the conditioning tiers (floors excluded).
 
     If the probe collapses onto one label, recovery at chance is the trivial
-    consequence of that collapse, not evidence the floors discriminate — so this
+    consequence of that collapse, not evidence the floors discriminate, so this
     is reported next to every headline number.
     """
     preds = [r["predicted"] for r in records if r["tier"] in TIERS]

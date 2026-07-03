@@ -3,7 +3,7 @@
 The benchmark trusts the probe to read emotion from an image. This measures how
 much that trust is warranted: run the probe on images with known emotion labels
 (e.g. FI or EmoSet, mapped to the Ekman set) and report its accuracy and
-confusion — the instrument's known error, to be propagated to every result.
+confusion, the instrument's known error, to be propagated to every result.
 """
 
 from __future__ import annotations

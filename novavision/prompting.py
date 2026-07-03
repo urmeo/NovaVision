@@ -2,7 +2,7 @@
 
 The conditioning tiers are the ablation. Critically, the image *content* comes
 from the input (text or a content-bank subject), and emotion is layered on as a
-mood/affect modifier — content is never chosen by the emotion label. That
+mood/affect modifier, content is never chosen by the emotion label. That
 decoupling is what lets recovery be attributed to the conditioning. The old
 fixed per-emotion scenes survive only as a ``scene`` floor that measures how
 much recovery is pure template recognition.
@@ -34,7 +34,7 @@ EMOTION_MOODS = {
     "neutral": "calm neutral mood, plain everyday atmosphere",
 }
 
-# Fixed per-emotion scenes — used ONLY by the `scene` floor.
+# Fixed per-emotion scenes, used ONLY by the `scene` floor.
 EMOTION_SCENES = {
     "joy": "a radiant sunlit meadow full of blooming wildflowers",
     "sadness": "a misty rain-soaked forest at dusk",
@@ -61,7 +61,7 @@ def va_descriptors(valence: float, arousal: float) -> str:
     """Map valence/arousal to palette and lighting cues.
 
     On the content track the valence/arousal passed here is the per-emotion prior,
-    so these cues are a deterministic function of the emotion — the ``affect`` vs
+    so these cues are a deterministic function of the emotion, the ``affect`` vs
     ``emotion`` contrast there measures palette/lighting strength only. Independent,
     text-grounded valence/arousal is exercised on the text track.
     """

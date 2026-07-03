@@ -21,7 +21,7 @@ logger = logging.getLogger("novavision.server")
 
 MIN_TEXT, MAX_TEXT = 3, 2000
 
-# Serve only the dedicated web asset directory — never the repo root, which would
+# Serve only the dedicated web asset directory, never the repo root, which would
 # expose source, configs, and benchmark data.
 _STATIC = Path(__file__).resolve().parent / "static"
 
