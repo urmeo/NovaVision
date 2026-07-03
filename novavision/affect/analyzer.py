@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import threading
+from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 
 from novavision.affect.lexicon import AffectLexicon
 from novavision.config import EMOTION_REVISION
 from novavision.taxonomy import prior
 
 DEFAULT_MODEL = "j-hartmann/emotion-english-distilroberta-base"
+
+# A fully in-lexicon input ("happy") must not discard the classifier prior
+# entirely: the lexicon reads words, not context, so it never gets full weight.
+MAX_LEXICON_BLEND = 0.8
 
 
 @dataclass(frozen=True)
@@ -19,7 +25,11 @@ class EmotionAnalysis:
     valence: float
     arousal: float
     coverage: float
-    scores: dict[str, float]
+    scores: Mapping[str, float]
+
+    def __post_init__(self):
+        # frozen=True does not deep-freeze; make the scores read-only too.
+        object.__setattr__(self, "scores", MappingProxyType(dict(self.scores)))
 
 
 class EmotionAnalyzer:
@@ -68,13 +78,15 @@ class EmotionAnalyzer:
         if not text or not text.strip():
             raise ValueError("Input text cannot be empty")
 
-        raw = self.classifier(text)[0]
+        # Truncate at the model limit: MAX_TEXT (2000 chars) can exceed 512 tokens,
+        # and an untruncated overflow raises inside transformers.
+        raw = self.classifier(text, truncation=True)[0]
         scores = {r["label"].lower(): float(r["score"]) for r in raw}
         primary = max(scores, key=lambda k: scores[k])
 
         affect = self.lexicon.score(text)
         pv, pa = prior(primary)
-        c = affect.coverage
+        c = min(affect.coverage, MAX_LEXICON_BLEND)
         valence = c * affect.valence + (1 - c) * pv
         arousal = c * affect.arousal + (1 - c) * pa
 
@@ -83,6 +95,6 @@ class EmotionAnalyzer:
             confidence=scores[primary],
             valence=round(valence, 4),
             arousal=round(arousal, 4),
-            coverage=c,
+            coverage=affect.coverage,  # raw diagnostic; the blend weight is capped
             scores=scores,
         )
