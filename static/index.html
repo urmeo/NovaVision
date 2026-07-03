@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NovaVision - Transform Emotions into AI Art</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- No external fonts: a research demo should not leak visitor IPs to a CDN. -->
     <style>
         * {
             margin: 0;
@@ -30,7 +28,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: linear-gradient(180deg, #faf9fc 0%, #f5f3f9 100%);
             background-attachment: fixed;
             color: #0f172a;
@@ -2205,6 +2203,10 @@
                                 <input type="text" class="seed-input" id="seedInput" placeholder="Random (leave empty)">
                                 <button class="copy-seed-btn" id="copySeedBtn">Copy Seed</button>
                             </div>
+                            <div class="seed-control">
+                                <label class="seed-label">API token:</label>
+                                <input type="password" class="seed-input" id="tokenInput" placeholder="Only if the server sets NOVA_API_TOKEN" autocomplete="off">
+                            </div>
                             <div class="used-seed-display" id="usedSeedDisplay">Last used seed: <span id="lastSeedValue">-</span></div>
                         </div>
                     </div>
@@ -2432,7 +2434,7 @@
                 <div class="step fade-in" data-delay="1">
                     <div class="step-number">1</div>
                     <h3 class="step-title">Express</h3>
-                    <p class="step-description">Type anything — a feeling, a memory, or a scene you want to see come to life.</p>
+                    <p class="step-description">Type anything: a feeling, a memory, or a scene you want to see come to life.</p>
                 </div>
                 <div class="step fade-in" data-delay="2">
                     <div class="step-number">2</div>
@@ -2468,7 +2470,7 @@
                     </div>
                     <h3 class="feature-title">Knows How You Feel</h3>
                     <p class="feature-description">
-                        Type naturally. Our AI detects joy, sadness, excitement, calm — and adjusts the artwork to match your emotional state perfectly.
+                        Type naturally. The emotion classifier reads joy, sadness, excitement, or calm from your words and adjusts the artwork to match.
                     </p>
                 </div>
                 <div class="feature-card fade-in" data-delay="2">
@@ -2490,9 +2492,9 @@
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                         </svg>
                     </div>
-                    <h3 class="feature-title">Instant HD Artwork</h3>
+                    <h3 class="feature-title">Fast, Reproducible Artwork</h3>
                     <p class="feature-description">
-                        No waiting. Get beautiful 1024×1024 images in seconds — ready to download, share, or use anywhere.
+                        512×512 images from a fixed seed, ready to download, share, or regenerate exactly.
                     </p>
                 </div>
             </div>
@@ -2957,6 +2959,7 @@
         const advancedToggle = document.getElementById('advancedToggle');
         const advancedContent = document.getElementById('advancedContent');
         const seedInput = document.getElementById('seedInput');
+        const tokenInput = document.getElementById('tokenInput');
         const copySeedBtn = document.getElementById('copySeedBtn');
         const usedSeedDisplay = document.getElementById('usedSeedDisplay');
         const lastSeedValue = document.getElementById('lastSeedValue');
@@ -3143,9 +3146,14 @@
             const seed = userSeed ? parseInt(userSeed, 10) : Math.floor(Math.random() * 2147483647);
 
             try {
+                // Token-protected deploys (NOVA_API_TOKEN set): send the token the
+                // server checks, else our own frontend would 401 against /api/generate.
+                const generateHeaders = { 'Content-Type': 'application/json' };
+                const apiToken = tokenInput.value.trim();
+                if (apiToken) generateHeaders['X-API-Token'] = apiToken;
                 const response = await fetch('/api/generate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: generateHeaders,
                     body: JSON.stringify({
                         text: emotionInput.value.trim(),
                         style: styleSelect.value,
