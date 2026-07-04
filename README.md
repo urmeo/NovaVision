@@ -108,6 +108,7 @@ make smoke          # quick end-to-end run (2 subjects, 1 seed)
 
 # Reproduce the paper artifacts:
 make repro-check    # re-derive the committed headline numbers from the committed records (no models)
+make power          # sample-size analysis for the powered run (no models)
 make pilot          # the committed CPU pilot (256-px, 2 subjects, 1 seed -> n=14)
 make reproduce      # canonical content-track run, 512-px, 3 seeds (needs a GPU box)
 make validate-probe         # probe error on faces (out-of-domain proxy)
@@ -118,7 +119,17 @@ make paper          # regenerate the paper tables/figures from results/paper/res
 uv pip install -r requirements.lock
 ```
 
-Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **175** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift, so the reported numbers stay locked to the outputs they came from.
+No local setup? [`reproduce.ipynb`](reproduce.ipynb) runs the whole thing in Colab: clone, install, test, re-derive the numbers, and (optionally) regenerate the pilot with the real models.
+
+Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **189** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift, so the reported numbers stay locked to the outputs they came from.
+
+## Submit a system
+
+The harness scores any generator and probe under the same protocol. After a run, `make submission SYSTEM="your system"` emits a leaderboard entry validated against [`benchmark/submission.schema.json`](benchmark/submission.schema.json); numbers are copied from `results.json`, never hand-entered, so every submission is auditable.
+
+| System | Track | raw | emotion | affect | scene | Shuffled-label cleared? |
+|---|---|---|---|---|---|---|
+| SD-Turbo + CLIP ViT-B/32 (committed pilot) | content | 0.143 | 0.214 | 0.214 | 0.286 | no (honest null) |
 
 ## Future scope
 
