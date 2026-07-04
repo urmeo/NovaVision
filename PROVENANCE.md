@@ -73,8 +73,10 @@ lexicon and blended with the emotion's circumplex prior by lexical coverage
 - **Shipped (`data/lexicon/affect_lexicon.tsv`):** a small **original demo
   lexicon** authored for NovaVision (MIT, this repo). It is for offline use and
   tests, not a research-grade norm set.
-- **Warriner et al. (2013)** norms are fetched by the user from the original
-  source via `scripts/download_lexicon.py`; **not redistributed** here.
+- **Warriner et al. (2013)** norms are fetched by the user via
+  `scripts/download_lexicon.py` from the paper's Springer supplementary zip over
+  HTTPS, with the download's SHA-256 pinned in the script so a tampered or
+  re-issued file fails loudly; **not redistributed** here.
 - **NRC-VAD** is neither shipped nor downloaded; if supplied via
   `NOVAVISION_LEXICON` it keeps its own (non-commercial) terms.
 
