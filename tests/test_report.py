@@ -67,3 +67,25 @@ def test_shuffled_note_survives_partial_control_dict():
 
 def test_shuffled_note_empty_when_no_pvalues():
     assert report._shuffled_note({"emotion": {"shuffled_control": {"null_mean": 0.1}}}) == ""
+
+
+def test_tables_tolerate_null_bounds():
+    # A degenerate (n<2) run writes null CI/contrast bounds via json_safe; the
+    # tables must render "n/a", not crash on None.__format__.
+    metrics = {
+        "raw": {
+            "accuracy": 0.14,
+            "accuracy_ci": [None, None],
+            "macro_f1": None,
+            "valence_rho": 0.0,
+            "arousal_rho": 0.0,
+            "clip_t": None,
+            "n": 1,
+        },
+        "chance": 0.143,
+    }
+    assert "n/a" in report.metrics_table(metrics)
+    contrasts = {
+        "emotion_vs_raw": {"ci_low": None, "ci_high": None, "mean_diff": None, "p_value": None}
+    }
+    assert "n/a" in report.contrasts_table(contrasts)
