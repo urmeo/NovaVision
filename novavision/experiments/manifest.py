@@ -6,6 +6,9 @@ import platform
 import subprocess
 import sys
 from importlib import metadata
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def package_version(pkg: str) -> str:
@@ -23,8 +26,14 @@ def package_version(pkg: str) -> str:
 def git_sha() -> str:
     """Current commit SHA, or ``"unknown"`` outside a git checkout. Public API."""
     try:
+        # Anchor to the package checkout: run from another repo's directory,
+        # the inherited CWD would silently record that repo's HEAD instead.
         out = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=_REPO_ROOT,
         )
         return out.stdout.strip() or "unknown"
     except Exception:

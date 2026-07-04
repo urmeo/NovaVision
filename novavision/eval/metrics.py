@@ -194,6 +194,8 @@ def bootstrap_corr_ci(
     measurement; the CI makes that uncertainty explicit so the reader is not
     invited to over-read three reported decimals.
     """
+    if method not in ("spearman", "pearson"):
+        raise ValueError(f"unknown method '{method}', expected 'spearman' or 'pearson'")
     corr = spearman if method == "spearman" else pearson
     xa = np.asarray(x, dtype=float)
     ya = np.asarray(y, dtype=float)
