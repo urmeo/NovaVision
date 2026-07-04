@@ -57,3 +57,18 @@ def test_inject_replaces_between_markers(tmp_path):
     # Idempotent: a second injection does not duplicate.
     report.inject(paper, "NEWER\n")
     assert paper.read_text().count("<!--TABLES-->") == 1
+
+
+def test_shuffled_note_survives_partial_control_dict():
+    # An older results.json may carry shuffled_control without p_value/null_mean.
+    metrics = {
+        "emotion": {"shuffled_control": {}},  # present but empty
+        "affect": {"shuffled_control": {"p_value": 0.14, "null_mean": 0.142}},
+    }
+    note = report._shuffled_note(metrics)
+    assert "affect p=0.14" in note
+    assert "null mean 0.142" in note  # falls back to the tier that has it
+
+
+def test_shuffled_note_empty_when_no_pvalues():
+    assert report._shuffled_note({"emotion": {"shuffled_control": {"null_mean": 0.1}}}) == ""
