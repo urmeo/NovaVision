@@ -31,9 +31,12 @@ def test_auto_run_conditions_emotion():
 
 
 def test_build_pipeline_returns_lazy_null_pipeline(monkeypatch):
-    monkeypatch.setenv("BACKEND", "null")
+    from novavision.config import get_settings
     from novavision.pipeline import build_pipeline
 
+    monkeypatch.setenv("NOVA_BACKEND", "null")
+    get_settings.cache_clear()
     nv = build_pipeline()
+    get_settings.cache_clear()  # don't leak cached settings to other tests
     assert nv.backend.name == "null"
     assert nv.analyzer is not None  # constructed, no model loaded yet
