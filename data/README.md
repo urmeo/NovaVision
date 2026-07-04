@@ -31,7 +31,7 @@ python -m novavision.data.build_benchmark --n 100 --out data/affectbench.csv
 
 ## `lexicon/affect_lexicon.tsv`: affect lexicon
 
-A small **demo** lexicon (≈80 words) with valence (−1..1) and arousal (0..1), for offline
+A small **demo** lexicon (≈80 words) with valence (-1..1) and arousal (0..1), for offline
 use and tests. It is illustrative, not empirical norms. For research, replace it:
 
 - **Warriner et al. (2013)**: `python scripts/download_lexicon.py` (freely available norms),

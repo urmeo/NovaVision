@@ -68,7 +68,7 @@ Read the headline number as a calibration of the instrument, not a controllabili
 <img src="screenshots/how_it_works.png" alt="Pipeline diagram: detect the emotion, ground valence/arousal, condition the prompt, generate, recover" width="720">
 
 - **Detect:** a DistilRoBERTa classifier (`affect/analyzer.py`) scores the six Ekman emotions plus neutral (seven labels) in the input text.
-- **Ground:** valence and arousal are estimated from an affect lexicon (`affect/lexicon.py`) and blended with the emotion's circumplex prior by lexical coverage c, `v = c·v_lex + (1−c)·v_prior`, so affect is *measured* from text rather than read from a constant. Function words are skipped, simple negation flips valence, and c is capped at 0.8 so the prior is never fully discarded.
+- **Ground:** valence and arousal are estimated from an affect lexicon (`affect/lexicon.py`) and blended with the emotion's circumplex prior by lexical coverage c, `v = c·v_lex + (1-c)·v_prior`, so affect is *measured* from text rather than read from a constant. Function words are skipped, simple negation flips valence, and c is capped at 0.8 so the prior is never fully discarded.
 - **Condition:** image content stays independent of the emotion; emotion enters only as a modifier over four tiers (raw → naive → emotion → affect). The tiers are the ablation, so recovery is attributable to the conditioning, not a canned scene.
 - **Generate:** Stable Diffusion Turbo renders the image from a fixed, paired-per-item seed through a common `ImageBackend` (null for tests, diffusers for local, hf-api for hosted).
 - **Recover:** a swappable probe (default `CLIPProbe`, `eval/probes.py`) reads the emotion and graded valence/arousal back from the image; recovery only counts when it clears the majority-class baseline and the shuffled-label control with a non-degenerate probe.
@@ -118,7 +118,7 @@ make paper          # regenerate the paper tables/figures from results/paper/res
 uv pip install -r requirements.lock
 ```
 
-Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **166** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift, so the reported numbers stay locked to the outputs they came from.
+Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **171** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift, so the reported numbers stay locked to the outputs they came from.
 
 ## Future scope
 

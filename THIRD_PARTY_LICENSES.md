@@ -30,7 +30,7 @@ is **not** a default here).
   authored for NovaVision, covered by this repo's MIT license. It is for offline use and
   tests, not a research-grade resource.
 - **Warriner et al. (2013) norms** (`scripts/download_lexicon.py`): fetched by the user
-  from the original source (CRR, Ghent University); **not redistributed** in this repo.
+  from the paper's Springer supplementary material; **not redistributed** in this repo.
   Their academic terms apply.
 - **NRC-VAD:** *not shipped and not downloaded by this project.* If you supply your own
   NRC-VAD TSV via `NOVAVISION_LEXICON`, note NRC-VAD is **free for research but requires a

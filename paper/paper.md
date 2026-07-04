@@ -49,7 +49,7 @@ classifiers: FI [@you2016building], affective classification from psychology/art
 [@machajdik2010], EMOTIC [@kosti2017emotion], WEBEmo [@panda2018contemplating], ArtEmis [@achlioptas2021artemis], and the
 large-scale EmoSet [@yang2023emoset], which we use to *validate the probe* rather than to condition.
 Generation uses latent diffusion [@rombach2022; @sauer2023]; emotion-conditioned diffusion such
-as EmoGen [@yang2024emogen], EmotiCrafter [@yang2024emoticrafter], and CoEmoGen [@li2025coemogen]
+as EmoGen [@yang2024emogen], EmotiCrafter [@dang2025emoticrafter], and CoEmoGen [@li2025coemogen]
 motivates the task and supplies the natural baselines for cross-system comparison under our
 protocol. Evaluation uses CLIP zero-shot transfer
 [@radford2021], whose use as an affect probe we treat as an instrument to be validated, not
@@ -162,7 +162,7 @@ and significance is taken over the (item, seed) population, not a single draw.
 **Baselines.** The conditioning tiers are an internal ablation, with **`naive`**, appending the
 bare emotion word to the content, serving as the minimal "emotion adjective" baseline that any
 method must beat. We do not yet compare against external emotion-conditioned generators
-(EmoGen [@yang2024emogen], EmotiCrafter [@yang2024emoticrafter], CoEmoGen [@li2025coemogen]); the
+(EmoGen [@yang2024emogen], EmotiCrafter [@dang2025emoticrafter], CoEmoGen [@li2025coemogen]); the
 harness is built for it (`--diffusion-model`, `--style`, `--probe` swap the system under test
 while holding the protocol fixed), but the shipped runs cover one generator, so the ablation
 shows internal monotonicity, not yet a ranked contribution against the field. Cross-system
@@ -213,7 +213,7 @@ The committed run is a small CPU **pilot** (256-px, 2 content subjects, single s
 $n=14$ per tier), produced by `make pilot` at the recorded git SHA; full provenance is in the
 manifest. It is reported not as evidence *for* controllability but as a demonstration that the
 protocol, its floors, and its diagnostics run end-to-end, and, just as importantly, that the
-**instrument is too weak to draw any positive conclusion from**. Three things to read together:
+**instrument is too weak to draw any positive conclusion from**. Four things to read together:
 
 1. **The probe has collapsed in-domain.** The `probe_health` diagnostic (reported with every run)
    shows the CLIP probe uses only a handful of the seven labels across the conditioning tiers,
