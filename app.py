@@ -29,6 +29,10 @@ def _pipeline():
 def generate(text: str, style: str, seed: int):
     if not text.strip():
         raise gr.Error("Please enter some text.")
+    if style not in STYLE_PRESETS:
+        # gradio_client bypasses the dropdown; mirror the Flask route's rejection
+        # so the two entry points cannot disagree.
+        raise gr.Error(f"Unknown style {style!r}.")
     try:
         result = _pipeline().auto_run(text, style=style, seed=int(seed))
     except Exception:
