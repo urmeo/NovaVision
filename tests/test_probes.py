@@ -12,7 +12,7 @@ def _img():
 
 def test_hf_probe_maps_and_aggregates():
     probe = HFImageClassifierProbe("fake/model", label_map={"happy": "joy"})
-    probe._pipe = lambda img: [
+    probe._pipe = lambda img, **kw: [
         {"label": "happy", "score": 0.6},
         {"label": "joy", "score": 0.2},
         {"label": "anger", "score": 0.2},
@@ -24,7 +24,10 @@ def test_hf_probe_maps_and_aggregates():
 
 def test_hf_probe_drops_unknown_labels():
     probe = HFImageClassifierProbe("fake/model")
-    probe._pipe = lambda img: [{"label": "cat", "score": 0.9}, {"label": "fear", "score": 0.1}]
+    probe._pipe = lambda img, **kw: [
+        {"label": "cat", "score": 0.9},
+        {"label": "fear", "score": 0.1},
+    ]
     assert probe.recover(_img()).emotion == "fear"
 
 
@@ -39,7 +42,7 @@ def test_probe_name():
 
 def test_hf_probe_raises_when_nothing_maps():
     probe = HFImageClassifierProbe("fake/model")
-    probe._pipe = lambda img: [{"label": "cat", "score": 0.9}]
+    probe._pipe = lambda img, **kw: [{"label": "cat", "score": 0.9}]
     with pytest.raises(RuntimeError):
         probe.recover(_img())
 

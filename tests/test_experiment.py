@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from novavision.affect.analyzer import EmotionAnalysis
 from novavision.eval.probes import Recovery
 from novavision.experiments import run
@@ -132,11 +134,8 @@ def test_run_experiment_text_track(tmp_path, monkeypatch):
 
 def test_text_track_requires_benchmark(monkeypatch):
     monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
-    try:
+    with pytest.raises(ValueError):
         run.run_experiment(backend="null", track="text", seeds=1, out="/tmp/x")
-        raise AssertionError("expected ValueError")
-    except ValueError:
-        pass
 
 
 def test_seed_injective_within_guarded_domain():
@@ -151,8 +150,5 @@ def test_seed_injective_within_guarded_domain():
 def test_seed_domain_guard():
     run._check_seed_domain(run.SEED_MAX_ITEMS, run.SEED_MAX_SEEDS)  # boundary is fine
     for items, seeds in ((run.SEED_MAX_ITEMS + 1, 1), (1, run.SEED_MAX_SEEDS + 1)):
-        try:
+        with pytest.raises(ValueError):
             run._check_seed_domain(items, seeds)
-            raise AssertionError("expected ValueError")
-        except ValueError:
-            pass
