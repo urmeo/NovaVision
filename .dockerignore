@@ -13,5 +13,7 @@ results/*
 !results/paper/
 screenshots
 paper
-tests
+# tests/ stays in the image so the shipped artifact can self-verify with `pytest`.
+# The tests load no models, but they do need pytest + matplotlib, which the pinned
+# requirements.lock (installed before .[app]) already provides in the image.
 .DS_Store
