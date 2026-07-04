@@ -1,3 +1,6 @@
+import pytest
+
+import novavision
 from novavision.affect.analyzer import EmotionAnalysis
 from novavision.generation import NullBackend
 from novavision.pipeline import NovaVision
@@ -40,3 +43,16 @@ def test_build_pipeline_returns_lazy_null_pipeline(monkeypatch):
     get_settings.cache_clear()  # don't leak cached settings to other tests
     assert nv.backend.name == "null"
     assert nv.analyzer is not None  # constructed, no model loaded yet
+
+
+def test_public_api_is_importable():
+    assert novavision.__version__ == "1.0.0"
+    assert callable(novavision.build_pipeline)
+    assert novavision.NovaVision is not None and novavision.Result is not None
+    # run_experiment is exposed lazily (PEP 562) and resolves on access.
+    assert callable(novavision.run_experiment)
+
+
+def test_unknown_top_level_attr_raises():
+    with pytest.raises(AttributeError):
+        novavision.__getattr__("not_a_real_symbol")

@@ -89,3 +89,11 @@ def test_tables_tolerate_null_bounds():
         "emotion_vs_raw": {"ci_low": None, "ci_high": None, "mean_diff": None, "p_value": None}
     }
     assert "n/a" in report.contrasts_table(contrasts)
+
+
+def test_rho_tolerates_null_ci():
+    # NaN CI bounds round-trip to null; _rho must not crash on None[0].
+    assert (
+        report._rho({"valence_rho": None, "valence_rho_ci": [None, None]}, "valence_rho") == "n/a"
+    )
+    assert "[" in report._rho({"valence_rho": 0.5, "valence_rho_ci": [0.1, 0.9]}, "valence_rho")
