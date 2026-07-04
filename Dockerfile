@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir --extra-index-url "$TORCH_INDEX" -c requirements.
 # public bind here; protect the generate route with NOVA_API_TOKEN when exposing it.
 ENV NOVA_PUBLIC=1
 
-# Run as an unprivileged user.
+# uid >= 10000 cannot collide with a host system account.
 RUN useradd --create-home --uid 10001 nova && chown -R nova:nova /app
 USER nova
 
