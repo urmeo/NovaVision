@@ -26,13 +26,26 @@ def _shuffled_note(metrics: dict) -> str:
     """Circularity check: does any conditioning tier beat the shuffled-label null?"""
     parts = []
     for cond in ("naive", "emotion", "affect"):
-        sc = (metrics.get(cond) or {}).get("shuffled_control")
-        if sc:
-            parts.append(f"{cond} p={sc['p_value']:.2f}")
+        sc = (metrics.get(cond) or {}).get("shuffled_control") or {}
+        # An older/edited results.json may carry the control dict without a
+        # p-value; skip that tier rather than KeyError out of report generation.
+        p = sc.get("p_value")
+        if p is not None:
+            parts.append(f"{cond} p={p:.2f}")
     if not parts:
         return ""
-    null = (metrics.get("emotion") or metrics.get("affect") or {}).get("shuffled_control", {})
-    base = f" (null mean {null['null_mean']:.3f})" if null else ""
+    # The null mean is shared across tiers; take it from whichever tier actually
+    # carries it, so a partial dict on one tier does not drop the annotation.
+    null_mean = next(
+        (
+            nm
+            for cond in ("naive", "emotion", "affect")
+            for nm in [((metrics.get(cond) or {}).get("shuffled_control") or {}).get("null_mean")]
+            if nm is not None
+        ),
+        None,
+    )
+    base = f" (null mean {null_mean:.3f})" if null_mean is not None else ""
     return (
         "**Shuffled-label control:** one-sided permutation test of recovery vs randomly "
         f"reassigned target emotions{base}: {', '.join(parts)}. A p near 1 means recovery is "
