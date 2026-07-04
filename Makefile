@@ -1,5 +1,5 @@
 .PHONY: setup setup-ml test lint format app serve-prod benchmark reproduce text validate-probe \
-  validate-probe-scene robustness resummarize smoke paper repro-check
+  validate-probe-scene robustness resummarize smoke pilot paper repro-check
 
 BIND ?= 127.0.0.1:8000
 
@@ -51,7 +51,8 @@ validate-probe-scene:   # probe error IN-DOMAIN on EmoSet scenes (the real ceili
 	python -m novavision.eval.validate_probe --hf-dataset xodhks/EmoSet118K --label-key emotion \
 	  --n 400 --split train --seed 0 --out results/paper/probe_validation_scene.json
 
-robustness:             # cross-probe check: rerun with an independent non-CLIP probe
+robustness:             # cross-probe check (requires PROBE_MODEL=<hf image-emotion model id>)
+	@test -n "$(PROBE_MODEL)" || { echo "Set PROBE_MODEL=<HF image-classifier model id>"; exit 1; }
 	python -m novavision.experiments.run --backend diffusers --contents 4 --seeds 1 \
 	  --probe hf --probe-model $(PROBE_MODEL) --out results/robustness
 
