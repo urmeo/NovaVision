@@ -1,7 +1,9 @@
 .PHONY: setup setup-ml test lint format app serve-prod benchmark reproduce text validate-probe \
-  validate-probe-scene robustness resummarize smoke pilot paper repro-check
+  validate-probe-scene validate-probe-hf robustness resummarize smoke pilot paper repro-check \
+  power ablate-blend submission
 
 BIND ?= 127.0.0.1:8000
+DIFFUSION_MODEL ?= stabilityai/sd-turbo
 
 setup:                  # tests, lint, benchmark build
 	python -m pip install -e ".[dev,research]"
@@ -36,8 +38,9 @@ pilot:                  # the committed CPU pilot (256-px, 2 subjects, 1 seed ->
 	python -m novavision.experiments.run --backend diffusers --contents 2 --seeds 1 \
 	  --width 256 --height 256 --out results/paper
 
-reproduce:              # canonical content-track run, 512-px (needs a GPU / non-memory-bound box)
-	python -m novavision.experiments.run --backend diffusers --seeds 3 --out results/paper
+reproduce:              # canonical content-track run, 512-px (needs a GPU); DIFFUSION_MODEL= to swap generator
+	python -m novavision.experiments.run --backend diffusers --diffusion-model $(DIFFUSION_MODEL) \
+	  --seeds 3 --resume --out results/paper
 
 text:                   # text-conditioned run on AffectBench (run: make benchmark first)
 	python -m novavision.experiments.run --backend diffusers --track text \
@@ -50,6 +53,12 @@ validate-probe:         # probe error on FACES (out-of-domain proxy)
 validate-probe-scene:   # probe error IN-DOMAIN on EmoSet scenes (the real ceiling)
 	python -m novavision.eval.validate_probe --hf-dataset xodhks/EmoSet118K --label-key emotion \
 	  --n 400 --split train --seed 0 --out results/paper/probe_validation_scene.json
+
+validate-probe-hf:      # in-domain error of an INDEPENDENT non-CLIP probe (requires PROBE_MODEL=)
+	@test -n "$(PROBE_MODEL)" || { echo "Set PROBE_MODEL=<HF image-classifier model id>"; exit 1; }
+	python -m novavision.eval.validate_probe --hf-dataset xodhks/EmoSet118K --label-key emotion \
+	  --n 400 --split train --seed 0 --probe hf --probe-model $(PROBE_MODEL) \
+	  --out results/paper/probe_validation_scene_hf.json
 
 robustness:             # cross-probe check (requires PROBE_MODEL=<hf image-emotion model id>)
 	@test -n "$(PROBE_MODEL)" || { echo "Set PROBE_MODEL=<HF image-classifier model id>"; exit 1; }
@@ -64,3 +73,14 @@ resummarize:            # refresh metrics/diagnostics/figures from existing reco
 
 paper:                  # regenerate Table 1/2 from the canonical results
 	python scripts/report.py --results results/paper/results.json --out paper/tables.md
+
+power:                  # sample-size analysis for the powered run (no models)
+	python scripts/power_analysis.py
+
+ablate-blend:           # affect-blend sensitivity on the text track (FORCE_C=0|0.8|1; needs models)
+	python -m novavision.experiments.run --backend diffusers --track text \
+	  --benchmark data/affectbench.csv --seeds 1 --force-coverage $(FORCE_C) \
+	  --out results/ablate_c$(FORCE_C)
+
+submission:             # build a schema-valid benchmark submission (SYSTEM="name")
+	python scripts/make_submission.py --results results/paper/results.json --system "$(SYSTEM)"
