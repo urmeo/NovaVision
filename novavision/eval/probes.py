@@ -85,7 +85,7 @@ class HFImageClassifierProbe(Probe):
                 device=0 if self.device == "cuda" else -1,
             )
             # Assign only after the coverage check, so a failed load stays retryable.
-            self.mapped_labels = self._check_label_coverage(pipe.model.config.id2label)
+            self._check_label_coverage(pipe.model.config.id2label)
             # transformers drops top_k=None and defaults to top 5, which could leave
             # zero mappable labels for one image; ask for every label explicitly.
             self._top_k = int(pipe.model.config.num_labels)
@@ -107,8 +107,7 @@ class HFImageClassifierProbe(Probe):
         self._load()
         known = set(EMOTIONS)
         scores: dict[str, float] = {}
-        preds = self._pipe(image, top_k=self._top_k) if self._top_k else self._pipe(image)
-        for pred in preds:
+        for pred in self._pipe(image, top_k=self._top_k):
             label = pred["label"].lower()
             label = self.label_map.get(label, label)
             if label in known:

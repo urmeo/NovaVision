@@ -92,7 +92,8 @@ def load_image_folder(root: str | Path) -> list[tuple[Path, str]]:
     root = Path(root)
     pairs: list[tuple[Path, str]] = []
     for sub in sorted(root.iterdir()):
-        label = sub.name.lower()
+        # Absorb dataset aliases (happy/, sad/, ...) like the HF path does.
+        label = EKMAN_ALIASES.get(sub.name.lower(), sub.name.lower())
         if not sub.is_dir() or label not in set(EMOTIONS):
             continue
         for img in sorted(sub.iterdir()):

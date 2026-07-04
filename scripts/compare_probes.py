@@ -37,6 +37,9 @@ def main() -> None:
     b = json.load(open(args.report_b))
     if a["gold"] != b["gold"]:
         raise SystemExit("reports are not from the same sample; a paired test is invalid")
+    for r in (a, b):
+        if len(r["predictions"]) != len(r["gold"]):
+            raise SystemExit("report predictions/gold length mismatch; refusing a paired test")
     out = {
         "a": {"probe": a["probe"], "accuracy": a["accuracy"]},
         "b": {"probe": b["probe"], "accuracy": b["accuracy"]},

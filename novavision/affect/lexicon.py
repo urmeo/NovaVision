@@ -134,8 +134,12 @@ class AffectLexicon:
                 if not line or line.startswith("#"):
                     continue
                 parts = [p.strip() for p in line.split("\t")]
-                if len(parts) < 3 or parts[0].lower() == "word":
+                # Only the exact header row is skipped: a lexicon ENTRY for the
+                # word "word" (present in research norms) must not be dropped.
+                if [p.lower() for p in parts[:3]] == ["word", "valence", "arousal"]:
                     continue
+                if len(parts) < 3:
+                    raise ValueError(f"{path}:{n} has fewer than 3 tab-separated columns")
                 word, valence, arousal = parts[:3]
                 try:
                     entries[word.lower()] = (float(valence), float(arousal))

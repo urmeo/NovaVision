@@ -18,7 +18,6 @@ class Result:
     prompt: str
     analysis: EmotionAnalysis
     tier: str
-    style: str
     seed: int
     backend: str
 
@@ -71,7 +70,7 @@ class NovaVision:
         image = self.backend.generate(
             prompt, width=width, height=height, seed=seed, negative_prompt=NEGATIVE_PROMPT
         )
-        return Result(image, prompt, analysis, tier, style, seed, self.backend.name)
+        return Result(image, prompt, analysis, tier, seed, self.backend.name)
 
 
 def build_pipeline(settings=None) -> NovaVision:

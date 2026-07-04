@@ -32,7 +32,7 @@ class NullBackend(ImageBackend):
     name = "null"
 
     def __init__(self, **kwargs):
-        pass  # ignore kwargs
+        pass  # get_backend forwards model_id/device to every backend uniformly
 
     def generate(
         self,
