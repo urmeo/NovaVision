@@ -1,10 +1,8 @@
-import sys
+import json
 from pathlib import Path
 
+import compare_probes  # scripts/ on sys.path via conftest.py
 import pytest
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import compare_probes  # noqa: E402
 
 
 def test_mcnemar_no_discordants_is_one():
@@ -29,8 +27,6 @@ def test_mcnemar_symmetric_is_capped_at_one():
 
 def test_committed_probe_reports_are_paired_and_significant():
     # The paper's section-7 claim regenerates from the committed artifacts.
-    import json
-
     root = Path(__file__).resolve().parents[1] / "results" / "paper"
     a = json.loads((root / "probe_validation_scene.json").read_text())
     b = json.loads((root / "probe_validation_scene_l14.json").read_text())

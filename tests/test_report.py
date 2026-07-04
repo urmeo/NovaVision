@@ -1,9 +1,4 @@
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-
-import report  # noqa: E402
+import report  # scripts/ on sys.path via conftest.py
 
 
 def _results():
