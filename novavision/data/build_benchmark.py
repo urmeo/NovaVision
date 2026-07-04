@@ -83,6 +83,11 @@ def build(
     revision: str = DEFAULT_REVISION,
     drop_train_overlap: bool = True,
 ) -> Path:
+    if n_per_class < 1:
+        # A silent empty (n=0) or tail-sliced (negative) benchmark would back a
+        # wrong result; fail loudly, like load_benchmark.
+        raise ValueError(f"n_per_class must be a positive integer, got {n_per_class}")
+
     from datasets import load_dataset
 
     dataset = load_dataset(DATASET, "simplified", split=split, revision=revision)

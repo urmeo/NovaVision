@@ -1,5 +1,7 @@
 import sys
 
+import pytest
+
 from novavision.data.build_benchmark import _curate, _drop_overlap, _interleave, _normalize
 from novavision.taxonomy import EMOTIONS
 
@@ -57,3 +59,11 @@ def test_cli_threads_revision_into_build(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["build_benchmark", "--revision", "deadbeef"])
     bb.main()
     assert captured["revision"] == "deadbeef"
+
+
+def test_build_rejects_nonpositive_n():
+    from novavision.data.build_benchmark import build
+
+    for bad in (0, -5):
+        with pytest.raises(ValueError, match="positive integer"):
+            build(n_per_class=bad, out_path="/tmp/should_not_write.csv")
