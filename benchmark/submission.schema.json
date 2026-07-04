@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/urme-b/NovaVision/benchmark/submission.schema.json",
+  "title": "NovaVision benchmark submission",
+  "description": "A result produced by running the NovaVision protocol on a new generator and/or probe. Numbers must come from results.json (make paper), never hand-entered.",
+  "type": "object",
+  "required": ["system", "track", "generator", "probe", "conditions", "provenance"],
+  "additionalProperties": false,
+  "properties": {
+    "system": {"type": "string", "description": "Human-readable name of the submitted system."},
+    "track": {"enum": ["content", "text"]},
+    "generator": {"type": "string", "description": "Text-to-image model id (HF or local)."},
+    "probe": {"type": "string", "description": "Recovery probe id (CLIP or HF image classifier)."},
+    "conditions": {
+      "type": "object",
+      "description": "Per-condition metrics; keys are the tier names.",
+      "minProperties": 2,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["accuracy", "accuracy_ci", "n"],
+        "properties": {
+          "accuracy": {"type": "number", "minimum": 0, "maximum": 1},
+          "accuracy_ci": {
+            "type": "array",
+            "items": {"type": ["number", "null"]},
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "shuffled_p": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "n": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "probe_health": {
+      "type": "object",
+      "description": "The collapse diagnostic; a submission with a degenerate probe is not comparable.",
+      "required": ["distinct_labels", "n_labels"],
+      "properties": {
+        "distinct_labels": {"type": "integer", "minimum": 1},
+        "n_labels": {"type": "integer", "minimum": 1}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Copied verbatim from results.json manifest, so a submission is auditable.",
+      "required": ["git_sha", "seeds", "base_seed"],
+      "properties": {
+        "git_sha": {"type": "string"},
+        "seeds": {"type": "integer", "minimum": 1},
+        "base_seed": {"type": "integer"},
+        "benchmark_sha256": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

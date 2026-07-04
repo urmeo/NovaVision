@@ -155,7 +155,13 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0, help="sampling seed")
     parser.add_argument("--image-key", default="image", help="HF dataset image column")
     parser.add_argument("--label-key", default="label", help="HF dataset label column")
+    parser.add_argument("--probe", default="clip", choices=["clip", "hf"])
     parser.add_argument("--clip-model", default="openai/clip-vit-base-patch32")
+    parser.add_argument(
+        "--probe-model",
+        default=None,
+        help="image-classifier model id, required for --probe hf",
+    )
     parser.add_argument(
         "--clip-revision",
         default=None,
@@ -164,7 +170,7 @@ def main() -> None:
     parser.add_argument("--out", default="results/probe_validation.json")
     args = parser.parse_args()
 
-    from novavision.eval.probes import CLIPProbe
+    from novavision.eval.probes import CLIPProbe, HFImageClassifierProbe
 
     if args.hf_dataset:
         pairs = load_hf_dataset(
@@ -181,9 +187,19 @@ def main() -> None:
     else:
         parser.error("pass --hf-dataset or --images-dir")
 
-    probe = CLIPProbe(model_id=args.clip_model, revision=clip_revision_for(args))
+    from novavision.eval.probes import Probe
+
+    probe: Probe
+    if args.probe == "hf":
+        if not args.probe_model:
+            parser.error("--probe hf requires --probe-model")
+        probe = HFImageClassifierProbe(model_id=args.probe_model)
+        model = args.probe_model
+    else:
+        model = args.clip_model
+        probe = CLIPProbe(model_id=model, revision=clip_revision_for(args))
     report = validate(probe, pairs)
-    report["model"] = args.clip_model
+    report["model"] = model
     report["source"] = args.hf_dataset or args.images_dir
     # Provenance: make the exact sample behind the number reproducible.
     if args.hf_dataset:
