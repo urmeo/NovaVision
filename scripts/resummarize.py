@@ -17,7 +17,7 @@ import json
 from pathlib import Path
 
 from novavision.experiments import run as run_mod
-from novavision.experiments.manifest import _git_sha, _version
+from novavision.experiments.manifest import git_sha, package_version
 
 
 def _conditions_for(records: list[dict]) -> tuple[str, ...]:
@@ -35,9 +35,9 @@ def resummarize(results_path: str | Path) -> dict:
     payload["metrics"] = run_mod._summarize(records, conditions)
     payload["contrasts"] = run_mod._contrasts(records)
     payload.setdefault("manifest", {})["reanalysis"] = {
-        "git_sha": _git_sha(),
+        "git_sha": git_sha(),
         "note": "metrics/diagnostics recomputed from the original records; no images regenerated",
-        "packages": {pkg: _version(pkg) for pkg in ("numpy",)},
+        "packages": {pkg: package_version(pkg) for pkg in ("numpy",)},
     }
     run_mod.dump_results(payload, path)
     run_mod._write_figures(path.parent, records, payload["metrics"], conditions)
