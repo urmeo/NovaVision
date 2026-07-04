@@ -136,13 +136,6 @@
             background: linear-gradient(90deg, #7C3AED, #8b5cf6);
         }
 
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-        }
 
         /* App Header - with subtle gradient */
         .app-header {
@@ -579,20 +572,7 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .analysis-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-        }
 
-        .analysis-group h4 {
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #64748b;
-            margin-bottom: 16px;
-        }
 
         .emotion-bar {
             display: flex;
@@ -792,7 +772,7 @@
             margin-bottom: 12px;
         }
 
-        /* ========== FEATURE 1: Live Emotion Timeline ========== */
+        /* Live Emotion Timeline */
         .live-emotions {
             margin-top: 18px;
             padding: 18px;
@@ -949,7 +929,7 @@
             font-weight: 500;
         }
 
-        /* ========== FEATURE 2: Download Buttons ========== */
+        /* Download Buttons */
         .download-actions {
             display: none;
             gap: 12px;
@@ -963,7 +943,7 @@
             animation: fadeInUp 0.3s ease;
         }
 
-        /* ========== FEATURE 1: Enhanced Loading Animation ========== */
+        /* Enhanced Loading Animation */
         .skeleton-loader {
             position: absolute;
             inset: 0;
@@ -1027,7 +1007,7 @@
             color: #94a3b8;
         }
 
-        /* ========== FEATURE 2: Generation Time Display ========== */
+        /* Generation Time Display */
         .generation-time {
             display: none;
             text-align: center;
@@ -1048,7 +1028,7 @@
             color: #6366f1;
         }
 
-        /* ========== FEATURE 3: Regenerate Button ========== */
+        /* Regenerate Button */
         .regenerate-btn {
             display: flex;
             align-items: center;
@@ -1092,7 +1072,7 @@
             height: 16px;
         }
 
-        /* ========== FEATURE 4: Example Prompts ========== */
+        /* Example Prompts */
         .example-prompts {
             margin-top: 12px;
         }
@@ -1136,7 +1116,7 @@
             transform: translateY(0) scale(0.98);
         }
 
-        /* ========== FEATURE 5: Advanced Settings & Seed Control ========== */
+        /* Advanced Settings & Seed Control */
         .advanced-settings {
             margin-top: 16px;
             border-top: 1px solid #e2e8f0;
@@ -1259,7 +1239,7 @@
             color: #6366f1;
         }
 
-        /* ========== FEATURE 6: Error Handling ========== */
+        /* Error Handling */
         .error-display {
             display: none;
             padding: 16px;
@@ -1333,7 +1313,7 @@
             height: 14px;
         }
 
-        /* ========== FEATURE 7: Image History ========== */
+        /* Image History */
         .image-history {
             display: block;
             padding: 20px;
@@ -1504,7 +1484,7 @@
             transform: translateY(-2px);
         }
 
-        /* ========== FEATURE 3: Prompt Engineering Display - Always Visible ========== */
+        /* Prompt Engineering Display - Always Visible */
         .prompt-engineering-section {
             display: block;
             margin-top: 32px;
@@ -1666,10 +1646,6 @@
             color: #8b5cf6;
         }
 
-        .modifier-badge.emotion {
-            background: #ffedd5;
-            color: #ea580c;
-        }
 
         .modifier-badge.quality {
             background: #dcfce7;
@@ -1761,9 +1737,6 @@
             transform: translateY(-4px);
         }
 
-        .step-connector {
-            display: none;
-        }
 
         .step-number {
             width: 80px;
@@ -2061,17 +2034,11 @@
             }
 
 
-            .step-connector {
-                display: none;
-            }
 
             .app-container {
                 grid-template-columns: 1fr;
             }
 
-            .analysis-grid {
-                grid-template-columns: 1fr;
-            }
         }
 
         @media (max-width: 768px) {
@@ -2079,9 +2046,6 @@
                 display: none;
             }
 
-            .mobile-menu-btn {
-                display: block;
-            }
 
             .app-header-title {
                 font-size: 36px;
@@ -2113,13 +2077,6 @@
                 <a href="#features">Features</a>
                 <a href="#about">About</a>
             </div>
-            <button class="mobile-menu-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="2">
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-            </button>
         </div>
     </nav>
 
@@ -2138,7 +2095,6 @@
                     <div class="form-group">
                         <label class="form-label">How are you feeling today?</label>
                         <textarea id="emotionInput" placeholder="Share a thought, memory, or describe how you're feeling..."></textarea>
-                        <!-- FEATURE 4: Example Prompts -->
                         <div class="example-prompts">
                             <div class="example-prompts-label">Try these examples:</div>
                             <div class="example-chips">
@@ -2148,7 +2104,6 @@
                                 <button class="example-chip" data-prompt="Cozy coffee shop on a rainy day">Cozy coffee shop</button>
                             </div>
                         </div>
-                        <!-- FEATURE 1: Live Emotion Timeline -->
                         <div class="live-emotions" id="liveEmotions">
                             <div class="live-emotions-header">
                                 <span class="live-emotions-title">Live Emotion Analysis</span>
@@ -2189,7 +2144,6 @@
                             </span>
                         </div>
                     </div>
-                    <!-- FEATURE 5: Advanced Settings / Seed Control -->
                     <div class="advanced-settings">
                         <button class="advanced-toggle" id="advancedToggle">
                             <span>Advanced Settings</span>
@@ -2216,7 +2170,6 @@
                         <span class="btn-text">Generate Visualization</span>
                     </button>
 
-                    <!-- FEATURE 6: Error Display -->
                     <div class="error-display" id="errorDisplay">
                         <div class="error-message">
                             <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2240,9 +2193,7 @@
                 </div>
                 <div class="app-card output-card">
                     <div class="image-display" id="imageDisplay">
-                        <!-- FEATURE 1: Skeleton Loader -->
                         <div class="skeleton-loader" id="skeletonLoader"></div>
-                        <!-- FEATURE 1: Loading Overlay -->
                         <div class="loading-overlay" id="loadingOverlay">
                             <div class="loading-spinner-large"></div>
                             <div class="loading-text" id="loadingText">Analyzing emotions...</div>
@@ -2258,7 +2209,6 @@
                         </div>
                         <img id="generatedImage" src="" alt="Generated artwork">
                     </div>
-                    <!-- FEATURE 2: Generation Time Display -->
                     <div class="generation-time" id="generationTime">
                         Generated in <span class="time-value" id="generationTimeValue">0.0</span> seconds
                     </div>
@@ -2281,7 +2231,6 @@
                             </svg>
                             Report
                         </button>
-                        <!-- FEATURE 3: Regenerate Button -->
                         <button class="regenerate-btn" id="regenerateBtn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="23 4 23 10 17 10"/>
@@ -2290,7 +2239,6 @@
                             Regenerate
                         </button>
                     </div>
-                    <!-- FEATURE 7: Image History -->
                     <div class="image-history" id="imageHistory">
                         <div class="history-header">
                             <span class="history-title">Recent Generations</span>
@@ -2357,7 +2305,6 @@
                 </div>
             </div>
 
-            <!-- FEATURE 3: Prompt Engineering Display -->
             <div class="prompt-engineering-section" id="prompt-section">
                 <div class="prompt-engineering-header">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2411,7 +2358,7 @@
                             <div class="modifier-item">
                                 <span class="modifier-badge quality">Quality</span>
                                 <div class="modifier-content">
-                                    <div class="modifier-text">"masterpiece, best quality, highly detailed, 8k resolution, sharp focus, professional"</div>
+                                    <div class="modifier-text">"masterpiece, highly detailed, sharp focus, professional"</div>
                                     <div class="modifier-description">Added automatically for high-quality output</div>
                                 </div>
                             </div>
@@ -2439,7 +2386,7 @@
                 <div class="step fade-in" data-delay="2">
                     <div class="step-number">2</div>
                     <h3 class="step-title">Understand</h3>
-                    <p class="step-description">AI instantly reads your emotions and picks the perfect visual style to match your mood.</p>
+                    <p class="step-description">AI reads your emotions and adjusts the mood, palette, and lighting to match.</p>
                 </div>
                 <div class="step fade-in" data-delay="3">
                     <div class="step-number">3</div>
@@ -2510,10 +2457,9 @@
             </div>
             <div class="about-content fade-in">
                 <p class="about-text">
-                    NovaVision combines state-of-the-art natural language processing with advanced image generation
-                    to create a unique bridge between human emotion and visual art. Using transformer-based emotion
-                    detection and diffusion-based image synthesis, we transform the intangible nature of feelings
-                    into stunning, personalized artwork.
+                    NovaVision combines transformer-based emotion detection with diffusion-based image
+                    generation to create a bridge between human emotion and visual art, transforming
+                    the intangible nature of feelings into personalized artwork.
                 </p>
                 <div class="tech-stack fade-in" data-delay="1">
                     <span class="tech-badge">Python</span>
@@ -2610,8 +2556,6 @@
 
         document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-        // ========== FEATURE 1: Live Emotion Timeline ==========
-        const liveEmotions = document.getElementById('liveEmotions');
         const liveStatus = document.getElementById('liveStatus');
         const liveStatusText = document.getElementById('liveStatusText');
         const liveEmotionBars = document.getElementById('liveEmotionBars');
@@ -2698,7 +2642,6 @@
                 }
             });
 
-            // Update status text
             if (showDominant) {
                 liveStatusText.textContent = primaryEmotion.charAt(0).toUpperCase() + primaryEmotion.slice(1);
             } else {
@@ -2706,34 +2649,19 @@
             }
         }
 
-        function setNeutralDominant(showTip = true) {
-            // For non-emotional inputs, show high neutral
-            const neutralEmotions = [
-                { name: 'joy', score: 2 },
-                { name: 'sadness', score: 3 },
-                { name: 'anger', score: 1 },
-                { name: 'fear', score: 1 },
-                { name: 'surprise', score: 5 },
-                { name: 'disgust', score: 1 },
-                { name: 'neutral', score: 87 }
-            ];
-            updateLiveEmotions(neutralEmotions, 'neutral', 87, showTip);
-        }
-
         async function analyzeLive(text) {
             liveStatus.classList.add('analyzing');
             liveStatus.classList.remove('active');
             liveStatusText.textContent = 'Analyzing...';
 
-            // Smart detection: check if input has emotional context
             const hasEmotion = hasEmotionalContext(text);
             const wordCount = text.split(/\s+/).length;
 
-            // If very short and no emotion words, default to neutral
+            // Every displayed score comes from the classifier; too-short input
+            // gets an honest prompt to keep typing, never invented percentages.
             if (wordCount <= 2 && !hasEmotion) {
-                setTimeout(() => {
-                    setNeutralDominant(true);
-                }, 300); // Small delay for visual feedback
+                liveStatus.classList.remove('analyzing');
+                liveStatusText.textContent = 'Type a bit more to analyze';
                 return;
             }
 
@@ -2747,19 +2675,21 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Show tip if input seems non-emotional but model gave a result
                     const showTip = !hasEmotion && wordCount < 5;
                     updateLiveEmotions(data.emotions, data.primary_emotion, data.confidence, showTip);
+                } else {
+                    liveStatus.classList.remove('analyzing');
+                    liveStatusText.textContent = 'Ready';
                 }
             } catch (error) {
                 console.error('Live analysis error:', error);
                 liveStatus.classList.remove('analyzing');
+                liveStatusText.textContent = 'Ready';
             }
         }
 
         const emotionInput = document.getElementById('emotionInput');
 
-        // Initialize with empty state
         resetToEmpty();
 
         emotionInput.addEventListener('input', () => {
@@ -2786,7 +2716,6 @@
             }
         });
 
-        // ========== FEATURE 2: Download Functions ==========
         let currentGenerationData = null;
 
         function downloadImage() {
@@ -2944,7 +2873,6 @@
         document.getElementById('downloadImageBtn').addEventListener('click', downloadImage);
         document.getElementById('downloadReportBtn').addEventListener('click', downloadReport);
 
-        // ========== FEATURE 4: Example Prompts ==========
         document.querySelectorAll('.example-chip').forEach(chip => {
             chip.addEventListener('click', () => {
                 emotionInput.value = chip.dataset.prompt;
@@ -2955,7 +2883,6 @@
             });
         });
 
-        // ========== FEATURE 5: Advanced Settings Toggle ==========
         const advancedToggle = document.getElementById('advancedToggle');
         const advancedContent = document.getElementById('advancedContent');
         const seedInput = document.getElementById('seedInput');
@@ -2971,7 +2898,7 @@
         });
 
         copySeedBtn.addEventListener('click', () => {
-            if (lastUsedSeed) {
+            if (lastUsedSeed !== null) {
                 navigator.clipboard.writeText(lastUsedSeed.toString()).then(() => {
                     copySeedBtn.textContent = 'Copied!';
                     copySeedBtn.classList.add('copied');
@@ -2983,11 +2910,9 @@
             }
         });
 
-        // ========== FEATURE 7: Image History ==========
         const imageHistory = [];
         const maxHistoryItems = 4;
         const historyThumbnails = document.getElementById('historyThumbnails');
-        const historyContainer = document.getElementById('imageHistory');
         const historyCount = document.getElementById('historyCount');
 
         function addToHistory(data) {
@@ -3049,32 +2974,30 @@
         const placeholder = document.getElementById('placeholder');
         const downloadActions = document.getElementById('downloadActions');
 
-        // FEATURE 1: Loading elements
         const skeletonLoader = document.getElementById('skeletonLoader');
         const loadingOverlay = document.getElementById('loadingOverlay');
         const loadingText = document.getElementById('loadingText');
         const loadingSubtext = document.getElementById('loadingSubtext');
 
-        // FEATURE 2: Generation time
         const generationTimeEl = document.getElementById('generationTime');
         const generationTimeValue = document.getElementById('generationTimeValue');
 
-        // FEATURE 6: Error handling
         const errorDisplay = document.getElementById('errorDisplay');
         const errorText = document.getElementById('errorText');
         const errorDetails = document.getElementById('errorDetails');
         const retryBtn = document.getElementById('retryBtn');
 
         // Style descriptions for prompt engineering display
+        // Must mirror STYLE_PRESETS in novavision/prompting.py: this panel shows
+        // the exact text that went into the prompt.
         const styleDescriptions = {
-            'artistic': 'artistic interpretation, painterly style, expressive brushwork, fine art aesthetic',
-            'nature': 'natural landscape, organic forms, environmental beauty, nature photography style',
-            'abstract': 'abstract expressionism, geometric forms, flowing shapes, non-representational art',
-            'dreamscape': 'surreal dreamscape, ethereal atmosphere, fantastical elements, otherworldly beauty',
-            'photorealistic': 'photorealistic rendering, hyperrealistic detail, cinematic photography, professional lighting'
+            'photorealistic': 'hyperrealistic photograph, 85mm lens, natural light, ultra sharp, 8k',
+            'artistic': 'digital painting, expressive brushwork, rich color, dramatic lighting',
+            'abstract': 'abstract art, geometric forms, bold composition, modern gallery piece',
+            'nature': 'landscape photography, golden hour, atmospheric depth, fine detail',
+            'dreamscape': 'surreal dreamscape, ethereal glow, volumetric light, imaginative'
         };
 
-        // Loading state messages
         const loadingMessages = [
             { text: 'Analyzing emotions...', sub: 'Understanding your feelings' },
             { text: 'Building prompt...', sub: 'Crafting the perfect description' },
@@ -3093,7 +3016,6 @@
             loadingOverlay.classList.add('active');
             imageDisplay.classList.add('generating');
 
-            // Hide placeholder
             placeholder.style.display = 'none';
 
             // Cycle through loading messages
@@ -3127,7 +3049,13 @@
                 return;
             }
 
-            // Hide previous error
+            // A typoed seed must fail loudly: parseInt('12a') would silently
+            // generate a different image than the one the user meant to reproduce.
+            if (seedInput.value.trim() && !/^\d+$/.test(seedInput.value.trim())) {
+                showError('Seed must be a whole number.', 'Fix the seed field and try again.');
+                return;
+            }
+
             errorDisplay.classList.remove('visible');
 
             generateBtn.disabled = true;
@@ -3135,13 +3063,10 @@
             generateBtn.classList.add('loading');
             btnText.textContent = 'Generating...';
 
-            // FEATURE 1: Start loading animation
             startLoadingAnimation();
 
-            // FEATURE 2: Start timing
             const startTime = performance.now();
 
-            // FEATURE 5: Get seed value
             const userSeed = seedInput.value.trim();
             const seed = userSeed ? parseInt(userSeed, 10) : Math.floor(Math.random() * 2147483647);
 
@@ -3164,42 +3089,36 @@
                 const data = await response.json();
 
                 if (data.error) {
-                    // FEATURE 6: Show friendly error
                     showError('Generation failed. Please try again.', data.error);
                     stopLoadingAnimation();
                     placeholder.style.display = 'block';
                     return;
                 }
 
-                // FEATURE 2: Calculate generation time
                 const endTime = performance.now();
                 const generationSeconds = ((endTime - startTime) / 1000).toFixed(1);
 
                 // Store generation data for downloads
                 currentGenerationData = data;
 
-                // FEATURE 5: Update seed display
-                lastUsedSeed = data.seed || seed;
+                lastUsedSeed = data.seed ?? seed;
                 lastSeedValue.textContent = lastUsedSeed;
                 usedSeedDisplay.classList.add('visible');
 
                 // Stop loading animation
                 stopLoadingAnimation();
 
-                // Show generated image
-                generatedImage.src = data.image;
+                    generatedImage.src = data.image;
                 generatedImage.classList.add('visible');
                 imageDisplay.classList.add('has-image');
                 placeholder.style.display = 'none';
 
-                // FEATURE 2: Show generation time
                 generationTimeValue.textContent = generationSeconds;
                 generationTimeEl.classList.add('visible');
 
                 // Show download buttons
                 downloadActions.classList.add('visible');
 
-                // FEATURE 7: Add to history
                 addToHistory(data);
 
                 // Update primary emotion (remove default styling)
@@ -3263,7 +3182,6 @@
                 console.error('Error:', error);
                 stopLoadingAnimation();
                 placeholder.style.display = 'block';
-                // FEATURE 6: Show friendly error
                 showError('Failed to connect to server.', 'Make sure the server is running on localhost:8000');
             } finally {
                 generateBtn.disabled = false;
@@ -3274,14 +3192,12 @@
 
         generateBtn.addEventListener('click', generateImage);
 
-        // FEATURE 3: Regenerate button
         document.getElementById('regenerateBtn').addEventListener('click', () => {
             // Clear the seed to get a new random one
             seedInput.value = '';
             generateImage();
         });
 
-        // FEATURE 6: Retry button
         retryBtn.addEventListener('click', () => {
             errorDisplay.classList.remove('visible');
             generateImage();
