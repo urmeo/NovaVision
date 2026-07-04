@@ -31,9 +31,9 @@ make robustness PROBE_MODEL=<hf-image-emotion-model>   # independent non-CLIP pr
 fails this gate makes every downstream recovery number uninterpretable,
 including nulls.
 
-Committed evidence (`results/paper/probe_validation*.json`, CPU, 2026-07-03;
-macro-F1 averages the six supported classes, since the Ekman mapping leaves
-`neutral` unsupported in both sets):
+Committed evidence (`results/paper/probe_validation*.json`; on EmoSet the
+Ekman mapping leaves `neutral` unsupported, so macro-F1 there averages the six
+supported classes; the faces set supports all seven):
 
 | Probe | EmoSet scenes (n=400) | Faces (n=200) | Labels used in-domain |
 |---|---|---|---|
