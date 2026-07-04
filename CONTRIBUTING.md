@@ -27,14 +27,14 @@ Run the full local gate; all should be clean:
 make test
 ruff check novavision tests scripts server.py app.py
 ruff format --check novavision tests scripts server.py app.py
-mypy novavision --ignore-missing-imports
+mypy novavision
 ```
 
 CI also runs a coverage gate, a secret scan (gitleaks), and a dependency audit (pip-audit) on Python 3.9 to 3.12.
 
 Then:
 
-- The suite is **166 tests**; add or update one for any behavior change. `tests/test_contracts.py`
+- The suite is **171 tests**; add or update one for any behavior change. `tests/test_contracts.py`
   pins cross-module invariants (label ordering, backend-default parity, seed pairing, provenance
   API) that per-module tests miss; extend it when you add a coupling across modules. Statistics live in novavision/eval/metrics.py and are unit-tested to the edge cases (nan, ties, small-n).
 - Keep the deterministic core dependency-light: heavy deps (torch, transformers, diffusers, CLIP) are imported *inside* the functions that use them, never at module top.
