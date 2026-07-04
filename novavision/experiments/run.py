@@ -88,6 +88,33 @@ def _shuffle_emotion(gold: str, seed: int) -> str:
     return others[seed % len(others)]
 
 
+class _Checkpoint:
+    """Stream records to JSONL so a long run resumes instead of restarting.
+
+    Each image's record is keyed by (tier, intended, index, seed); an interrupted
+    run reloads the completed records and skips their regeneration. A no-op when
+    ``path`` is None, so the default (non-resumable) path is unchanged.
+    """
+
+    def __init__(self, path: Path | None):
+        self.path = path
+        self.done: dict = {}
+        if path and path.exists():
+            for line in path.read_text().splitlines():
+                if line.strip():
+                    r = json.loads(line)
+                    self.done[(r["tier"], r["intended"], r["index"], r["seed"])] = r
+
+    def cached(self, tier: str, intended: str, index: int, seed: int):
+        return self.done.get((tier, intended, index, seed))
+
+    def record(self, rec: dict) -> dict:
+        if self.path:
+            with open(self.path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(json_safe(rec)) + "\n")
+        return rec
+
+
 def _make_probe(kind: str, probe_model: str | None, clip_model: str, device: str | None):
     """CLIP (default) or an independent HF image-emotion classifier."""
     if kind == "hf":
@@ -121,6 +148,8 @@ def run_experiment(
     clip_model: str = "openai/clip-vit-base-patch32",
     probe_model: str | None = None,
     emotion_model: str = "j-hartmann/emotion-english-distilroberta-base",
+    coverage_override: float | None = None,
+    resume: bool = False,
 ) -> dict:
     set_determinism(base_seed)
     kwargs = {"model_id": diffusion_model}
@@ -128,6 +157,9 @@ def run_experiment(
         kwargs["device"] = device
     gen = get_backend(backend, **kwargs)
     probe_obj = _make_probe(probe, probe_model, clip_model, device)
+    out_dir = Path(out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ckpt = _Checkpoint(out_dir / "records.jsonl" if resume else None)
 
     if track == "text":
         if not benchmark:
@@ -137,9 +169,9 @@ def run_experiment(
             rows = rows[:limit]
         n_items = len(rows)
         _check_seed_domain(n_items, seeds)
-        analyzer = EmotionAnalyzer(model_name=emotion_model)
+        analyzer = EmotionAnalyzer(model_name=emotion_model, coverage_override=coverage_override)
         records = _text_records(
-            rows, gen, probe_obj, analyzer, style, seeds, base_seed, width, height
+            rows, gen, probe_obj, analyzer, style, seeds, base_seed, width, height, ckpt
         )
     else:
         bank = load_content_bank()
@@ -147,7 +179,9 @@ def run_experiment(
             bank = bank[:contents]
         n_items = len(bank)
         _check_seed_domain(n_items, seeds)
-        records = _content_records(bank, gen, probe_obj, style, seeds, base_seed, width, height)
+        records = _content_records(
+            bank, gen, probe_obj, style, seeds, base_seed, width, height, ckpt
+        )
 
     conditions = CONDITIONS[track]
     metrics = _summarize(records, conditions)
@@ -168,12 +202,15 @@ def run_experiment(
         height=height,
         benchmark=benchmark,
         benchmark_sha256=sha256(benchmark) if benchmark else None,
+        coverage_override=coverage_override,
     )
     _write(out, records, metrics, contrasts, manifest, conditions)
+    if ckpt.path and ckpt.path.exists():
+        ckpt.path.unlink()  # run completed; results.json supersedes the checkpoint
     return {"metrics": metrics, "contrasts": contrasts}
 
 
-def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -> list[dict]:
+def _content_records(bank, gen, probe, style, seeds, base_seed, width, height, ckpt) -> list[dict]:
     records: list[dict] = []
     total = len(bank) * len(EMOTIONS) * seeds
     step = 0
@@ -185,12 +222,27 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -
                 step += 1
                 print(f"[{step}/{total}] {emotion} :: {content[:30]}", flush=True)
                 for tier in TIERS:
+                    done = ckpt.cached(tier, emotion, ci, sk)
+                    if done is not None:
+                        records.append(done)
+                        continue
                     image = _render(gen, content, emotion, pv, pa, style, tier, seed, width, height)
                     rec = probe.recover(image)
                     clip_t = probe.clip_t(image, content)
                     records.append(
-                        _record(
-                            probe.name, tier, content, emotion, sk, rec, pv, pa, clip_t, index=ci
+                        ckpt.record(
+                            _record(
+                                probe.name,
+                                tier,
+                                content,
+                                emotion,
+                                sk,
+                                rec,
+                                pv,
+                                pa,
+                                clip_t,
+                                index=ci,
+                            )
                         )
                     )
 
@@ -198,14 +250,22 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height) -
     for ei, emotion in enumerate(EMOTIONS):
         pv, pa = prior(emotion)
         for sk in range(seeds):
+            done = ckpt.cached("scene", emotion, 0, sk)
+            if done is not None:
+                records.append(done)
+                continue
             seed = _seed(base_seed, 0, ei, sk)
             image = _render(gen, "", emotion, pv, pa, style, "scene", seed, width, height)
             rec = probe.recover(image)
-            records.append(_record(probe.name, "scene", "", emotion, sk, rec, pv, pa, float("nan")))
+            records.append(
+                ckpt.record(
+                    _record(probe.name, "scene", "", emotion, sk, rec, pv, pa, float("nan"))
+                )
+            )
     return records
 
 
-def _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, height) -> list[dict]:
+def _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, height, ckpt):
     records: list[dict] = []
     total = len(rows) * seeds
     step = 0
@@ -219,35 +279,57 @@ def _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, he
             print(f"[{step}/{total}] {gold} :: {text[:30]}", flush=True)
             seed = _seed(base_seed, ri, gi, sk)
             for tier in TIERS:
+                done = ckpt.cached(tier, gold, ri, sk)
+                if done is not None:
+                    records.append(done)
+                    continue
                 image = _render(gen, text, gold, iv, ia, style, tier, seed, width, height)
                 rec = probe.recover(image)
                 clip_t = probe.clip_t(image, text)
                 records.append(
-                    _record(
-                        probe.name, tier, text, gold, sk, rec, iv, ia, clip_t, a.primary, index=ri
+                    ckpt.record(
+                        _record(
+                            probe.name,
+                            tier,
+                            text,
+                            gold,
+                            sk,
+                            rec,
+                            iv,
+                            ia,
+                            clip_t,
+                            a.primary,
+                            index=ri,
+                        )
                     )
                 )
 
             # shuffled floor: condition on a wrong emotion, score against it
             wrong = _shuffle_emotion(gold, seed)
+            done = ckpt.cached("shuffled", wrong, ri, sk)
+            if done is not None:
+                records.append(done)
+                continue
             wv, wa = prior(wrong)
             wseed = _seed(base_seed, ri, EMOTIONS.index(wrong), sk)
             image = _render(gen, text, wrong, wv, wa, style, "emotion", wseed, width, height)
             rec = probe.recover(image)
             clip_t = probe.clip_t(image, text)
             records.append(
-                _record(
-                    probe.name,
-                    "shuffled",
-                    text,
-                    wrong,
-                    sk,
-                    rec,
-                    wv,
-                    wa,
-                    clip_t,
-                    a.primary,
-                    index=ri,
+                ckpt.record(
+                    _record(
+                        probe.name,
+                        "shuffled",
+                        text,
+                        wrong,
+                        sk,
+                        rec,
+                        wv,
+                        wa,
+                        clip_t,
+                        a.primary,
+                        index=ri,
+                    )
                 )
             )
     return records
@@ -453,6 +535,17 @@ def main() -> None:
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--device", default=None, help="cpu, cuda, or mps; auto if unset")
     parser.add_argument("--out", default="results")
+    parser.add_argument(
+        "--force-coverage",
+        type=float,
+        default=None,
+        help="ablation: force the lexicon/prior blend weight (0=prior only, 1=lexicon only)",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="stream records to <out>/records.jsonl and resume an interrupted run",
+    )
     args = parser.parse_args()
 
     result = run_experiment(
@@ -472,6 +565,8 @@ def main() -> None:
         probe=args.probe,
         clip_model=args.clip_model,
         probe_model=args.probe_model,
+        coverage_override=args.force_coverage,
+        resume=args.resume,
     )
     print(json.dumps(json_safe(result), indent=2))
 
