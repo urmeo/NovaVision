@@ -1,3 +1,5 @@
+import sys
+
 from novavision.data.build_benchmark import _curate, _drop_overlap, _interleave, _normalize
 from novavision.taxonomy import EMOTIONS
 
@@ -36,3 +38,22 @@ def test_drop_overlap_removes_cross_split_leakage():
     assert kept == [("unique line", "joy")]
     # No exclusion set -> passthrough.
     assert _drop_overlap(examples, set()) == examples
+
+
+def test_cli_threads_revision_into_build(monkeypatch):
+    # Regression: --revision was accepted by build() but never exposed on the CLI,
+    # so the pinned default could not be overridden without editing source.
+    from novavision.data import build_benchmark as bb
+
+    captured = {}
+
+    def fake_build(n, out, seed, split, *, revision, drop_train_overlap):
+        captured["revision"] = revision
+        from pathlib import Path
+
+        return Path(out)
+
+    monkeypatch.setattr(bb, "build", fake_build)
+    monkeypatch.setattr(sys, "argv", ["build_benchmark", "--revision", "deadbeef"])
+    bb.main()
+    assert captured["revision"] == "deadbeef"

@@ -142,13 +142,23 @@ def main() -> None:
     parser.add_argument("--split", default="test")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
+        "--revision",
+        default=DEFAULT_REVISION,
+        help="GoEmotions dataset revision to pin (default: the reproducible pinned commit)",
+    )
+    parser.add_argument(
         "--keep-train-overlap",
         action="store_true",
         help="do NOT subtract the train split (disables cross-split dedup)",
     )
     args = parser.parse_args()
     path = build(
-        args.n, args.out, args.seed, args.split, drop_train_overlap=not args.keep_train_overlap
+        args.n,
+        args.out,
+        args.seed,
+        args.split,
+        revision=args.revision,
+        drop_train_overlap=not args.keep_train_overlap,
     )
     print(f"Wrote {path} and {path.with_suffix('.manifest.json')}")
 
