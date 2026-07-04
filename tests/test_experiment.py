@@ -152,3 +152,49 @@ def test_seed_domain_guard():
     for items, seeds in ((run.SEED_MAX_ITEMS + 1, 1), (1, run.SEED_MAX_SEEDS + 1)):
         with pytest.raises(ValueError):
             run._check_seed_domain(items, seeds)
+
+
+def test_coverage_override_forces_blend_weight(monkeypatch):
+    from novavision.affect.analyzer import EmotionAnalyzer
+    from novavision.affect.lexicon import AffectScore
+
+    class _Lex:
+        def score(self, text):
+            return AffectScore(1.0, 1.0, 0.5)  # coverage 0.5 would normally blend
+
+    a = EmotionAnalyzer(lexicon=_Lex(), coverage_override=0.0)  # prior only
+    a._classifier = lambda text, **kw: [[{"label": "joy", "score": 0.9}]]
+    from novavision.taxonomy import prior
+
+    pv, pa = prior("joy")
+    res = a.analyze("anything")
+    assert (res.valence, res.arousal) == (round(pv, 4), round(pa, 4))
+
+
+def test_coverage_override_rejects_out_of_range():
+    from novavision.affect.analyzer import EmotionAnalyzer
+
+    with pytest.raises(ValueError, match="coverage_override"):
+        EmotionAnalyzer(coverage_override=1.5)
+
+
+def test_resume_reuses_checkpoint_and_cleans_up(tmp_path, monkeypatch):
+    monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
+    out = tmp_path / "run"
+    run.run_experiment(backend="null", contents=1, seeds=1, out=str(out), resume=True)
+    # A completed run removes its checkpoint; results.json supersedes it.
+    assert not (out / "records.jsonl").exists()
+    assert (out / "results.json").exists()
+
+
+def test_resume_skips_completed_records(tmp_path):
+    import json as _json
+
+    from novavision.experiments.run import _Checkpoint
+
+    path = tmp_path / "records.jsonl"
+    rec = {"tier": "raw", "intended": "joy", "index": 0, "seed": 0, "predicted": "joy"}
+    path.write_text(_json.dumps(rec) + "\n")
+    ckpt = _Checkpoint(path)
+    assert ckpt.cached("raw", "joy", 0, 0) == rec
+    assert ckpt.cached("raw", "anger", 0, 0) is None
