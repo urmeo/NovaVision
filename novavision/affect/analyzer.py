@@ -39,10 +39,12 @@ class EmotionAnalyzer:
         self,
         model_name: str = DEFAULT_MODEL,
         lexicon: AffectLexicon | None = None,
-        revision: str | None = EMOTION_REVISION,
+        revision: str | None = None,
     ):
         self.model_name = model_name
-        self.revision = revision
+        # The pinned revision is a commit of DEFAULT_MODEL only; applying it to a
+        # swapped model would request a commit that does not exist in that repo.
+        self.revision = revision or (EMOTION_REVISION if model_name == DEFAULT_MODEL else None)
         self._lexicon = lexicon
         self._classifier = None
         # Independent resources get independent locks: neither load can ever
