@@ -11,7 +11,9 @@ CLIP_REVISION = "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(extra="ignore")
+    # NOVA_ prefix keeps these consistent with the other NOVA_* env vars and stops
+    # a generic BACKEND in a shell or base image from silently overriding the run.
+    model_config = SettingsConfigDict(env_prefix="NOVA_", extra="ignore")
 
     backend: str = "null"
     emotion_model: str = "j-hartmann/emotion-english-distilroberta-base"
