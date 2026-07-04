@@ -40,11 +40,17 @@ class EmotionAnalyzer:
         model_name: str = DEFAULT_MODEL,
         lexicon: AffectLexicon | None = None,
         revision: str | None = None,
+        coverage_override: float | None = None,
     ):
         self.model_name = model_name
         # The pinned revision is a commit of DEFAULT_MODEL only; applying it to a
         # swapped model would request a commit that does not exist in that repo.
         self.revision = revision or (EMOTION_REVISION if model_name == DEFAULT_MODEL else None)
+        # Ablation hook: force the lexicon/prior blend weight (0 = prior only,
+        # 1 = lexicon only) instead of using measured coverage. None = normal.
+        if coverage_override is not None and not 0.0 <= coverage_override <= 1.0:
+            raise ValueError("coverage_override must be in [0, 1]")
+        self.coverage_override = coverage_override
         self._lexicon = lexicon
         self._classifier = None
         # Independent resources get independent locks: neither load can ever
@@ -88,7 +94,11 @@ class EmotionAnalyzer:
 
         affect = self.lexicon.score(text)
         pv, pa = prior(primary)
-        c = min(affect.coverage, MAX_LEXICON_BLEND)
+        c = (
+            self.coverage_override
+            if self.coverage_override is not None
+            else min(affect.coverage, MAX_LEXICON_BLEND)
+        )
         valence = c * affect.valence + (1 - c) * pv
         arousal = c * affect.arousal + (1 - c) * pa
 
