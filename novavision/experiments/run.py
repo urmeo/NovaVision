@@ -39,10 +39,9 @@ from novavision.eval.metrics import (
 from novavision.eval.probes import CLIPProbe, HFImageClassifierProbe
 from novavision.experiments.manifest import build_manifest
 from novavision.generation import get_backend
-from novavision.prompting import NEGATIVE_PROMPT, build_prompt
+from novavision.prompting import NEGATIVE_PROMPT, TIERS, build_prompt
 from novavision.taxonomy import EMOTIONS, prior
 
-TIERS = ("raw", "naive", "emotion", "affect")
 CONDITIONS = {
     "content": (*TIERS, "scene"),
     "text": (*TIERS, "shuffled"),
@@ -95,7 +94,12 @@ def _make_probe(kind: str, probe_model: str | None, clip_model: str, device: str
         if not probe_model:
             raise ValueError("--probe hf requires --probe-model")
         return HFImageClassifierProbe(model_id=probe_model, device=device)
-    return CLIPProbe(model_id=probe_model or clip_model, device=device, revision=CLIP_REVISION)
+    if kind != "clip":
+        raise ValueError(f"unknown probe kind '{kind}', expected 'clip' or 'hf'")
+    model_id = probe_model or clip_model
+    # The pinned revision is a ViT-B/32 commit; it must not leak onto other models.
+    revision = CLIP_REVISION if model_id == "openai/clip-vit-base-patch32" else None
+    return CLIPProbe(model_id=model_id, device=device, revision=revision)
 
 
 def run_experiment(
@@ -469,7 +473,7 @@ def main() -> None:
         clip_model=args.clip_model,
         probe_model=args.probe_model,
     )
-    print(json.dumps(result, indent=2))
+    print(json.dumps(json_safe(result), indent=2))
 
 
 if __name__ == "__main__":

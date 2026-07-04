@@ -30,9 +30,12 @@ class DiffusersBackend(ImageBackend):
         model_id: str = "stabilityai/sd-turbo",
         device: str | None = None,
         steps: int = 2,
-        revision: str | None = DIFFUSION_REVISION,
+        revision: str | None = None,
     ):
         self.model_id = model_id
+        # The pinned revision belongs to sd-turbo only; a swapped model gets its
+        # own latest revision rather than a nonexistent commit.
+        revision = revision or (DIFFUSION_REVISION if model_id == "stabilityai/sd-turbo" else None)
         self.device = device or _pick_device()
         self.dtype = "float16" if self.device == "cuda" else "float32"
         self.steps = steps
@@ -68,7 +71,7 @@ class DiffusersBackend(ImageBackend):
     ) -> Image.Image:
         import torch
 
-        # clamp seed
+        # manual_seed rejects negative seeds; normalize into torch's valid range.
         generator = torch.Generator(device=self.device).manual_seed(int(seed) % (2**63 - 1))
         turbo = "turbo" in self.model_id.lower()
         out = self.pipe(

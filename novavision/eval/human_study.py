@@ -66,8 +66,12 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
     style = cfg.get("style", "artistic")
     bank = load_content_bank()
 
+    from novavision.determinism import set_determinism
     from novavision.experiments.run import _seed
 
+    # The rated images must be bit-identical to the scored images, so the rebuild
+    # runs under the same determinism settings as the original run.
+    set_determinism(cfg["base_seed"])
     if gen is None and cfg["backend"] not in ("diffusers", "null"):
         raise ValueError(
             f"Backend '{cfg['backend']}' is non-deterministic: rebuilt images would not be "
@@ -189,7 +193,10 @@ def main() -> None:
         path = build_sheet(args.results, n=args.n, seed=args.seed)
         print(f"Wrote rating sheet to {path}")
     else:
-        print(json.dumps(analyze(args.ratings, args.key), indent=2))
+        from novavision.experiments.run import json_safe
+
+        # An unfilled sheet yields nan agreement; json_safe keeps the output valid JSON.
+        print(json.dumps(json_safe(analyze(args.ratings, args.key)), indent=2))
 
 
 if __name__ == "__main__":

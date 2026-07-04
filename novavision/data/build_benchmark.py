@@ -131,6 +131,8 @@ def build(
         "total": len(rows),
         "underfilled": short,
         "balanced": not short,
+        # The count alone cannot show whether the dedup RAN (0 also means disabled).
+        "drop_train_overlap": bool(drop_train_overlap and split != "train"),
         "dropped_train_overlap": dropped_overlap,
         "sha256": sha256(out_path),
     }

@@ -58,10 +58,15 @@ def token_ok(provided: str | None) -> bool:
 
 
 def env_int(name: str, default: int) -> int:
-    try:
-        return int(os.getenv(name, "") or default)
-    except ValueError:
+    raw = os.getenv(name, "")
+    if not raw:
         return default
+    try:
+        return int(raw)
+    except ValueError:
+        # These knobs guard a public bind; a typo must fail at startup, not
+        # silently run with the default.
+        raise ValueError(f"{name} must be an integer, got {raw!r}") from None
 
 
 class RateLimiter:
