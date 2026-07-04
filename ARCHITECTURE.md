@@ -21,7 +21,7 @@ text ─► EmotionAnalyzer ─► (emotion, valence, arousal) ─► build_prom
    measure pure template recognition.
 3. **Backends** (`generation/`): a common `ImageBackend` interface with three
    implementations: `null` (deterministic, offline, for tests), `diffusers` (local, seedable,
-   revision-pinned), `hf-api` (hosted). Selected by `BACKEND`.
+   revision-pinned), `hf-api` (hosted). Selected by `NOVA_BACKEND`.
 
 ## Evaluation
 
