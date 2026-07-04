@@ -62,7 +62,8 @@ def metrics_table(metrics: dict) -> str:
         if not m:
             continue
         lo, hi = m["accuracy_ci"]
-        acc = f"{m['accuracy']:.3f} [{lo:.3f}, {hi:.3f}]"
+        # A degenerate (n<2) condition writes null CI bounds; _fmt renders those.
+        acc = f"{_fmt(m['accuracy'])} [{_fmt(lo)}, {_fmt(hi)}]"
         lines.append(
             f"| {cond} | {acc} | {_fmt(m['macro_f1'])} | {_rho(m, 'valence_rho')} | "
             f"{_rho(m, 'arousal_rho')} | {_fmt(m['clip_t'])} | {m['n']} |"
@@ -105,9 +106,11 @@ def contrasts_table(contrasts: dict) -> str:
     rule = "|" + "---|" * 4
     lines = [head, rule]
     for name, c in contrasts.items():
-        ci = f"[{c['ci_low']:.3f}, {c['ci_high']:.3f}]"
+        ci = f"[{_fmt(c['ci_low'])}, {_fmt(c['ci_high'])}]"
+        diff = c["mean_diff"]
+        diff_s = f"{diff:+.3f}" if isinstance(diff, (int, float)) else _fmt(diff)
         label = name.replace("_", " ")
-        lines.append(f"| {label} | {c['mean_diff']:+.3f} | {ci} | {c['p_value']:.3f} |")
+        lines.append(f"| {label} | {diff_s} | {ci} | {_fmt(c['p_value'])} |")
     return "\n".join(lines)
 
 
