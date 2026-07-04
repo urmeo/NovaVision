@@ -103,8 +103,9 @@ def test_all_backends_default_to_same_size():
 def test_seed_is_independent_of_tier():
     from novavision.experiments import run
 
-    # Same (base, ci, ei, sk) must give one seed regardless of which tier renders.
-    assert run._seed(0, 3, 4, 1) == run._seed(0, 3, 4, 1)
+    # The seed is derived from (base, item, emotion, seed) with no tier input, so
+    # every tier renders the same content under the same generation noise.
+    assert "tier" not in inspect.signature(run._seed).parameters
     # Distinct coordinates must give distinct seeds inside the guarded domain.
     assert run._seed(0, 3, 4, 1) != run._seed(0, 3, 5, 1)
 
@@ -122,11 +123,7 @@ def test_seed_bound_assumption_is_still_valid():
 
 
 def test_report_conditions_are_producible_by_run():
-    import sys
-    from pathlib import Path
-
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-    import report
+    import report  # scripts/ on sys.path via conftest.py
 
     from novavision.experiments import run
 

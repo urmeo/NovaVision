@@ -1,3 +1,5 @@
+import pytest
+
 from novavision import serving
 
 
@@ -70,3 +72,19 @@ def test_concurrency_guard_caps_slots():
     assert guard.acquire() is False  # only one slot
     guard.release()
     assert guard.acquire() is True
+
+
+def test_env_int_reads_valid(monkeypatch):
+    monkeypatch.setenv("NOVA_X", "42")
+    assert serving.env_int("NOVA_X", 7) == 42
+
+
+def test_env_int_unset_uses_default(monkeypatch):
+    monkeypatch.delenv("NOVA_X", raising=False)
+    assert serving.env_int("NOVA_X", 7) == 7
+
+
+def test_env_int_malformed_fails_loudly(monkeypatch):
+    monkeypatch.setenv("NOVA_X", "1O")  # letter O, not zero
+    with pytest.raises(ValueError, match="must be an integer"):
+        serving.env_int("NOVA_X", 7)

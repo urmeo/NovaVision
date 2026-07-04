@@ -28,3 +28,12 @@ def test_auto_run_skips_neutral():
 def test_auto_run_conditions_emotion():
     nv = NovaVision(backend=NullBackend(), analyzer=StubAnalyzer(emotion="joy"))
     assert nv.auto_run("what a wonderful day").tier == "affect"
+
+
+def test_build_pipeline_returns_lazy_null_pipeline(monkeypatch):
+    monkeypatch.setenv("BACKEND", "null")
+    from novavision.pipeline import build_pipeline
+
+    nv = build_pipeline()
+    assert nv.backend.name == "null"
+    assert nv.analyzer is not None  # constructed, no model loaded yet

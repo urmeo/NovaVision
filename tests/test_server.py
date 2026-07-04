@@ -19,7 +19,7 @@ class FakePipeline:
 
     def auto_run(self, text, style="artistic", seed=0):
         image = Image.new("RGB", (8, 8), (10, 20, 30))
-        return Result(image, "prompt", self.analyzer.analyze(text), "affect", style, seed, "null")
+        return Result(image, "prompt", self.analyzer.analyze(text), "affect", seed, "null")
 
 
 @pytest.fixture
@@ -136,7 +136,7 @@ def test_worst_case_legal_body_fits_under_cap(client):
     # characters, so this request is legal and must not be rejected by the cap.
     import json as _json
 
-    body = _json.dumps({"text": "\U0001f600" * 1999, "style": "artistic", "seed": 1})
+    body = _json.dumps({"text": "\U0001f600" * 2000, "style": "artistic", "seed": 1})
     resp = client.post("/api/generate", data=body, content_type="application/json")
     assert resp.status_code == 200
 
