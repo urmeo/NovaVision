@@ -7,6 +7,20 @@ from pathlib import Path
 import numpy as np
 
 
+def _pyplot():
+    """pyplot on a non-interactive backend.
+
+    Runs (CI, servers) are headless; force ``Agg`` before pyplot is first
+    imported so it never tries to reach a display and warn or stall.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg", force=False)
+    import matplotlib.pyplot as plt
+
+    return plt
+
+
 def _row_normalize(matrix: np.ndarray) -> np.ndarray:
     """Row-normalized confusion; a class absent from y_true becomes NaN, not 0.
 
@@ -20,7 +34,7 @@ def _row_normalize(matrix: np.ndarray) -> np.ndarray:
 
 
 def plot_confusion(matrix: np.ndarray, labels, path: str | Path, title: str = "") -> None:
-    import matplotlib.pyplot as plt
+    plt = _pyplot()
 
     row_n = matrix.sum(axis=1, keepdims=True)
     norm = _row_normalize(matrix)
@@ -46,7 +60,7 @@ def plot_confusion(matrix: np.ndarray, labels, path: str | Path, title: str = ""
 def plot_accuracy(
     tier_acc: dict[str, float], path: str | Path, chance: float | None = None
 ) -> None:
-    import matplotlib.pyplot as plt
+    plt = _pyplot()
 
     tiers = list(tier_acc)
     fig, ax = plt.subplots(figsize=(5, 3.5))
@@ -64,7 +78,7 @@ def plot_accuracy(
 
 
 def plot_va_scatter(records, tier: str, path: str | Path) -> None:
-    import matplotlib.pyplot as plt
+    plt = _pyplot()
 
     sub = [r for r in records if r["tier"] == tier]
     fig, ax = plt.subplots(figsize=(4.5, 4.5))
