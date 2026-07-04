@@ -7,7 +7,7 @@ colorFrom: indigo
 colorTo: purple
 sdk: gradio
 # Kept on the same major as the app extra (gradio>=6,<7) so Spaces and Docker
-# run the same gradio major; app.py is import-verified against this version.
+# run the same gradio major.
 sdk_version: 6.19.0
 app_file: app.py
 pinned: false
