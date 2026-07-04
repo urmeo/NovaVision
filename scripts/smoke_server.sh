@@ -10,7 +10,7 @@ BASE="http://127.0.0.1:${PORT}"
 TOKEN="smoke-token"
 
 BIG=$(mktemp)
-BACKEND=null NOVA_API_TOKEN="$TOKEN" NOVA_RATE_LIMIT=100 PORT="$PORT" python server.py &
+NOVA_BACKEND=null NOVA_API_TOKEN="$TOKEN" NOVA_RATE_LIMIT=100 PORT="$PORT" python server.py &
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" 2>/dev/null || true; rm -f "$BIG"' EXIT
 
