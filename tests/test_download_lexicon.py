@@ -1,13 +1,9 @@
 import hashlib
 import io
-import sys
 import zipfile
-from pathlib import Path
 
+import download_lexicon as dl  # scripts/ on sys.path via conftest.py
 import pytest
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import download_lexicon as dl  # noqa: E402
 
 _CSV = "Word,V.Mean.Sum,A.Mean.Sum\nhappy,7.0,5.0\ngloom,2.0,3.0\n"
 

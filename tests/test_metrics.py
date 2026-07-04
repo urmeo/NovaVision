@@ -8,6 +8,7 @@ from novavision.eval.metrics import (
     bootstrap_corr_ci,
     confusion_matrix,
     macro_f1,
+    mae,
     majority_baseline,
     paired_bootstrap_test,
     pearson,
@@ -15,6 +16,20 @@ from novavision.eval.metrics import (
     prediction_collapse,
     spearman,
 )
+
+
+def test_mae_known_values():
+    assert mae([1.0, 2.0, 3.0], [1.0, 2.0, 3.0]) == 0.0
+    assert mae([0.0, 0.0], [1.0, 3.0]) == 2.0
+
+
+def test_mae_empty_is_nan():
+    assert math.isnan(mae([], []))
+
+
+def test_bootstrap_corr_ci_rejects_unknown_method():
+    with pytest.raises(ValueError, match="unknown method"):
+        bootstrap_corr_ci([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], method="pearsn")
 
 
 def test_accuracy():

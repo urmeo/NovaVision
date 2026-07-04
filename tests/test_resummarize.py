@@ -1,12 +1,8 @@
 import json
-import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+import resummarize  # scripts/ on sys.path via conftest.py
 
-import resummarize  # noqa: E402
-
-from novavision.taxonomy import EMOTIONS  # noqa: E402
+from novavision.taxonomy import EMOTIONS
 
 
 def _run_with_records(tmp_path):
