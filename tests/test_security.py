@@ -10,7 +10,7 @@ SOURCES = [ROOT / "novavision", ROOT / "scripts", ROOT / "server.py", ROOT / "ap
 # Model weights must load via HF from_pretrained (safetensors), never these.
 _UNSAFE = re.compile(
     r"\bpickle\.loads?\b|\btorch\.load\s*\(|weights_only\s*=\s*False|"
-    r"yaml\.load\s*\((?![^)]*SafeLoader)|\bos\.system\s*\(|shell\s*=\s*True"
+    r"yaml\.load\s*\((?!.*SafeLoader)|\bos\.system\s*\(|shell\s*=\s*True"
 )
 
 
@@ -35,6 +35,7 @@ def test_no_default_public_bind():
     # The server must never default to 0.0.0.0; binding is opt-in via novavision.serving.
     server = (ROOT / "server.py").read_text()
     app = (ROOT / "app.py").read_text()
-    assert 'os.getenv("HOST", "0.0.0.0")' not in server
-    assert 'os.getenv("HOST", "0.0.0.0")' not in app
+    bind = re.compile(r"""getenv\(\s*["']HOST["']\s*,\s*["']0\.0\.0\.0["']""")
+    assert not bind.search(server)
+    assert not bind.search(app)
     assert "resolve_host()" in server and "resolve_host()" in app
