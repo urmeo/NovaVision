@@ -143,10 +143,17 @@ def _holm_note(metrics: dict) -> str:
         return ""
     adjusted = holm_bonferroni(pvals)
     parts = [f"{cond} p_adj={adjusted[cond]['p_adjusted']:.2f}" for cond in pvals]
+    survivors = [cond for cond in pvals if adjusted[cond]["reject"]]
+    # The conclusion is derived from the adjusted decisions, never hardcoded, so a
+    # future run where a tier clears the correction reports that truthfully.
+    verdict = (
+        "no tier survives at 0.05, so the null holds under multiple-comparison control"
+        if not survivors
+        else f"the null is rejected for {', '.join(survivors)} under multiple-comparison control"
+    )
     return (
         "**Family-wise correction (Holm):** across the conditioning tiers, "
-        f"{', '.join(parts)}. No tier survives at 0.05, so the null holds under "
-        "multiple-comparison control."
+        f"{', '.join(parts)}; {verdict}."
     )
 
 
