@@ -18,7 +18,8 @@ judged, whichever way it comes out. Timestamped by its git commit.
 ## Design
 
 - **Content track:** 20 neutral subjects x 7 Ekman emotions x 3 seeds =
-  n=420 per conditioning tier (n=210 for `scene`).
+  n=420 per conditioning tier (n=21 for `scene`: 7 emotions x 3 seeds, with no
+  content factor since the template floor renders no subject).
 - **Text track:** AffectBench (GoEmotions test split, pinned revision), same seeds.
 - **Generator:** as configured (`--diffusion-model`); **probe:** the one that
   clears the in-domain gate (see RUNBOOK step 1), reported with its measured error.

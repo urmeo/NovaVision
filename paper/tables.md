@@ -13,7 +13,7 @@ Chance = 0.143 (1/7); majority-class baseline = 0.143. A probe collapsed onto on
 **Shuffled-label control:** one-sided permutation test of recovery vs randomly reassigned target emotions (null mean 0.142): emotion p=0.23, affect p=0.14. A p near 1 means recovery is indistinguishable from the circularity baseline, i.e. not above chance label agreement.
 † On neutral content the intended valence/arousal is the per-emotion prior, so these correlations reflect between-emotion separation, not within-emotion grounding.
 ‡ ρ is shown with its bootstrap 95% CI; at small n the interval spans most of [-1, 1], so the point estimate should not be over-read.
-**Family-wise correction (Holm):** across the conditioning tiers, emotion p_adj=0.27, affect p_adj=0.27. No tier survives at 0.05, so the null holds under multiple-comparison control.
+**Family-wise correction (Holm):** across the conditioning tiers, emotion p_adj=0.27, affect p_adj=0.27; no tier survives at 0.05, so the null holds under multiple-comparison control.
 
 **Table 2.** Paired contrasts on per-item recovery (bootstrap).
 
