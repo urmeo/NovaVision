@@ -14,10 +14,10 @@ This regenerates a class-stratified sample of the run's images under
 `results/paper/human_study/` (deterministic, so the rated images are byte-identical
 to the scored ones) with:
 
-- `images/` — the images to rate,
-- `ratings_template.csv` — one blank `emotion` column to fill,
-- `key.csv` — the intended and probe labels, **kept hidden from raters**,
-- `README.md` — realized per-class counts (report them with any result).
+- `images/`: the images to rate,
+- `ratings_template.csv`: one blank `emotion` column to fill,
+- `key.csv`: the intended and probe labels, **kept hidden from raters**,
+- `README.md`: realized per-class counts (report them with any result).
 
 ## 2. Recruit and instruct raters
 
