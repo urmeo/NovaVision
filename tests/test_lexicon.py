@@ -68,6 +68,13 @@ def test_meaning_changing_suffixes_not_stripped():
     assert lex.lookup("hopeless") is None
 
 
+def test_ly_suffix_not_stripped():
+    # `lovely`/`early` must not collapse onto `love`/`ear`.
+    lex = AffectLexicon({"love": (0.9, 0.7), "ear": (0.0, 0.4)})
+    assert lex.lookup("lovely") is None
+    assert lex.lookup("early") is None
+
+
 def test_malformed_lexicon_line_raises(tmp_path):
     bad = tmp_path / "bad.tsv"
     bad.write_text("word\tvalence\tarousal\nhappy\thigh\t0.5\n")

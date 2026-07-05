@@ -72,8 +72,6 @@ def _variants(token: str):
         yield token[:-1]  # likes -> like
     elif token.endswith("s") and not token.endswith("ss") and len(token) > 3:
         yield token[:-1]  # dogs -> dog
-    elif token.endswith("ly") and len(token) > 4:
-        yield token[:-2]  # sadly -> sad
 
 
 class AffectLexicon:
