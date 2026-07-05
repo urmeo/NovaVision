@@ -121,7 +121,7 @@ uv pip install -r requirements.lock
 
 No local setup? [`reproduce.ipynb`](reproduce.ipynb) runs the whole thing in Colab: clone, install, test, re-derive the numbers, and (optionally) regenerate the pilot with the real models.
 
-Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **189** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift, so the reported numbers stay locked to the outputs they came from.
+Requires Python 3.9 to 3.12 (all tested in CI). The pilot results and figures are committed under `results/paper/`, so `make paper` and the **198** tests run without re-downloading models or raw data. `make repro-check` re-derives every headline number in the table above from the committed raw per-example records (`results/paper/results.json`, pure numpy) and fails on any drift, so the reported numbers stay locked to the outputs they came from.
 
 ## Submit a system
 
@@ -146,6 +146,7 @@ The ordered GPU-day checklist with acceptance gates is in [RUNBOOK.md](RUNBOOK.m
 - Setup, test, and reproduction steps: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md)
 - Vulnerabilities go through the [security policy](SECURITY.md)
+- Powered-run analysis is locked in the [preregistration](PREREGISTRATION.md); intended use and limits are in the [model card](MODEL_CARD.md)
 
 ## License
 
