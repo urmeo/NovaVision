@@ -47,7 +47,7 @@ supported classes; the faces set supports all seven):
 
 | Probe | EmoSet scenes (n=400) | Faces (n=200) | Labels used in-domain |
 |---|---|---|---|
-| CLIP ViT-B/32 (committed default) | 40.3% / F1 0.44 | 29.0% / F1 0.22 | 7/7, most frequent `neutral` 28.3% |
+| CLIP ViT-B/32 (committed default) | 40.3% / F1 0.44 | 29.0% / F1 0.22 | 7/7, most frequent `neutral` 28.2% |
 | CLIP ViT-L/14 (candidate) | 45.5% / F1 0.47 | 37.5% / F1 0.36 | 7/7, most frequent `sadness` 27.8% |
 
 The L/14 edge is significant per set (exact paired McNemar: EmoSet p=0.038,

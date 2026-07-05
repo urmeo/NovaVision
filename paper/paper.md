@@ -265,7 +265,7 @@ this is why §6 reports a null and why the floors, while necessary, are not suff
 same check on real scene photographs (EmoSet, $n=400$ from the train split, seed 0; labels
 mapped to the Ekman set, which leaves `neutral` unsupported, so macro-F1 averages the six
 supported classes). The default ViT-B/32 recovers **40.3% (macro-F1 0.44)** while still
-emitting all seven labels (most frequent prediction `neutral`, 28.3% of items); ViT-L/14
+emitting all seven labels (most frequent prediction `neutral`, 28.2% of items); ViT-L/14
 reaches **45.5% (macro-F1 0.47)**, also emitting all seven (most frequent `sadness`, 27.8%).
 On faces the same comparison is 29.0% vs. 37.5%. The reports store per-item outcomes, so the
 gap is tested rather than eyeballed: an exact paired McNemar test gives $p=0.038$ in domain
