@@ -152,6 +152,15 @@ through. For each tier we report:
   against randomly reassigned target emotions, reporting the null mean, 95% interval, and p-value.
   This is the circularity baseline: recovery counts only when it clears the shuffled-label null.
 
+Because several tiers are tested against the shuffled-label null, we control the family-wise
+error rate with a **Holm correction** [@holm1979] and report the adjusted p-values; a tier counts
+only if it clears the correction. Each tier contrast is accompanied by **Cohen's $h$**, the
+arcsine effect size for two proportions, so significance is never reported without magnitude.
+Finally, because the probe is imperfect, we report recovery **corrected for the probe's measured
+error** by the Rogan-Gladen estimator [@rogan1978]: given the probe's per-class sensitivity and
+specificity from validation (§7), the apparent recovery is deconvolved to the rate a perfect
+instrument would see, so the probe's known error becomes a correction rather than only a caveat.
+
 Tier differences (**naive** vs **raw**, **emotion** vs **naive**, **emotion** vs **raw**,
 **affect** vs **emotion**, **affect** vs **raw**) are tested with a **paired bootstrap** on
 per-item recovery, reporting the mean difference, its CI, and a p-value. Each item is rendered
@@ -198,7 +207,7 @@ Chance = 0.143 (1/7); majority-class baseline = 0.143. A probe collapsed onto on
 **Shuffled-label control:** one-sided permutation test of recovery vs randomly reassigned target emotions (null mean 0.142): emotion p=0.23, affect p=0.14. A p near 1 means recovery is indistinguishable from the circularity baseline, i.e. not above chance label agreement.
 † On neutral content the intended valence/arousal is the per-emotion prior, so these correlations reflect between-emotion separation, not within-emotion grounding.
 ‡ ρ is shown with its bootstrap 95% CI; at small n the interval spans most of [-1, 1], so the point estimate should not be over-read.
-**Family-wise correction (Holm):** across the conditioning tiers, emotion p_adj=0.27, affect p_adj=0.27. No tier survives at 0.05, so the null holds under multiple-comparison control.
+**Family-wise correction (Holm):** across the conditioning tiers, emotion p_adj=0.27, affect p_adj=0.27; no tier survives at 0.05, so the null holds under multiple-comparison control.
 
 **Table 2.** Paired contrasts on per-item recovery (bootstrap).
 
