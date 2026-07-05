@@ -32,17 +32,12 @@ def build_submission(results: dict, system: str) -> dict:
             "n": m["n"],
         }
 
-    health = metrics.get("probe_health", {})
-    return {
+    submission = {
         "system": system,
         "track": cfg.get("track", "content"),
         "generator": cfg.get("diffusion_model", "unknown"),
         "probe": cfg.get("probe", "unknown"),
         "conditions": conditions,
-        "probe_health": {
-            "distinct_labels": health.get("distinct_labels", 0),
-            "n_labels": health.get("n_labels", 0),
-        },
         "provenance": {
             "git_sha": manifest.get("git_sha", "unknown"),
             "seeds": cfg.get("seeds", 1),
@@ -50,6 +45,15 @@ def build_submission(results: dict, system: str) -> dict:
             "benchmark_sha256": manifest.get("benchmark_sha256"),
         },
     }
+    # probe_health is optional in the schema; include it only when the run carries
+    # a valid diagnostic, never a schema-invalid 0 placeholder.
+    health = metrics.get("probe_health") or {}
+    if health.get("distinct_labels") and health.get("n_labels"):
+        submission["probe_health"] = {
+            "distinct_labels": health["distinct_labels"],
+            "n_labels": health["n_labels"],
+        }
+    return submission
 
 
 def main() -> None:
