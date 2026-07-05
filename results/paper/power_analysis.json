@@ -1,0 +1,45 @@
+{
+  "chance": 0.1429,
+  "probe_ceiling": 0.455,
+  "alpha": 0.05,
+  "target_power": 0.8,
+  "planned_n": 420,
+  "rows": [
+    {
+      "effect_strength": 0.2,
+      "recovery_accuracy": 0.2053,
+      "n_for_80pct_power": 240,
+      "power_at_planned_n": 0.955
+    },
+    {
+      "effect_strength": 0.3,
+      "recovery_accuracy": 0.2365,
+      "n_for_80pct_power": 130,
+      "power_at_planned_n": 0.999
+    },
+    {
+      "effect_strength": 0.4,
+      "recovery_accuracy": 0.2677,
+      "n_for_80pct_power": 70,
+      "power_at_planned_n": 1.0
+    },
+    {
+      "effect_strength": 0.5,
+      "recovery_accuracy": 0.2989,
+      "n_for_80pct_power": 50,
+      "power_at_planned_n": 1.0
+    },
+    {
+      "effect_strength": 0.7,
+      "recovery_accuracy": 0.3614,
+      "n_for_80pct_power": 30,
+      "power_at_planned_n": 1.0
+    },
+    {
+      "effect_strength": 1.0,
+      "recovery_accuracy": 0.455,
+      "n_for_80pct_power": 20,
+      "power_at_planned_n": 1.0
+    }
+  ]
+}
