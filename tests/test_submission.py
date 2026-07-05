@@ -35,3 +35,16 @@ def test_submission_never_invents_a_condition():
     }
     sub = make_submission.build_submission(results, "sparse")
     assert set(sub["conditions"]) == {"raw"}
+
+
+def test_submission_omits_probe_health_when_degenerate():
+    # A run without a valid probe_health must not emit a schema-invalid 0 placeholder.
+    results = {
+        "manifest": {"git_sha": "abc", "config": {"seeds": 1, "base_seed": 0}},
+        "metrics": {
+            "raw": {"accuracy": 0.1, "accuracy_ci": [0.0, 0.3], "n": 7},
+            "probe_health": {"distinct_labels": 0, "n_labels": 7},
+        },
+    }
+    sub = make_submission.build_submission(results, "degenerate")
+    assert "probe_health" not in sub  # omitted, not emitted as invalid 0

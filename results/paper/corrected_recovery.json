@@ -2,7 +2,7 @@
   "tier": "emotion",
   "probe": "openai/clip-vit-base-patch32",
   "apparent_recovery": 0.2143,
-  "corrected_recovery": 0.1376,
+  "corrected_recovery": 0.1651,
   "per_class": {
     "anger": {
       "apparent": 0.0,
@@ -27,7 +27,7 @@
     "neutral": {
       "apparent": 1.0,
       "sensitivity": NaN,
-      "corrected": 0.0
+      "corrected": null
     },
     "sadness": {
       "apparent": 0.5,
