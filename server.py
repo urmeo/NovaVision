@@ -152,6 +152,9 @@ def generate():
     raw_seed = data.get("seed")
     if isinstance(raw_seed, bool):
         return jsonify({"error": "seed must be an integer."}), 400
+    if isinstance(raw_seed, float) and not raw_seed.is_integer():
+        # int(2.9) truncates silently; the contract says integer.
+        return jsonify({"error": "seed must be an integer."}), 400
     try:
         # OverflowError: Flask's JSON parser admits the nonstandard Infinity literal.
         seed = random.randint(0, 2**31 - 1) if raw_seed is None else int(raw_seed)

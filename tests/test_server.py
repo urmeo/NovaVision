@@ -149,6 +149,15 @@ def test_nonstandard_json_seed_literals_rejected(client):
         assert resp.status_code == 400, literal
 
 
+def test_fractional_seed_rejected(client):
+    # 2.9 must 400, not truncate to 2; integral 2.0 is accepted.
+    bad = client.post("/api/generate", json={"text": "i feel great", "seed": 2.9})
+    assert bad.status_code == 400
+    ok = client.post("/api/generate", json={"text": "i feel great", "seed": 2.0})
+    assert ok.status_code == 200
+    assert ok.get_json()["seed"] == 2
+
+
 def test_non_dict_json_bodies_rejected(client):
     for body in ("[1, 2]", '"abc"', "123", "true"):
         for route in ("/api/analyze", "/api/generate"):
