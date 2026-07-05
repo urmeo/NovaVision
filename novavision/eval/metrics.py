@@ -153,14 +153,18 @@ def rogan_gladen(apparent: float, sensitivity: float, specificity: float) -> flo
     (sensitivity + specificity <= 1); clamps the estimate to [0, 1].
     """
     denom = sensitivity + specificity - 1.0
-    if denom <= 0:
+    # np.isfinite also rejects nan inputs, which a bare `denom <= 0` misses
+    # (nan <= 0 is False) and would silently clamp to 0.0.
+    if not np.isfinite(denom) or denom <= 0 or not np.isfinite(apparent):
         return float("nan")
-    return float(min(1.0, max(0.0, (apparent + specificity - 1.0) / denom)))
+    return float(np.clip((apparent + specificity - 1.0) / denom, 0.0, 1.0))
 
 
 def cohens_h(p1: float, p2: float) -> float:
     """Effect size for two proportions (arcsine-transformed difference)."""
-    phi = lambda p: 2.0 * np.arcsin(np.sqrt(min(1.0, max(0.0, p))))  # noqa: E731
+    if not (np.isfinite(p1) and np.isfinite(p2)):
+        return float("nan")
+    phi = lambda p: 2.0 * np.arcsin(np.sqrt(np.clip(p, 0.0, 1.0)))  # noqa: E731
     return float(phi(p1) - phi(p2))
 
 
