@@ -1,0 +1,43 @@
+{
+  "tier": "emotion",
+  "probe": "openai/clip-vit-base-patch32",
+  "apparent_recovery": 0.2143,
+  "corrected_recovery": 0.1376,
+  "per_class": {
+    "anger": {
+      "apparent": 0.0,
+      "sensitivity": 0.5522,
+      "corrected": 0.0
+    },
+    "disgust": {
+      "apparent": 0.0,
+      "sensitivity": 0.5085,
+      "corrected": 0.0
+    },
+    "fear": {
+      "apparent": 0.0,
+      "sensitivity": 0.3485,
+      "corrected": 0.0
+    },
+    "joy": {
+      "apparent": 0.0,
+      "sensitivity": 0.4531,
+      "corrected": 0.0
+    },
+    "neutral": {
+      "apparent": 1.0,
+      "sensitivity": NaN,
+      "corrected": 0.0
+    },
+    "sadness": {
+      "apparent": 0.5,
+      "sensitivity": 0.5857,
+      "corrected": 0.8257
+    },
+    "surprise": {
+      "apparent": 0.0,
+      "sensitivity": 0.0135,
+      "corrected": null
+    }
+  }
+}
