@@ -142,6 +142,50 @@ def cohen_kappa(a: Sequence[str], b: Sequence[str], labels: Sequence[str]) -> fl
     return float((po - pe) / (1 - pe))
 
 
+def rogan_gladen(apparent: float, sensitivity: float, specificity: float) -> float:
+    """Prevalence corrected for an imperfect test (Rogan & Gladen, 1978).
+
+    Recovery is an ``apparent`` rate measured through a probe with known
+    ``sensitivity`` (true-positive rate) and ``specificity`` (true-negative rate)
+    from probe validation. This backs out the underlying rate the probe would see
+    with a perfect instrument, so the probe's measured error becomes a correction
+    rather than only a caveat. Returns nan when the test cannot discriminate
+    (sensitivity + specificity <= 1); clamps the estimate to [0, 1].
+    """
+    denom = sensitivity + specificity - 1.0
+    if denom <= 0:
+        return float("nan")
+    return float(min(1.0, max(0.0, (apparent + specificity - 1.0) / denom)))
+
+
+def cohens_h(p1: float, p2: float) -> float:
+    """Effect size for two proportions (arcsine-transformed difference)."""
+    phi = lambda p: 2.0 * np.arcsin(np.sqrt(min(1.0, max(0.0, p))))  # noqa: E731
+    return float(phi(p1) - phi(p2))
+
+
+def holm_bonferroni(pvalues: dict[str, float], alpha: float = 0.05) -> dict[str, dict]:
+    """Family-wise correction over a set of named p-values (Holm, 1979).
+
+    Reporting several tier/track p-values is a family of tests; Holm controls the
+    family-wise error rate without the raw Bonferroni's conservatism. Returns each
+    name's adjusted p-value and its reject decision at ``alpha``.
+    """
+    finite = {k: v for k, v in pvalues.items() if isinstance(v, (int, float)) and v == v}
+    ordered = sorted(finite, key=lambda k: finite[k])
+    m = len(ordered)
+    out: dict[str, dict] = {}
+    running = 0.0
+    for i, name in enumerate(ordered):
+        adj = min(1.0, (m - i) * finite[name])
+        running = max(running, adj)  # adjusted p-values are monotone non-decreasing
+        out[name] = {"p_adjusted": round(running, 4), "reject": running <= alpha}
+    for name, v in pvalues.items():
+        if name not in out:
+            out[name] = {"p_adjusted": None, "reject": False}
+    return out
+
+
 def mae(x: Sequence[float], y: Sequence[float]) -> float:
     """Mean absolute error, an interpretable companion to the VA correlations."""
     xa = np.asarray(x, dtype=float)

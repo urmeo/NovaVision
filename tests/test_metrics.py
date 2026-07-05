@@ -6,7 +6,9 @@ from novavision.eval.metrics import (
     accuracy,
     bootstrap_ci,
     bootstrap_corr_ci,
+    cohens_h,
     confusion_matrix,
+    holm_bonferroni,
     macro_f1,
     mae,
     majority_baseline,
@@ -14,6 +16,7 @@ from novavision.eval.metrics import (
     pearson,
     permutation_test,
     prediction_collapse,
+    rogan_gladen,
     spearman,
 )
 
@@ -138,3 +141,33 @@ def test_bootstrap_corr_ci_brackets_and_widens_at_small_n():
     # Too few points to bootstrap a correlation -> nan, not a fake number.
     nlo, nhi = bootstrap_corr_ci([1, 2], [2, 1])
     assert math.isnan(nlo) and math.isnan(nhi)
+
+
+def test_rogan_gladen_matches_formula_and_bounds():
+    # A perfect test returns the apparent rate unchanged.
+    assert rogan_gladen(0.3, 1.0, 1.0) == pytest.approx(0.3)
+    # (apparent + spec - 1) / (sens + spec - 1), clamped to [0, 1].
+    assert rogan_gladen(0.3, 0.45, 0.9) == pytest.approx(0.2 / 0.35)
+    # Below-chance apparent under a good test clamps at 0, never negative.
+    assert rogan_gladen(0.05, 0.9, 0.9) == 0.0
+    # A non-discriminating test (sens+spec<=1) is uninvertible.
+    assert math.isnan(rogan_gladen(0.3, 0.5, 0.5))
+
+
+def test_cohens_h_sign_and_zero():
+    assert cohens_h(0.5, 0.5) == pytest.approx(0.0)
+    assert cohens_h(0.5, 0.2) > 0
+    assert cohens_h(0.2, 0.5) < 0
+
+
+def test_holm_bonferroni_orders_and_rejects():
+    adj = holm_bonferroni({"a": 0.01, "b": 0.04, "c": 0.5}, alpha=0.05)
+    # Smallest p tested against m=3: 0.03 < 0.05 -> reject a; adjusted p monotone.
+    assert adj["a"]["reject"] is True
+    assert adj["a"]["p_adjusted"] <= adj["b"]["p_adjusted"] <= adj["c"]["p_adjusted"]
+    assert adj["c"]["reject"] is False
+
+
+def test_holm_ignores_non_finite():
+    adj = holm_bonferroni({"a": 0.01, "b": float("nan")})
+    assert adj["b"]["p_adjusted"] is None and adj["b"]["reject"] is False
