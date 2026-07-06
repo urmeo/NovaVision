@@ -53,6 +53,13 @@ rather than from hand-written examples.
   rare-class results are underpowered.
 - The hand-authored `tests/fixtures/affectbench_sample.csv` is a **test fixture
   only** and must never produce a reported number.
+- **Affect grounding is a heuristic, by design.** Valence/arousal for the text
+  track come from a lexicon blended with the emotion prior. Negation is handled
+  by a two-token lookback flip on valence only ("not happy" scores negative;
+  arousal is unchanged, and longer-range scope and degree adverbs are unmodeled).
+  The blend weight is capped at 0.8, so a single-word input never fully discards
+  the classifier prior; this is a deliberate choice, not a bug. Sensitivity is
+  ablatable via `--force-coverage` (see paper §5).
 
 ## Distribution & licensing
 
