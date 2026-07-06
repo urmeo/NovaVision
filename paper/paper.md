@@ -244,6 +244,12 @@ protocol, its floors, and its diagnostics run end-to-end, and, just as important
    recovery is statistically indistinguishable from the circularity baseline. So the pilot's
    numbers are not even evidence of non-circular signal, let alone of controllability.
 
+Correcting recovery for the probe's measured error sharpens, rather than softens, this reading:
+applying the Rogan-Gladen estimator (§5) with the probe's in-domain sensitivity and specificity,
+the `emotion` tier's apparent recovery of $0.214$ becomes a corrected $0.165$, back at chance
+(`make correct-recovery`, artifact in `results/paper/corrected_recovery.json`). The apparent
+lift over chance is fully attributable to the instrument's error structure, not to conditioning.
+
 No claim about controllability survives this: a weak-or-null effect is exactly what a collapsed
 probe on an underpowered pilot must produce. The honest order of operations is to fix the probe
 (§7) *before* spending the powered configuration (`make reproduce`: 512-px, 20 subjects, 3 seeds
