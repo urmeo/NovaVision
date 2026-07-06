@@ -53,7 +53,12 @@ class NovaVision:
         width: int = 512,
         height: int = 512,
     ) -> Result:
-        """App helper: skip emotion conditioning for neutral text."""
+        """App helper: skip emotion conditioning for neutral text.
+
+        The default ``seed=0`` is a fixed seed, not a random one: omitting it
+        reproduces the same image. Pass an explicit seed (server.py randomizes
+        per request) for variety.
+        """
         analysis = self.analyzer.analyze(text)
         tier = "raw" if analysis.primary == NEUTRAL else "affect"
         return self._render(text, analysis, style, tier, seed, width, height)
