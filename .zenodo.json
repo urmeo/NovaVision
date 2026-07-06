@@ -1,6 +1,6 @@
 {
   "upload_type": "software",
-  "title": "NovaVision: A Reproducible Protocol for Measuring Emotion Controllability in Text-to-Image Generation",
+  "title": "NovaVision: A Reproducible Protocol for Measuring Emotion Controllability in Text-to-Image Generation, and Why Zero-Shot Round-Trip Recovery Fails",
   "description": "Emotion-conditioned text-to-image generation with an automatic, reproducible benchmark that recovers the emotion from generated images (via CLIP) and compares it to the intended affect.",
   "creators": [
     { "name": "Bose, Urme" }
