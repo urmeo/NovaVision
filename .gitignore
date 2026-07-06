@@ -1,106 +1,31 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
+build/
+dist/
 
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-
-# Translations
-*.mo
-*.pot
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# Environments
-.env
-venv/
+# Environment and secrets
 .venv/
-ENV/
-env.bak/
-venv.bak/
+.env
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
+# Tool caches and coverage
+.pytest_cache/
+.ruff_cache/
 .mypy_cache/
-.dmypy.json
-dmypy.json
+.coverage
+coverage.xml
+htmlcov/
 
-# IDE / local agent tooling
-.idea/
-.vscode/
-.claude/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Project specific
-*.log
-outputs/
-# Ignore every run dir except the canonical paper run, which is tracked.
+# Run outputs: every run dir except the canonical committed paper run
 results/*
 !results/paper/
 results/paper/human_study/images/
+results/paper/records.jsonl
 
-# Superseded pre-rebuild report (contains stale, non-reproducible numbers)
-Report.pdf
+# Built benchmark (make benchmark); rebuilt on demand, never committed
+data/affectbench.csv
+data/affectbench.manifest.json
+
+# macOS
+.DS_Store
