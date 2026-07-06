@@ -1,4 +1,4 @@
-# NovaVision: A Reproducible Protocol for Measuring Emotion Controllability in Text-to-Image Generation
+# NovaVision: A Reproducible Protocol for Measuring Emotion Controllability in Text-to-Image Generation, and Why Zero-Shot Round-Trip Recovery Fails
 
 **Can emotion conditioning actually steer what a generated image conveys?** **Not measurably yet: under a protocol built to catch self-deception, no conditioning tier beats chance, and the apparent lift vanishes once the probe's measured error is corrected for.**
 
@@ -138,7 +138,10 @@ No local setup: [reproduce.ipynb](reproduce.ipynb) runs clone-install-test-repro
 - [Rogan and Gladen (1978)](https://doi.org/10.1093/oxfordjournals.aje.a112510): prevalence correction; deconvolves probe error from recovery.
 - [Holm (1979)](https://www.jstor.org/stable/4615733): the family-wise correction applied across tiers.
 - [Gebru et al. (2021)](https://arxiv.org/abs/1803.09010): datasheets for datasets; the template for the AffectBench card.
-- EmoGen, EmotiCrafter, CoEmoGen: the emotion-conditioned generators the harness is built to compare (see paper references).
+- [Mikels et al. (2005)](https://doi.org/10.3758/BF03192732): the eight-category taxonomy image-emotion evaluators are trained on; motivates the mapping in section 7 of the paper.
+- [Stein et al. (2023)](https://arxiv.org/abs/2306.04675): precedent that critiquing a generative-evaluation metric is itself a contribution.
+- [Othmen et al. (2026)](https://arxiv.org/abs/2606.13247): EPIG, the closest training-free valence/arousal conditioning peer.
+- EmoGen, EmotiCrafter, EmoEdit, MUSE, CoEmoGen: the emotion-conditioned generation systems the protocol is built to compare (see paper references).
 
 ## License
 
