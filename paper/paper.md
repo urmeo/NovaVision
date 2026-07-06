@@ -1,4 +1,4 @@
-# A Reproducible Protocol for Measuring Emotion Controllability in Text-to-Image Generation
+# A Reproducible Protocol for Measuring Emotion Controllability in Text-to-Image Generation, and Why Zero-Shot Round-Trip Recovery Fails
 
 **Urme Bose** (`urme-b`)
 
@@ -40,20 +40,52 @@ and must add information beyond a fixed template, with the difference significan
 test. If it does not, we report the null: a rigorous null with a bounded instrument is more
 useful than a circular positive.
 
+Relative to the emotion-conditioned generation line, our delta is a single sentence: the
+generator (training-free valence/arousal grounding on a frozen backbone, shared with concurrent
+EPIG [@othmen2026epig]) is deliberately lightweight, and the contribution is the *measurement*:
+a round-trip controllability protocol with negative and positive floors, a shuffled-label
+permutation control, family-wise correction, probe-error validation in and out of domain, and
+an honest, probe-corrected null. In the spirit of metric-critique work on generative evaluation
+[@stein2023exposing], the object of study is the metric itself.
+
 ## 2. Related work
 
-Affect is represented with the circumplex model of valence and arousal [@russell1980]. Text
-emotion is read with a DistilRoBERTa classifier [@hartmann2022] and lexical affect with
-empirical norms [@warriner2013; @mohammad2018]. Image-level emotion has its own datasets and
-classifiers: FI [@you2016building], affective classification from psychology/art features
-[@machajdik2010], EMOTIC [@kosti2017emotion], WEBEmo [@panda2018contemplating], ArtEmis [@achlioptas2021artemis], and the
-large-scale EmoSet [@yang2023emoset], which we use to *validate the probe* rather than to condition.
-Generation uses latent diffusion [@rombach2022; @sauer2023]; emotion-conditioned diffusion such
-as EmoGen [@yang2024emogen], EmotiCrafter [@dang2025emoticrafter], and CoEmoGen [@li2025coemogen]
-motivates the task and supplies the natural baselines for cross-system comparison under our
-protocol. Evaluation uses CLIP zero-shot transfer
-[@radford2021], whose use as an affect probe we treat as an instrument to be validated, not
-assumed. The benchmark follows datasheet practice [@gebru2021datasheets].
+**Task and conditioning spectrum.** Emotional image content generation was named as a task by
+EmoGen [@yang2024emogen], which learns an emotion space from an EmoSet-trained classifier and
+maps it to CLIP space; EmotiCrafter [@dang2025emoticrafter] extends it to continuous
+valence/arousal conditioning through a learned injection network, and observes that arousal is
+harder to control than valence. Lighter-weight approaches include adapter and LoRA methods
+(EmoEdit [@yang2024emoedit], CoEmoGen [@li2025coemogen]), test-time classifier guidance
+(MUSE [@xia2025muse]), and, closest to our pipeline, EPIG [@othmen2026epig]: training-free
+prompt-level conditioning that grounds emotion in valence/arousal with affective lexicons on a
+frozen diffusion backbone. As a generator our pipeline sits at this training-free end; we do
+not claim novelty there.
+
+**Evaluation norms.** Round-trip emotion accuracy (generate on an emotion, classify the image,
+check recovery) has been the field's controllability metric since EmoGen, computed with a
+classifier *trained* on EmoSet, not a zero-shot model. Our work makes the round trip itself the
+object of study and adds the controls this literature generally omits: chance and template
+floors, a shuffled-label permutation test, majority-class and collapse diagnostics, and
+measured probe error propagated into a corrected estimate. Reported zero-shot CLIP performance
+on image emotion is consistently weak: relatively low, though above baseline, on abstract art
+[@widhoelzl2024decoding], and low enough on standard benchmarks that recent work treats the
+visual affective gap as the problem to solve [@wu2025bridging]. Our in-domain measurements
+(section 7) corroborate this, and our choice of the smallest CLIP variant is close to the worst
+case for the task.
+
+**Foundations.** Affect is represented with the circumplex model of valence and arousal
+[@russell1980] over a basic-emotion category set [@ekman1992]. Text emotion is read with a
+DistilRoBERTa classifier [@hartmann2022] and lexical affect with empirical norms [@warriner2013;
+@mohammad2018]. Image-level emotion has its own datasets and classifiers: FI [@you2016building],
+affective classification from psychology/art features [@machajdik2010], EMOTIC
+[@kosti2017emotion], WEBEmo [@panda2018contemplating], ArtEmis [@achlioptas2021artemis], and the
+large-scale EmoSet [@yang2023emoset], which we use to *validate the probe* rather than to
+condition. Note the taxonomy split: image-emotion resources standardize on Mikels' eight
+categories [@mikels2005], while our targets are the six Ekman emotions plus neutral (the
+GoEmotions grouping); section 7 discusses this mismatch as a candidate cause of probe collapse.
+Generation uses latent diffusion [@rombach2022; @sauer2023]. Evaluation uses CLIP zero-shot
+transfer [@radford2021], whose use as an affect probe we treat as an instrument to be validated,
+not assumed. The benchmark follows datasheet practice [@gebru2021datasheets].
 
 ## 3. Method
 
@@ -141,7 +173,9 @@ through. For each tier we report:
 
 - **Recovery accuracy / macro-F1**: recovered vs. intended emotion, with **bootstrap 95% CIs**.
 - **Valence/arousal correlation and error**: Pearson $r$, Spearman $\rho$ (both with bootstrap
-  CIs), and **MAE** between intended and probed affect, the last for an interpretable scale. On
+  CIs), and **MAE** between intended and probed affect, the last for an interpretable scale. Arousal
+  is expected to be the harder axis: EmotiCrafter reports the same asymmetry for learned
+  conditioning [@dang2025emoticrafter]. On
   the content track the intended valence/arousal is the per-emotion prior, so this is a
   *between-emotion* check (does conditioning on "joy" raise recovered valence above "sadness"?)
   and the affect-vs-emotion delta only measures palette/lighting cues; the **text track** is
@@ -295,6 +329,19 @@ higher than ViT-B/32 on both sets and is the first candidate for the powered run
 the independent non-CLIP probe (`--probe hf`, `make robustness`), which remains unmeasured.
 (iii) Even 45.5% is a weak instrument in absolute terms, so every recovery number is still
 read against these measured ceilings. Artifacts: `results/paper/probe_validation*.json`.
+
+**Taxonomy mismatch as a candidate cause.** A structural suspect for the collapse is the label
+space itself. Image-emotion classifiers and datasets standardize on Mikels' eight categories
+[@mikels2005] (amusement, awe, contentment, excitement, anger, disgust, fear, sadness, with no
+neutral), while our targets are the six Ekman emotions plus neutral, inherited from GoEmotions.
+Our EmoSet validation bridges the two with an explicit surjection (amusement, contentment,
+excitement to joy; awe to surprise), which leaves `neutral` unsupported in domain, and `neutral`
+is exactly where the probe collapses. The registered remedy, ahead of any powered run, is to
+evaluate with the field-standard instrument on its native taxonomy: an EmoSet-trained classifier
+(as introduced with EmoGen [@yang2024emogen]) through the same `--probe hf` interface
+(`make validate-probe-hf`), reporting per-class recovery and confusion so any collapse is
+visible rather than averaged away. Zero-shot CLIP is retained only as the documented negative
+example of an inadequate probe.
 
 `novavision.eval.human_study` adds the human leg: regenerate a stratified sample, collect labels
 from three or more raters, and report human-vs-probe Cohen's $\kappa$. It is wired but unrun
