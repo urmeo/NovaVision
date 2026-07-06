@@ -41,6 +41,9 @@ every model is an off-the-shelf, pinned checkpoint.
   via Rogan-Gladen, corrected for it.
 - **Labels are coarse and culturally situated.** Six Ekman emotions plus neutral;
   mixed and compound affect are out of scope.
+- **Taxonomy mismatch with image-emotion evaluators.** Standard evaluators are
+  trained on Mikels' eight categories (no neutral); the Ekman-plus-neutral target
+  space requires an explicit mapping (see paper section 7).
 - **Domain skew.** The text track derives from GoEmotions (Reddit-English, modest
   inter-annotator agreement); AffectBench inherits that bias.
 
