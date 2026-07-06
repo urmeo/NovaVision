@@ -27,4 +27,8 @@ USER nova
 
 EXPOSE 7860
 
+# Let orchestrators see whether the app is actually serving.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7860/')" || exit 1
+
 CMD ["python", "app.py"]
