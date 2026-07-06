@@ -7,3 +7,7 @@
 *.webp binary
 *.ico  binary
 *.pdf  binary
+
+# The single-file demo UI is a showcase, not the project's source language;
+# keep it out of the language bar so it reads as the Python project it is.
+static/index.html linguist-documentation
