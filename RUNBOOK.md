@@ -33,8 +33,10 @@ make validate-probe-hf PROBE_MODEL=<hf-image-emotion-model>   # independent non-
 ```
 
 The `validate-probe-hf` target is the still-unmeasured leg that fully closes
-circularity: a probe that does not share CLIP's vocabulary. Pick an EmoSet/WEBEmo
-image-emotion classifier from Hugging Face.
+circularity: a probe that does not share CLIP's vocabulary. The field standard is
+an EmoSet-trained classifier on its native Mikels-8 taxonomy (EmoGen's evaluator);
+EKMAN_ALIASES bridges its labels to the Ekman targets. Pick such a checkpoint from
+Hugging Face, or export EmoGen's released ResNet-50.
 
 **Gate:** the chosen probe must (i) use clearly more than 2 of 7 labels on
 *generated* scenes and (ii) beat the majority-class baseline. A probe that
@@ -69,8 +71,9 @@ make ablate-blend FORCE_C=0                 # affect-blend ablation (also FORCE_
 
 `make reproduce` streams records to `results/paper/records.jsonl` and resumes from
 it, so one bad image never restarts an hours-long run. A second generator turns the
-harness's cross-system capability into a ranking result (finding: one generator ships
-today, the protocol was always built for more). The blend ablation closes the paper's
+harness's cross-system capability into a ranking result; the external baselines the
+literature expects are EmoGen and EmotiCrafter (the `naive` tier already covers the
+raw emotion-in-prompt baseline). The blend ablation closes the paper's
 own flagged open question about the `v = c*v_lex + (1-c)*v_prior` heuristic.
 
 Committing a new run changes the locked records: regenerate and commit
