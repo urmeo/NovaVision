@@ -184,8 +184,8 @@ def holm_bonferroni(pvalues: dict[str, float], alpha: float = 0.05) -> dict[str,
         adj = min(1.0, (m - i) * finite[name])
         running = max(running, adj)  # adjusted p-values are monotone non-decreasing
         out[name] = {"p_adjusted": round(running, 4), "reject": running <= alpha}
-    for name, v in pvalues.items():
-        if name not in out:
+    for name in pvalues:
+        if name not in out:  # non-finite p-values carry through as undecided
             out[name] = {"p_adjusted": None, "reject": False}
     return out
 
