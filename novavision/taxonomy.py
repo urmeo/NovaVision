@@ -14,7 +14,8 @@ EMOTIONS: tuple[str, ...] = (
 
 NEUTRAL = "neutral"
 
-# Circumplex priors (Russell, 1980): valence -1..1, arousal 0..1
+# Per-emotion valence/arousal priors: author estimates placed on the Russell (1980)
+# circumplex, not values reported in that paper. Valence -1..1, arousal 0..1.
 EMOTION_PRIORS: dict[str, tuple[float, float]] = {
     "joy": (0.80, 0.70),
     "sadness": (-0.70, 0.30),

@@ -150,6 +150,7 @@ def main() -> None:
     parser.add_argument("--images-dir", default=None, help="root/<emotion>/*.jpg")
     parser.add_argument("--hf-dataset", default=None, help="labelled HF image dataset")
     parser.add_argument("--n", type=int, default=200, help="sample size for --hf-dataset")
+    # train split is not leakage: the CLIP probe is zero-shot, never trained on it.
     parser.add_argument("--split", default="train", help="HF dataset split")
     parser.add_argument("--revision", default=None, help="HF dataset revision to pin")
     parser.add_argument("--seed", type=int, default=0, help="sampling seed")
