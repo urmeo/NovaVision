@@ -34,7 +34,7 @@ CI also runs a coverage gate, a secret scan (gitleaks), and a dependency audit (
 
 Then:
 
-- The suite is **198 tests**; add or update one for any behavior change. Statistics live in
+- The suite is **199 tests**; add or update one for any behavior change. Statistics live in
   novavision/eval/metrics.py and are unit-tested to the edge cases (nan, ties, small-n).
 - `tests/test_contracts.py` pins cross-module invariants (label ordering, backend-default parity,
   seed pairing, provenance API) that per-module tests miss; extend it when you couple two modules.
