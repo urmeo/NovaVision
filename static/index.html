@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Same-origin only: no external scripts, styles, or fetches. This SPA is a
+         single self-contained file, so inline script/style need 'unsafe-inline'. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'">
     <title>NovaVision - Transform Emotions into AI Art</title>
     <!-- No external fonts: a research demo should not leak visitor IPs to a CDN. -->
     <style>
@@ -3129,21 +3132,23 @@
                 document.getElementById('primaryConfidence').textContent =
                     data.confidence + '% confidence';
 
-                // Update valence display
+                // Update valence display (guard: a malformed response must not throw)
+                const valence = Number(data.valence);
+                const arousal = Number(data.arousal);
                 const valenceDisplay = document.getElementById('valenceDisplay');
-                const valenceLabel = data.valence >= 0 ? 'Positive' : 'Negative';
-                const valenceClass = data.valence >= 0 ? 'positive' : 'negative';
+                const valenceLabel = valence >= 0 ? 'Positive' : 'Negative';
+                const valenceClass = valence >= 0 ? 'positive' : 'negative';
                 valenceDisplay.className = 'dimension-value ' + valenceClass;
                 valenceDisplay.innerHTML = valenceLabel + '<span class="dimension-number">(' +
-                    (data.valence >= 0 ? '+' : '') + data.valence.toFixed(1) + ')</span>';
+                    (Number.isFinite(valence) ? (valence >= 0 ? '+' : '') + valence.toFixed(1) : 'n/a') + ')</span>';
 
                 // Update arousal display
                 const arousalDisplay = document.getElementById('arousalDisplay');
-                const arousalLabel = data.arousal >= 0.5 ? 'Energized' : 'Calm';
-                const arousalClass = data.arousal >= 0.5 ? 'energized' : 'calm';
+                const arousalLabel = arousal >= 0.5 ? 'Energized' : 'Calm';
+                const arousalClass = arousal >= 0.5 ? 'energized' : 'calm';
                 arousalDisplay.className = 'dimension-value ' + arousalClass;
                 arousalDisplay.innerHTML = arousalLabel + '<span class="dimension-number">(' +
-                    data.arousal.toFixed(1) + ')</span>';
+                    (Number.isFinite(arousal) ? arousal.toFixed(1) : 'n/a') + ')</span>';
 
                 // Update all 7 emotion bars
                 const emotionBars = document.getElementById('emotionBars');
@@ -3158,7 +3163,7 @@
                     track.className = 'emotion-track';
                     const fill = document.createElement('div');
                     fill.className = 'emotion-fill' + (i > 0 ? ' secondary' : '');
-                    fill.style.width = e.score + '%';
+                    fill.style.width = Math.max(0, Math.min(100, Number(e.score) || 0)) + '%';
                     track.appendChild(fill);
                     const value = document.createElement('span');
                     value.className = 'emotion-value';
