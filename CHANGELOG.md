@@ -11,6 +11,8 @@ follow the git tags.
 - Public API (`novavision.build_pipeline`, `run_experiment`), submission schema,
   Colab reproduction notebook, preregistration, and system model card.
 - Content-Security-Policy and type guards in the web UI; `py.typed` marker.
+- Repositioned related work against the 2024-2026 emotion-conditioned generation
+  literature (EmoGen, EmotiCrafter, EmoEdit, MUSE, EPIG); taxonomy-mismatch analysis.
 
 ## [1.0.0] - 2026-07-02
 
