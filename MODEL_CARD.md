@@ -2,8 +2,9 @@
 
 Following Mitchell et al. (2019), "Model Cards for Model Reporting". This documents
 the **system** (the emotion-to-image pipeline and its evaluation harness); the
-AffectBench **data** card is `data/DATASHEET.md`, and every model is pinned to an
-exact revision in `novavision/config.py` and recorded in each run's manifest.
+AffectBench **data** card is `data/DATASHEET.md`. The default models are pinned to
+exact revisions in `novavision/config.py`; each run's manifest records the
+revisions actually used (a swapped model loads unpinned).
 
 ## Overview
 
