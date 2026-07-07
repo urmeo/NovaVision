@@ -13,10 +13,10 @@ make repro-check                      # committed numbers re-derive bit-for-bit
 make power                            # sample-size analysis, no models
 ```
 
-`make power` confirms the run is worth doing before spending a GPU-day. Using the
-measured L/14 ceiling (0.455), n=420 per tier has >=95% power to detect even a weak
-effect (s=0.2), so a null from the powered run would be a *properly powered* null,
-not an underpowered one. Written to `results/paper/power_analysis.json`.
+`make power` confirms the run is worth doing before spending a GPU-day; the
+sample-size derivation and its conclusion are locked in
+[PREREGISTRATION.md](PREREGISTRATION.md) (artifact:
+`results/paper/power_analysis.json`).
 
 ## 1. Fix the instrument (blocks everything else)
 
