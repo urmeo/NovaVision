@@ -29,11 +29,14 @@ All three are pinned to an exact Hugging Face commit in
 weights. Revisions are also written into every run's manifest
 (`results/paper/results.json` → `manifest.model_revisions`).
 
-| Role | Model (HF id) | Pinned revision | Base / lineage | License |
-|---|---|---|---|---|
-| Text-to-image generator | `stabilityai/sd-turbo` | `b261bac6fd2cf515557d5d0707481eafa0485ec2` | SD-Turbo, adversarial-diffusion-distilled from Stable Diffusion 2.1 | Stability AI **Community License**: free for research/personal use; **commercial use requires a Stability AI membership** |
-| Recovery probe | `openai/clip-vit-base-patch32` | `3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268` | CLIP ViT-B/32 | MIT |
-| Text emotion classifier | `j-hartmann/emotion-english-distilroberta-base` | `0e1cd914e3d46199ed785853e12b57304e04178b` | fine-tuned DistilRoBERTa (base is Apache-2.0) | see the model card for the fine-tuned checkpoint's terms |
+| Role | Model (HF id) | Pinned revision | Base / lineage |
+|---|---|---|---|
+| Text-to-image generator | `stabilityai/sd-turbo` | `b261bac6fd2cf515557d5d0707481eafa0485ec2` | SD-Turbo, adversarial-diffusion-distilled from Stable Diffusion 2.1 |
+| Recovery probe | `openai/clip-vit-base-patch32` | `3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268` | CLIP ViT-B/32 |
+| Text emotion classifier | `j-hartmann/emotion-english-distilroberta-base` | `0e1cd914e3d46199ed785853e12b57304e04178b` | fine-tuned DistilRoBERTa |
+
+License terms for all three live in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md), the
+single owner of licensing facts.
 
 Notes:
 
@@ -101,19 +104,11 @@ move a number.
 ### Text track: AffectBench
 
 - **Source:** derived on demand from **GoEmotions** (Demszky et al., 2020),
-  `simplified` config, GoEmotions revision pinned, license Apache-2.0.
-- **How constructed** (`novavision/data/build_benchmark.py`; full card in
-  `data/DATASHEET.md`): single-label examples only, mapped to the six Ekman
-  emotions plus neutral via the dataset's official grouping
-  (`novavision/taxonomy.py:GOEMOTIONS_TO_EKMAN`); sampled from the **test**
-  split; exact within-sample dedup after normalisation; **cross-split dedup**
-  subtracts any item whose normalised text also appears in the **train** split
-  (so no eval sentence is one a model could have trained on); deterministic
-  seeded shuffle, round-robin interleave to keep any prefix balanced.
-- **Manifest:** the build records the pinned revision, seed, realized per-class
-  counts, `dropped_train_overlap`, `total`, a `balanced` flag, and a content
-  hash. Report the realized per-class n with any result; under the Ekman
-  collapse the scarce classes (notably `disgust`) underfill.
+  `simplified` config, revision pinned in the build manifest, license Apache-2.0;
+  **not redistributed** here.
+- Construction, deduplication, manifest fields, and per-class caveats are owned by
+  the data card, [data/DATASHEET.md](data/DATASHEET.md); the builder is
+  `novavision/data/build_benchmark.py`.
 - **Not a reported source:** the hand-authored
   `tests/fixtures/affectbench_sample.csv` is a test fixture only and can never
   produce a reported number (`load_benchmark` has no default path).
