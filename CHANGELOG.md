@@ -13,6 +13,8 @@ follow the git tags.
 - Content-Security-Policy and type guards in the web UI; `py.typed` marker.
 - Repositioned related work against the 2024-2026 emotion-conditioned generation
   literature (EmoGen, EmotiCrafter, EmoEdit, MUSE, EPIG); taxonomy-mismatch analysis.
+- Replaced the injected-markdown paper with a LaTeX preprint (paper/paper.tex,
+  compiled paper/paper.pdf); tables render to paper/tables.md as before.
 - Removed the Gradio/Spaces path (`app.py`, `spaces_config.yaml`, `requirements.txt`):
   `server.py` is the single entry point, served by gunicorn in Docker. Removed
   `RUNBOOK.md`, `PROVENANCE.md`, and `THIRD_PARTY_LICENSES.md`; model pins and per-run
