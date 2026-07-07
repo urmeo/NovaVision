@@ -74,7 +74,21 @@ def device_info() -> dict:
 
 def build_manifest(**config) -> dict:
     """Everything a reader needs to reconstruct the environment and run."""
-    from novavision.config import CLIP_REVISION, DIFFUSION_REVISION, EMOTION_REVISION
+    from novavision.config import (
+        CLIP_MODEL,
+        CLIP_REVISION,
+        DIFFUSION_MODEL,
+        DIFFUSION_REVISION,
+        EMOTION_MODEL,
+        EMOTION_REVISION,
+    )
+
+    def pin(key: str, default_id: str, revision: str) -> str | None:
+        # A pin belongs to its default checkpoint; a swapped model loads unpinned
+        # (see DiffusersBackend/_make_probe), so recording the default's commit
+        # for it would fabricate provenance.
+        model = config.get(key) or default_id
+        return revision if model == default_id else None
 
     return {
         "git_sha": git_sha(),
@@ -86,9 +100,9 @@ def build_manifest(**config) -> dict:
             for pkg in ("torch", "transformers", "diffusers", "numpy", "datasets", "pillow")
         },
         "model_revisions": {
-            "emotion": EMOTION_REVISION,
-            "diffusion": DIFFUSION_REVISION,
-            "clip": CLIP_REVISION,
+            "emotion": pin("emotion_model", EMOTION_MODEL, EMOTION_REVISION),
+            "diffusion": pin("diffusion_model", DIFFUSION_MODEL, DIFFUSION_REVISION),
+            "clip": pin("clip_model", CLIP_MODEL, CLIP_REVISION),
         },
         "config": config,
     }

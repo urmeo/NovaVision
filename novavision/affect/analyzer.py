@@ -8,10 +8,10 @@ from dataclasses import dataclass
 from types import MappingProxyType
 
 from novavision.affect.lexicon import AffectLexicon
-from novavision.config import EMOTION_REVISION
+from novavision.config import EMOTION_MODEL, EMOTION_REVISION
 from novavision.taxonomy import prior
 
-DEFAULT_MODEL = "j-hartmann/emotion-english-distilroberta-base"
+DEFAULT_MODEL = EMOTION_MODEL
 
 # A fully in-lexicon input ("happy") must not discard the classifier prior
 # entirely: the lexicon reads words, not context, so it never gets full weight.

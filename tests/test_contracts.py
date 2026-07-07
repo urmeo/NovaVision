@@ -156,6 +156,23 @@ def test_manifest_records_device_provenance():
     assert set(m["device_info"]) >= {"cuda_available", "device_name", "cuda"}
 
 
+def test_manifest_pins_only_default_models():
+    # A swapped model loads unpinned (the backends refuse to apply a foreign
+    # commit), so the manifest must not fabricate a revision for it.
+    from novavision.config import CLIP_REVISION, DIFFUSION_REVISION
+    from novavision.experiments import manifest
+
+    default = manifest.build_manifest(backend="null")["model_revisions"]
+    assert default["diffusion"] == DIFFUSION_REVISION
+    assert default["clip"] == CLIP_REVISION
+
+    swapped = manifest.build_manifest(
+        backend="diffusers", diffusion_model="org/other-model", clip_model="org/other-probe"
+    )["model_revisions"]
+    assert swapped["diffusion"] is None
+    assert swapped["clip"] is None
+
+
 def test_device_info_degrades_without_torch(monkeypatch):
     # The deterministic (no-torch) path must still build a manifest; exercise the
     # degradation branch directly rather than relying on torch being absent.
