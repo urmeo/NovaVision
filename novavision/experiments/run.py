@@ -46,6 +46,10 @@ CONDITIONS = {
     "content": (*TIERS, "scene"),
     "text": (*TIERS, "shuffled"),
 }
+# The full ordered vocabulary, for consumers that render every condition
+# (report tables, benchmark submissions). Owned here so a new tier cannot
+# silently vanish from downstream artifacts.
+ALL_CONDITIONS = (*TIERS, "scene", "shuffled")
 CONTRASTS = (
     ("naive", "raw"),
     ("emotion", "naive"),
