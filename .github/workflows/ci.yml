@@ -27,9 +27,9 @@ jobs:
           pip install -e ".[dev]"
           pip install mypy
       - name: Ruff lint
-        run: ruff check novavision tests scripts server.py app.py
+        run: ruff check novavision tests scripts server.py
       - name: Ruff format check
-        run: ruff format --check novavision tests scripts server.py app.py
+        run: ruff format --check novavision tests scripts server.py
       - name: mypy
         run: mypy novavision  # flags live in [tool.mypy], shared with local runs
 
