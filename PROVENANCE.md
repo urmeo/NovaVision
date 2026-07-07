@@ -118,8 +118,8 @@ move a number.
 Every run writes a manifest to `results/paper/results.json` recording the git
 SHA, Python version, platform, library versions (torch, transformers,
 diffusers, numpy, datasets, pillow), model revisions, device, dtype, config,
-and, for the text track, the benchmark SHA-256. `requirements.lock` pins the
-exact resolved environment. Tables and figures are regenerated from the
+and, for the text track, the benchmark SHA-256. The exact library versions behind any
+reported number are the ones its manifest records. Tables and figures are regenerated from the
 committed records by `scripts/report.py` / `make paper`, never hand-written, and
 `make repro-check` re-derives the headline numbers from the raw records to guard
 against drift.
