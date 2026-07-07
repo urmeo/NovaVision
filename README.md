@@ -10,12 +10,14 @@
 
 **Can emotion conditioning steer what a generated image conveys?** **Not measurably yet: under a protocol built to catch self-deception, no conditioning tier beats chance, and the apparent lift vanishes once the probe's measured error is corrected for.**
 
-## What this is
+## Method
 
-- Detects the emotion in a sentence, grounds it in valence and arousal, conditions an image on it, then recovers the emotion back from the image and compares it to the intent.
-- Ships AffectBench, a frozen GoEmotions-derived benchmark, plus the harness to score any generator or probe under the same rules.
-- Bounds every number: chance floor, template ceiling, shuffled-label permutation test, probe-error correction.
-- Reports the pilot as it came out: a guarded null. The probe fails its own gate, so no number is a controllability score yet.
+- Detect the emotion in a sentence (DistilRoBERTa), ground it in valence and arousal.
+- Condition a prompt on it, tier by tier; generate with SD-Turbo on paired seeds.
+- Recover the emotion from the image with a swappable probe; a match is recovery.
+- Bound every number: chance floor, scene ceiling, shuffled-label null, probe-error correction.
+- Ship AffectBench plus the harness to score any generator or probe under the same rules.
+- Report the pilot as it came out: a guarded null. The probe fails its own gate, so no number is a controllability score yet.
 
 ## Pipeline
 
@@ -29,7 +31,7 @@ flowchart LR
 
 The tiers are the ablation. Content is never chosen by the emotion, so recovery can only come from the conditioning.
 
-| Tier | Prompt | Example fragment (sadness) |
+| Tier | Prompt | Example fragment (sadness) <img width="1000" height="1"> |
 |---|---|---|
 | raw | content + style | negative control, no emotion at all |
 | naive | content + emotion word | "sadness" |
@@ -44,7 +46,7 @@ The tiers are the ablation. Content is never chosen by the emotion, so recovery 
 
 CPU pilot: SD-Turbo generator, CLIP ViT-B/32 probe, 256 px, n = 14 per tier. Read it as a calibration of the instrument, not a controllability score. The naive tier postdates the committed pilot, so it has no committed numbers yet.
 
-| Tier | Recovery acc [95% CI] | Macro-F1 | Shuffled-label p | Reading |
+| Tier | Recovery acc [95% CI] | Macro-F1 | Shuffled-label p | Reading <img width="1000" height="1"> |
 |---|---|---|---|---|
 | raw (negative control) | 0.143 [0.00, 0.36] | 0.038 | 0.857 | exactly chance (1/7) |
 | emotion | 0.214 [0.00, 0.43] | 0.112 | 0.226 | not above circularity |
@@ -63,15 +65,13 @@ xychart-beta
 |:---:|:---:|
 | <img src="results/paper/figures/accuracy.png" alt="Recovery accuracy by tier, every confidence interval includes the chance line" width="400"> | <img src="results/paper/figures/confusion_raw.png" alt="Raw tier confusion matrix, predictions collapse onto the neutral row" width="360"> |
 
-- The probe used 2 of 7 labels and predicted neutral for 90% of generated items.
-- Correcting recovery for the probe's measured error (Rogan-Gladen) moves the emotion tier from 0.214 back to 0.165, chance.
-- No tier survives Holm correction across tiers (adjusted p = 0.27).
-- Paired contrasts: emotion adds +0.071 over raw (Cohen's h = 0.19, p = 0.26); affect adds nothing over emotion.
-- Chance equals the majority baseline at 0.143, so a collapsed probe scores here no matter what the image shows.
+- Probe collapse: 2 of 7 labels used, neutral 90% of the time.
+- Rogan-Gladen probe-error correction: 0.214 falls back to 0.165, chance.
+- Holm across tiers: nothing survives, adjusted p = 0.27.
+- Paired contrasts: emotion +0.071 over raw (Cohen's h = 0.19, p = 0.26); affect adds nothing.
+- Chance equals the majority baseline, 0.143: a collapsed probe scores it whatever the image shows.
 
-<details>
-<summary><b>All confusion matrices and the valence-arousal map</b></summary>
-<br>
+**All confusion matrices and the valence-arousal map:**
 
 | Emotion tier | Affect tier |
 |:---:|:---:|
@@ -81,15 +81,13 @@ xychart-beta
 |:---:|:---:|
 | <img src="results/paper/figures/confusion_scene.png" alt="Scene floor confusion matrix" width="360"> | <img src="results/paper/figures/va_affect.png" alt="Intended versus recovered valence and arousal, affect tier" width="360"> |
 
-</details>
-
-Full write-up: [paper/paper.md](paper/paper.md). The records and derived metrics are drift-locked by `make repro-check` in CI; the tables here are rendered snapshots of the same artifacts (`make paper`).
+Full write-up: [paper/paper.md](paper/paper.md). The records and derived metrics are drift-locked by make repro-check in CI; the tables here are rendered snapshots of the same artifacts (make paper).
 
 ## Checks
 
 One per failure mode, in the style of an instrument audit:
 
-| Check | Question | Result |
+| Check | Question | Result <img width="1000" height="1"> |
 |---|---|---|
 | Chance floor (raw) | Does no-emotion score above 1/7? | 0.143, exactly chance |
 | Template ceiling (scene) | How much is pure scene recognition? | 0.286, the upper bound |
@@ -102,7 +100,7 @@ One per failure mode, in the style of an instrument audit:
 
 **Probe gate.** A probe must read real images before its verdict on generated ones counts:
 
-| Probe | Faces | Scenes (EmoSet) | Verdict |
+| Probe | Faces | Scenes (EmoSet) | Verdict <img width="1000" height="1"> |
 |---|---|---|---|
 | CLIP ViT-B/32 (pilot) | 29.0% | 40.3% | fails the gate |
 | CLIP ViT-L/14 | 37.5% | 45.5% | candidate (McNemar p = 0.038 / 0.040) |
@@ -135,26 +133,26 @@ make validate-probe-scene                # gate a candidate probe on EmoSet
 make submission SYSTEM="name"            # schema-validated, numbers copied from results
 ```
 
-| System | Track | raw | emotion | affect | scene | Cleared shuffled-label? |
+| System | Track | raw | emotion | affect | scene | Cleared shuffled-label? <img width="1000" height="1"> |
 |---|---|---|---|---|---|---|
 | SD-Turbo + CLIP ViT-B/32 (pilot) | content | 0.143 | 0.214 | 0.214 | 0.286 | no, a guarded null |
 
-Submissions validate against [benchmark/submission.schema.json](benchmark/submission.schema.json). Also useful: `make power` (sample size), `make correct-recovery` (probe-error correction), `make validate-probe-hf` (non-CLIP probe).
+Submissions validate against [benchmark/submission.schema.json](benchmark/submission.schema.json). Also useful: make power (sample size), make correct-recovery (probe-error correction), make validate-probe-hf (non-CLIP probe).
 
 ## Pilot vs powered run
 
-| Parameter | Committed pilot | Powered run (registered) |
+| Parameter | Committed pilot | Powered run (registered) <img width="1000" height="1"> |
 |---|---|---|
-| Generator | stabilityai/sd-turbo, pinned | same, swappable via `DIFFUSION_MODEL` |
+| Generator | stabilityai/sd-turbo, pinned | same, swappable via DIFFUSION_MODEL |
 | Probe | CLIP ViT-B/32, pinned | gate-passing probe, ViT-L/14 candidate |
 | Image size | 256 x 256 | 512 x 512 |
 | Subjects x seeds | 2 x 1 | 20 x 3 |
 | n per tier | 14 (scene 7) | 420 (scene 21) |
-| Power | n/a | 95%+ for effect strength s = 0.2, `make power` |
+| Power | n/a | 95%+ for effect strength s = 0.2, make power |
 
 ## Key terms
 
-| Term | Meaning |
+| Term | Meaning <img width="1000" height="1"> |
 |---|---|
 | Valence, arousal | How positive and how activated an emotion is; the two axes of Russell's circumplex |
 | Tier | One rung of the conditioning ladder: raw, naive, emotion, affect |
@@ -165,7 +163,7 @@ Submissions validate against [benchmark/submission.schema.json](benchmark/submis
 
 ## Tech stack
 
-| Layer | Tools |
+| Layer | Tools <img width="1000" height="1"> |
 |---|---|
 | ML | PyTorch, Transformers, Diffusers (SD-Turbo), CLIP, DistilRoBERTa |
 | App | Flask, gunicorn |
