@@ -25,7 +25,8 @@ dependencies = [
     "numpy>=1.24",
     "pillow>=10.0",
     "pydantic>=2.5",
-    "pydantic-settings>=2.14.2",
+    # >=2.14 requires Python 3.10; this project supports 3.9 (requires-python).
+    "pydantic-settings>=2.5",
 ]
 
 [project.optional-dependencies]
