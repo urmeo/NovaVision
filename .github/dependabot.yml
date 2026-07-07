@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # Python dependencies (requirements.txt + pyproject.toml at repo root)
+  # Python dependencies (pyproject.toml at repo root)
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
