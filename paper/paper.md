@@ -1,4 +1,4 @@
-# A Reproducible Protocol for Measuring Emotion Controllability in Text-to-Image Generation, and Why Zero-Shot Round-Trip Recovery Fails
+# The Control You Prompt Is Not the Control You Get: Measuring Emotion Steering in Text-to-Image Generation
 
 **Urme Bose** (`urme-b`)
 
