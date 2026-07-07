@@ -1,12 +1,7 @@
 # Treat tracked binary assets as binary: no line-ending conversion,
 # no textual diff/merge munging.
-*.png  binary
-*.jpg  binary
-*.jpeg binary
-*.gif  binary
-*.webp binary
-*.ico  binary
-*.pdf  binary
+*.png binary
+*.gif binary
 
 # The single-file demo UI is a showcase, not the project's source language;
 # keep it out of the language bar so it reads as the Python project it is.
