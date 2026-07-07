@@ -37,18 +37,13 @@ def resolve_host(default: str = LOCAL_HOST) -> str:
     return PUBLIC_HOST if public_enabled() else default
 
 
-def api_token() -> str | None:
-    """Bearer token required on the generate route, or None to disable the check."""
-    return os.getenv("NOVA_API_TOKEN", "").strip() or None
-
-
 def token_ok(provided: str | None) -> bool:
-    """Constant-time comparison of a presented token against the configured one.
+    """Constant-time comparison of a presented token against ``NOVA_API_TOKEN``.
 
     Returns True when no token is configured (the check is opt-in), so local
     development keeps working; once ``NOVA_API_TOKEN`` is set it is enforced.
     """
-    expected = api_token()
+    expected = os.getenv("NOVA_API_TOKEN", "").strip() or None
     if expected is None:
         return True
     if provided is None:
@@ -116,7 +111,5 @@ class ConcurrencyGuard:
         return self._sem.acquire(blocking=False)
 
     def release(self) -> None:
-        try:
-            self._sem.release()
-        except ValueError:  # released more than acquired, ignore
-            pass
+        # A mispaired release is a caller bug; BoundedSemaphore fails loudly on it.
+        self._sem.release()
