@@ -22,7 +22,7 @@ judged, whichever way it comes out. Timestamped by its git commit.
   content factor since the template floor renders no subject).
 - **Text track:** AffectBench (GoEmotions test split, pinned revision), same seeds.
 - **Generator:** as configured (`--diffusion-model`); **probe:** the one that
-  clears the in-domain gate (see RUNBOOK step 1), reported with its measured error.
+  clears the in-domain gate (`make validate-probe-scene`), reported with its measured error.
 - Seeds are shared across tiers per item, so contrasts are paired on generation
   noise.
 
@@ -50,7 +50,7 @@ properly powered null, not an underpowered one.
 
 One run at the registered n. No optional stopping, no adding seeds until
 significance, no dropping tiers. If the probe collapses in domain, the run is
-withheld and the probe is replaced (RUNBOOK step 1), not reinterpreted.
+withheld and the probe is replaced (rerun the in-domain gate), not reinterpreted.
 
 ## Deviations
 

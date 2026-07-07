@@ -19,10 +19,9 @@ Expect an acknowledgement within a few days.
 
 ## Hardening defaults
 
-- **Localhost by default.** Both entry points (`server.py`, `app.py`) bind `127.0.0.1`. A public
-  bind (`0.0.0.0`) requires an explicit `NOVA_PUBLIC=1` opt-in (auto-enabled only inside a
-  Hugging Face Spaces sandbox). The shared rule lives in `novavision/serving.py` so the two
-  entry points cannot disagree.
+- **Localhost by default.** The entry point (`server.py`) binds `127.0.0.1`. A public bind
+  (`0.0.0.0`) requires an explicit `NOVA_PUBLIC=1` opt-in (auto-enabled only inside a
+  Hugging Face Spaces sandbox). The rule lives in `novavision/serving.py`.
 - **Generate route is protected.** `/api/generate` enforces a per-IP rate limit
   (`NOVA_RATE_LIMIT`, default 30/min), a concurrency cap (`NOVA_MAX_CONCURRENCY`, default 2, which
   sheds load rather than queueing), and an optional bearer token (`NOVA_API_TOKEN`): set the
