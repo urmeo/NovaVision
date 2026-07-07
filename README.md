@@ -2,6 +2,8 @@
 
 **Can emotion conditioning actually steer what a generated image conveys?** **Not measurably yet: under a protocol built to catch self-deception, no conditioning tier beats chance, and the apparent lift vanishes once the probe's measured error is corrected for.**
 
+[Paper](paper/paper.md) · [Colab](reproduce.ipynb) · [Preregistration](PREREGISTRATION.md) · [Runbook](RUNBOOK.md) · [Benchmark your system](#applications)
+
 <img src="screenshots/demo_preview.gif" alt="Typing a sentence, reading its emotion analysis, and generating a matching artwork" width="720">
 
 ## Results
@@ -14,6 +16,14 @@ The committed run is a CPU pilot (SD-Turbo generator, CLIP ViT-B/32 probe, n=14 
 | emotion | 0.214 [0.00, 0.43] | 0.112 | 0.226 | 14 | not above the circularity baseline |
 | affect | 0.214 [0.00, 0.43] | 0.133 | 0.137 | 14 | not above the circularity baseline |
 | scene (pos. control) | 0.286 [0.00, 0.58] | 0.184 | 0.145 | 7 | highest, still n.s. |
+
+```mermaid
+xychart-beta
+    title "Recovery accuracy by tier (chance = 0.143)"
+    x-axis ["raw", "emotion", "affect", "scene"]
+    y-axis "accuracy" 0 --> 0.35
+    bar [0.143, 0.214, 0.214, 0.286]
+```
 
 | Contrast | Delta acc | 95% CI | Cohen's h | p |
 |---|---|---|---|---|
@@ -35,11 +45,33 @@ Read it honestly:
 
 Full write-up: [paper/paper.md](paper/paper.md). The underlying records and derived metrics are drift-locked by `make repro-check` in CI; the tables here are rendered snapshots of the same artifacts (`make paper`).
 
+## Checks
+
+One check per failure mode, in the style of an instrument audit:
+
+| Check | Question | Result |
+|---|---|---|
+| Chance floor (raw) | Does no-emotion score above 1/7? | 0.143, exactly chance |
+| Template ceiling (scene) | How much is pure scene recognition? | 0.286, the upper bound |
+| Decoupled content | Can emotion leak through the subject? | No: neutral subjects, same seeds per tier |
+| Shuffled labels (n = 2000) | Is recovery just chance agreement? | emotion p = 0.23, affect p = 0.14 |
+| Holm correction | Does anything survive family-wise control? | No, adjusted p = 0.27 |
+| Probe collapse diagnostic | Is the probe even using its labels? | 2 of 7 labels, 90% neutral |
+| Rogan-Gladen correction | Does the lift outlive probe error? | 0.214 corrects to 0.165, chance |
+| Provenance manifest | Could numbers drift silently? | git SHA, model revisions, device, benchmark hash logged per run |
+
+**Probe gate.** A probe must read real images before its verdict on generated ones counts:
+
+| Probe | Faces | Scenes (EmoSet) | Verdict |
+|---|---|---|---|
+| CLIP ViT-B/32 (pilot) | 29.0% | 40.3% | fails the gate |
+| CLIP ViT-L/14 | 37.5% | 45.5% | candidate (McNemar p = 0.038 / 0.040) |
+
 ## Screenshots
 
-<img src="screenshots/main_interface.png" alt="Main interface: text input with example prompts, live emotion analysis panel, and the artwork pane" width="720">
-
-<img src="screenshots/emotion_analysis.png" alt="Emotion analysis view: primary emotion with confidence, valence and arousal, per-label scores, and the generated prompt" width="720">
+| Main interface | Emotion analysis |
+|:---:|:---:|
+| <img src="screenshots/main_interface.png" alt="Text input with example prompts, live emotion analysis panel, artwork pane" width="380"> | <img src="screenshots/emotion_analysis.png" alt="Primary emotion with confidence, valence and arousal, per-label scores, generated prompt" width="380"> |
 
 ## Parameters
 
@@ -60,13 +92,18 @@ Source of truth: the run manifest in [results/paper/results.json](results/paper/
 
 <img src="screenshots/how_it_works.png" alt="Pipeline diagram: detect the emotion, ground valence and arousal, condition the prompt, generate, recover" width="720">
 
-Detect the emotion in text (DistilRoBERTa), ground valence/arousal (lexicon blended with the circumplex prior, cap 0.8), condition the prompt, generate (SD-Turbo, fixed paired seeds), then recover the emotion from the image with a swappable probe and compare to the intent.
+Detect the emotion in text (DistilRoBERTa), ground valence/arousal (lexicon blended with the circumplex prior, cap 0.8), condition the prompt, generate (SD-Turbo, fixed paired seeds), then recover the emotion from the image with a swappable probe and compare to the intent. The tiers are the ablation: content is never chosen by the emotion, so recovery can only come from the conditioning.
 
-- Decoupled content: the depicted subject is never chosen by the emotion (20 neutral subjects), so signal can only come through the modifier, not the scene.
-- Two floors bound the claim: raw (negative control, chance) and scene (template-only positive control), so a tautology cannot win.
-- Shuffled-label control: a permutation test (n=2000) against randomly reassigned targets quantifies circularity directly; Holm correction is applied across tiers.
-- Probe as a known-error instrument: measured ceilings (EmoSet scenes: B/32 40.3%, L/14 45.5%; faces: 29.0% vs 37.5%; paired McNemar p=0.038/0.040) feed a Rogan-Gladen correction of recovery.
-- Full provenance: every run logs git SHA, library and model revisions, device, and benchmark hash; tables and figures are script-generated, never hand-written.
+| Tier | Prompt | Example fragment (sadness) |
+|---|---|---|
+| raw | content + style | negative control, no emotion at all |
+| naive | content + emotion word | "sadness" |
+| emotion | content + mood phrase | "sad melancholic mood, somber wistful atmosphere" |
+| affect | emotion tier + palette and lighting from valence, arousal | "cool desaturated palette, muted blue-grey tones, soft gentle lighting" |
+| scene | fixed per-emotion scene, no content | "a misty rain-soaked forest at dusk" (template ceiling) |
+
+- Valence maps to palette: warm golden above +0.33, cool desaturated blue-grey below -0.33.
+- Arousal maps to lighting: dramatic high contrast above 0.66, soft and calm below 0.33.
 - AffectBench hygiene: GoEmotions test split, within-sample and cross-split deduplication, realized per-class counts recorded.
 
 ## Figures
@@ -76,6 +113,29 @@ Detect the emotion in text (DistilRoBERTa), ground valence/arousal (lexicon blen
 <img src="results/paper/figures/confusion_raw.png" alt="Confusion matrix for the raw control tier, showing predictions collapsing onto the neutral row" width="440">
 
 Accuracy per tier against chance, and the raw-tier confusion matrix showing the probe's collapse onto neutral.
+
+<details>
+<summary><b>All confusion matrices and the valence-arousal map</b></summary>
+<br>
+
+| emotion tier | affect tier |
+|:---:|:---:|
+| <img src="results/paper/figures/confusion_emotion.png" width="360"> | <img src="results/paper/figures/confusion_affect.png" width="360"> |
+| **scene ceiling** | **valence, arousal by emotion** |
+| <img src="results/paper/figures/confusion_scene.png" width="360"> | <img src="results/paper/figures/va_affect.png" width="360"> |
+
+</details>
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| Valence, arousal | How positive and how activated an emotion is; the two axes of Russell's circumplex |
+| Tier | One rung of the conditioning ladder: raw, naive, emotion, affect, plus the scene ceiling |
+| Probe | The model that reads the emotion back off the generated image |
+| Recovery accuracy | How often the probe's read matches the intended emotion |
+| Shuffled-label control | Rerun scoring with targets randomly reassigned; real signal must beat it |
+| Probe gate | Minimum accuracy on real images before a probe's verdict counts |
 
 ## Toolkit
 
@@ -107,6 +167,15 @@ No local setup: [reproduce.ipynb](reproduce.ipynb) runs clone-install-test-repro
 | Emotion-conditioned art, interactively | `make app` |
 | Ground the probe against human raters | [docs/human_study_protocol.md](docs/human_study_protocol.md) |
 
+## Limitations
+
+- The probe is the binding limit: it reads real scenes at 40.3% yet collapses on generated ones, so no recovery number is interpretable as controllability yet.
+- Pilot scale: n = 14 per tier at 256 px; treat every interval as wide by design.
+- Prompt-level conditioning only; no fine-tuning, adapters, or guidance.
+- Seven Ekman labels plus neutral; standard image-emotion evaluators train on Mikels' eight, so cross-taxonomy comparison needs the paper's mapping.
+- On the content track, valence and arousal are per-emotion priors, so the affect tier measures palette and lighting strength, not text grounding.
+- AffectBench inherits GoEmotions' Reddit-English domain and its modest annotator agreement.
+
 ## Tech Stack
 
 | Layer | Tools |
@@ -118,14 +187,16 @@ No local setup: [reproduce.ipynb](reproduce.ipynb) runs clone-install-test-repro
 
 ## Docs
 
-- [paper/paper.md](paper/paper.md): the full write-up; tables auto-injected from results.
-- [RUNBOOK.md](RUNBOOK.md): the ordered GPU-day checklist with acceptance gates.
-- [PREREGISTRATION.md](PREREGISTRATION.md): hypotheses, n, and analysis locked before the powered run.
-- [MODEL_CARD.md](MODEL_CARD.md): intended use, out-of-scope uses, and limitations.
-- [ARCHITECTURE.md](ARCHITECTURE.md): how the pipeline and harness fit together.
-- [PROVENANCE.md](PROVENANCE.md): every model and eval prompt, pinned to exact revisions.
-- [data/DATASHEET.md](data/DATASHEET.md): the AffectBench data card.
-- [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md)
+| Doc | Purpose |
+|---|---|
+| [paper/paper.md](paper/paper.md) | Full write-up; tables auto-injected from results |
+| [PREREGISTRATION.md](PREREGISTRATION.md) | Hypotheses, n, and analysis locked before the powered run |
+| [RUNBOOK.md](RUNBOOK.md) | Ordered GPU-day checklist with acceptance gates |
+| [MODEL_CARD.md](MODEL_CARD.md) | Intended use, out-of-scope uses, limitations |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How the pipeline and harness fit together |
+| [PROVENANCE.md](PROVENANCE.md) | Every model and eval prompt, pinned to exact revisions |
+| [data/DATASHEET.md](data/DATASHEET.md) | The AffectBench data card |
+| [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [CHANGELOG.md](CHANGELOG.md) | Community and release docs |
 
 ## References
 
