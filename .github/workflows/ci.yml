@@ -14,6 +14,7 @@ jobs:
   lint:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -35,6 +36,7 @@ jobs:
   test:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: lint
     strategy:
       matrix:
@@ -62,6 +64,7 @@ jobs:
   server-smoke:
     name: Server smoke (real socket, no models)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: lint
     steps:
       - uses: actions/checkout@v7
@@ -79,6 +82,7 @@ jobs:
   ml-smoke:
     name: ML import + null-path smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: lint
     steps:
       - uses: actions/checkout@v7
@@ -117,6 +121,7 @@ jobs:
   security:
     name: Security audit (secrets + deps)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
