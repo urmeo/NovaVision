@@ -6,10 +6,6 @@ text-to-image · affective computing · valence arousal · controllability bench
 
 [Paper](paper/paper.md) · [Colab](reproduce.ipynb) · [Preregistration](PREREGISTRATION.md) · [Runbook](RUNBOOK.md) · [Benchmark](#benchmark-your-system)
 
-[![CI](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/NovaVision/actions/workflows/ci.yml)
-[![Python 3.9 to 3.12](https://img.shields.io/badge/python-3.9%20to%203.12-blue)](pyproject.toml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-
 <img src="screenshots/demo_preview.gif" alt="Typing a sentence, reading its emotion analysis, and generating a matching artwork" width="720">
 
 **Can emotion conditioning steer what a generated image conveys?** **Not measurably yet: under a protocol built to catch self-deception, no conditioning tier beats chance, and the apparent lift vanishes once the probe's measured error is corrected for.**
