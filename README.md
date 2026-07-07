@@ -33,7 +33,7 @@ Read it honestly:
 - A chance-level result alone is uninformative: a collapsed probe scores at the majority baseline regardless of the image, which is why every number ships beside its collapse diagnostic.
 - The powered run (n=420, 95%+ power for even a weak effect) is deliberately withheld until a probe clears the in-domain gate; analysis is locked in the [preregistration](PREREGISTRATION.md).
 
-Full write-up: [paper/paper.md](paper/paper.md). Numbers regenerate with `make paper` and are drift-locked by `make repro-check` in CI.
+Full write-up: [paper/paper.md](paper/paper.md). The underlying records and derived metrics are drift-locked by `make repro-check` in CI; the tables here are rendered snapshots of the same artifacts (`make paper`).
 
 ## Screenshots
 
@@ -81,7 +81,7 @@ Accuracy per tier against chance, and the raw-tier confusion matrix showing the 
 
 ```
 make setup          # core + dev deps (deterministic, no models)
-make test           # 199 tests, runs in seconds
+make test           # 200 tests, runs in seconds
 make repro-check    # re-derive committed headline numbers from committed records
 make power          # sample-size analysis for the powered run
 make correct-recovery       # probe-error-corrected recovery (Rogan-Gladen)
