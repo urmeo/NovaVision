@@ -180,10 +180,6 @@ Submissions validate against [benchmark/submission.schema.json](benchmark/submis
 - [Sauer et al. (2023)](https://arxiv.org/abs/2311.17042): adversarial diffusion distillation, the SD-Turbo generator.
 - [Yang et al. (2023)](https://arxiv.org/abs/2307.07961): EmoSet, the in-domain set the probe ceiling is measured on.
 
-Full bibliography, including the statistical methods and the emotion-conditioned generation literature, in [paper/references.bib](paper/references.bib).
-
 ## License
 
-Code is [MIT](LICENSE). Source only: model weights, datasets, and affect norms keep their own terms, several non-commercial, see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
-
-[Model Card](MODEL_CARD.md) · [Architecture](ARCHITECTURE.md) · [Provenance](PROVENANCE.md) · [Datasheet](data/DATASHEET.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
+[MIT License](LICENSE)
