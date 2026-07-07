@@ -11,7 +11,7 @@ import argparse
 import json
 from pathlib import Path
 
-_TIERS = ("raw", "naive", "emotion", "affect", "scene", "shuffled")
+from novavision.experiments.run import ALL_CONDITIONS
 
 
 def build_submission(results: dict, system: str) -> dict:
@@ -20,7 +20,7 @@ def build_submission(results: dict, system: str) -> dict:
     metrics = results["metrics"]
 
     conditions = {}
-    for tier in _TIERS:
+    for tier in ALL_CONDITIONS:
         m = metrics.get(tier)
         if not m:
             continue
