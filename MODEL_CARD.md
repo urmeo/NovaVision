@@ -44,13 +44,13 @@ every model is an off-the-shelf, pinned checkpoint.
   mixed and compound affect are out of scope.
 - **Taxonomy mismatch with image-emotion evaluators.** Standard evaluators are
   trained on Mikels' eight categories (no neutral); the Ekman-plus-neutral target
-  space requires an explicit mapping (see paper section 7).
+  space requires an explicit mapping (see the paper's Limitations).
 - **Domain skew.** The text track derives from GoEmotions (Reddit-English, modest
   inter-annotator agreement); AffectBench inherits that bias.
 
 ## Evaluation and ethics
 
-- The committed result is an honest, properly powered null (see `paper/paper.md`,
+- The committed result is an honest, properly powered null (see `paper/paper.pdf`,
   `PREREGISTRATION.md`), enforced in CI (`make repro-check`).
 - Generated images can carry the biases of SD-Turbo; the pipeline applies no
   content filtering and must not be exposed publicly without one.
