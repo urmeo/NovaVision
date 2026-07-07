@@ -13,6 +13,9 @@ follow the git tags.
 - Content-Security-Policy and type guards in the web UI; `py.typed` marker.
 - Repositioned related work against the 2024-2026 emotion-conditioned generation
   literature (EmoGen, EmotiCrafter, EmoEdit, MUSE, EPIG); taxonomy-mismatch analysis.
+- Removed `requirements.lock`; Docker and CI install from pyproject extras, and the
+  per-run manifest is the environment record. The `pydantic-settings` floor is
+  raised to 2.14.2, past a known advisory.
 
 ## [1.0.0] - 2026-07-02
 
