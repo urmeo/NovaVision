@@ -112,13 +112,13 @@ One per failure mode, in the style of an instrument audit:
 Reproduce the committed numbers, no GPU, seconds:
 
 ```bash
-make setup && make test && make repro-check    # 200 tests, then re-derive the committed metrics
+make setup && make test && make repro-check    # 201 tests, then re-derive the committed metrics
 ```
 
 Try the app:
 
 ```bash
-make setup-ml && make app        # http://127.0.0.1:8000, make serve-prod for public binds
+make setup-ml && make app        # http://127.0.0.1:8000, make serve-prod BIND=0.0.0.0:8000 to expose
 ```
 
 No local setup: [reproduce.ipynb](reproduce.ipynb) runs clone, install, test, reproduce in Colab.
