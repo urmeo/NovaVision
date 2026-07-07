@@ -152,8 +152,6 @@ Submissions validate against [benchmark/submission.schema.json](benchmark/submis
 | n per tier | 14 (scene 7) | 420 (scene 21) |
 | Power | n/a | 95%+ for effect strength s = 0.2, `make power` |
 
-Locked before execution in [PREREGISTRATION.md](PREREGISTRATION.md); the GPU-day checklist with acceptance gates is [RUNBOOK.md](RUNBOOK.md).
-
 ## Key terms
 
 | Term | Meaning |
@@ -174,35 +172,6 @@ Locked before execution in [PREREGISTRATION.md](PREREGISTRATION.md); the GPU-day
 | Research | NumPy, Pillow, matplotlib, HF datasets (GoEmotions, EmoSet) |
 | Quality | pytest, ruff, mypy, gitleaks, pip-audit, GitHub Actions, Docker, uv |
 
-## Limitations
-
-- The probe is the binding limit: it reads real scenes at 40.3% yet collapses on generated ones, so no recovery number is interpretable as controllability yet.
-- Pilot scale: n = 14 per tier at 256 px; treat every interval as wide by design.
-- Prompt-level conditioning only; no fine-tuning, adapters, or guidance.
-- Six Ekman labels plus neutral; standard image-emotion evaluators train on Mikels' eight, so cross-taxonomy comparison needs the paper's mapping.
-- On the content track, valence and arousal are per-emotion priors, so the affect tier measures palette and lighting strength, not text grounding.
-- AffectBench inherits GoEmotions' Reddit-English domain and its modest annotator agreement.
-
-## Future
-
-- Run the preregistered powered study (n = 420 per tier) once a probe clears the in-domain gate.
-- Gate stronger probes: CLIP ViT-L/14 first, then an EmoSet-trained classifier.
-- Ground the probe against human raters: [docs/human_study_protocol.md](docs/human_study_protocol.md).
-- Map Ekman-plus-neutral onto Mikels' eight so results compare against EmoGen-style evaluators.
-- Score more generators under the frozen protocol and grow the submission table.
-
-## Docs
-
-| | |
-|---|---|
-| [paper/paper.md](paper/paper.md) | full write-up, tables auto-injected from results |
-| [PREREGISTRATION.md](PREREGISTRATION.md) | hypotheses, n, analysis, locked before the powered run |
-| [RUNBOOK.md](RUNBOOK.md) | ordered GPU-day checklist with acceptance gates |
-| [MODEL_CARD.md](MODEL_CARD.md) | intended use, out-of-scope uses, limitations |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | how the pipeline and harness fit together |
-| [PROVENANCE.md](PROVENANCE.md) | every model and eval prompt pinned to exact revisions |
-| [data/DATASHEET.md](data/DATASHEET.md) | the AffectBench data card |
-
 ## References
 
 - [Russell (1980)](https://doi.org/10.1037/h0077714): the circumplex model, the valence and arousal axes.
@@ -217,4 +186,4 @@ Full bibliography, including the statistical methods and the emotion-conditioned
 
 Code is [MIT](LICENSE). Source only: model weights, datasets, and affect norms keep their own terms, several non-commercial, see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
-[Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [Changelog](CHANGELOG.md)
+[Model Card](MODEL_CARD.md) · [Architecture](ARCHITECTURE.md) · [Provenance](PROVENANCE.md) · [Datasheet](data/DATASHEET.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
