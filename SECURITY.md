@@ -44,7 +44,8 @@ Expect an acknowledgement within a few days.
 
 ## Secrets and CI
 
-- No secrets are committed. Configuration is read from environment variables; see `.env.example`.
+- No secrets are committed. Configuration is read from `NOVA_`-prefixed environment variables
+  (defined in `novavision/config.py`; serving knobs in `novavision/serving.py`).
 - The full git history is scanned for committed secrets on every push (`gitleaks` in CI), and the
   dependency chain is audited by `pip-audit`.
 - CI runs with least-privilege `permissions: contents: read`; no workflow has write scope.
