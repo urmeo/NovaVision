@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use NovaVision, please cite it as below."
 type: software
-title: "NovaVision: A Reproducible Protocol for Measuring Emotion Controllability in Text-to-Image Generation, and Why Zero-Shot Round-Trip Recovery Fails"
+title: "NovaVision: The Control You Prompt Is Not the Control You Get: Measuring Emotion Steering in Text-to-Image Generation"
 version: 1.0.0
 date-released: 2026-07-02
 url: "https://github.com/urme-b/NovaVision"
