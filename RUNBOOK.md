@@ -7,7 +7,7 @@ step has an acceptance gate; do not proceed past a failed gate.
 ## 0. Environment
 
 ```bash
-uv pip install -r requirements.lock   # the exact paper environment
+make setup && make setup-ml           # deterministic core + model runtime
 make test                             # all green, no models needed
 make repro-check                      # committed numbers re-derive bit-for-bit
 make power                            # sample-size analysis, no models

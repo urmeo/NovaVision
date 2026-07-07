@@ -381,7 +381,7 @@ from three or more raters, and report human-vs-probe Cohen's $\kappa$. It is wir
 
 ## 9. Reproducibility
 
-`uv pip install -r requirements.lock` pins the exact environment; every model is pinned to a
+The manifest records the exact library versions behind every run; every model is pinned to a
 commit revision (`novavision/config.py`) and the dataset to a revision. Runs are globally seeded
 (`novavision.determinism`); cross-device bit-exactness is not guaranteed, so each run declares its
 device and dtype in the manifest. The committed `results/paper/` artifact is produced by

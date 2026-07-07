@@ -22,7 +22,7 @@ paste the command and output here
 
 - OS and Python version:
 - Backend (null, diffusers, hf-api):
-- Installed from: pyproject extras or requirements.lock
+- Installed from: pyproject extras
 
 ## Notes
 
