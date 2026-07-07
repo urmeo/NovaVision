@@ -61,7 +61,7 @@ xychart-beta
 
 | Recovery accuracy vs chance | Raw-tier confusion: the collapse |
 |:---:|:---:|
-| <img src="results/paper/figures/accuracy.png" alt="Recovery accuracy by tier, every confidence interval includes the chance line" width="400"> | <img src="results/paper/figures/confusion_raw.png" alt="Raw tier confusion matrix, predictions collapse onto the neutral row" width="360"> |
+| <img src="results/paper/figures/accuracy.png" alt="Recovery accuracy by tier, every confidence interval includes the chance line" width="400"> | <img src="results/paper/figures/confusion_raw.png" alt="Raw tier confusion matrix, predictions collapse onto the neutral column" width="360"> |
 
 - Probe collapse: 2 of 7 labels used, neutral 90% of the time.
 - Rogan-Gladen probe-error correction: 0.214 falls back to 0.165, chance.
