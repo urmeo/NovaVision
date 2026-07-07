@@ -2,11 +2,11 @@
 
 ### The Control You Prompt Is Not the Control You Get: Measuring Emotion Steering in Text-to-Image Generation
 
-text-to-image · affective computing · valence arousal · controllability benchmark · reproducibility
-
 [Paper](paper/paper.md) · [Colab](reproduce.ipynb) · [Preregistration](PREREGISTRATION.md) · [Runbook](RUNBOOK.md) · [Benchmark](#benchmark-your-system)
 
+<p align="center">
 <img src="screenshots/demo_preview.gif" alt="Typing a sentence, reading its emotion analysis, and generating a matching artwork" width="720">
+</p>
 
 **Can emotion conditioning steer what a generated image conveys?** **Not measurably yet: under a protocol built to catch self-deception, no conditioning tier beats chance, and the apparent lift vanishes once the probe's measured error is corrected for.**
 
@@ -59,10 +59,9 @@ xychart-beta
     bar [0.143, 0.214, 0.214, 0.286]
 ```
 
-<p align="center">
-<img src="results/paper/figures/accuracy.png" alt="Recovery accuracy by tier, every confidence interval includes the chance line" width="480">
-<img src="results/paper/figures/confusion_raw.png" alt="Raw tier confusion matrix, predictions collapse onto the neutral row" width="360">
-</p>
+| Recovery accuracy vs chance | Raw-tier confusion: the collapse |
+|:---:|:---:|
+| <img src="results/paper/figures/accuracy.png" alt="Recovery accuracy by tier, every confidence interval includes the chance line" width="400"> | <img src="results/paper/figures/confusion_raw.png" alt="Raw tier confusion matrix, predictions collapse onto the neutral row" width="360"> |
 
 - The probe used 2 of 7 labels and predicted neutral for 90% of generated items.
 - Correcting recovery for the probe's measured error (Rogan-Gladen) moves the emotion tier from 0.214 back to 0.165, chance.
@@ -74,11 +73,13 @@ xychart-beta
 <summary><b>All confusion matrices and the valence-arousal map</b></summary>
 <br>
 
-| emotion tier | affect tier |
+| Emotion tier | Affect tier |
 |:---:|:---:|
-| <img src="results/paper/figures/confusion_emotion.png" width="360"> | <img src="results/paper/figures/confusion_affect.png" width="360"> |
-| **scene ceiling** | **valence, arousal by emotion** |
-| <img src="results/paper/figures/confusion_scene.png" width="360"> | <img src="results/paper/figures/va_affect.png" width="360"> |
+| <img src="results/paper/figures/confusion_emotion.png" alt="Emotion tier confusion matrix" width="360"> | <img src="results/paper/figures/confusion_affect.png" alt="Affect tier confusion matrix" width="360"> |
+
+| Scene ceiling | Valence, arousal by emotion |
+|:---:|:---:|
+| <img src="results/paper/figures/confusion_scene.png" alt="Scene floor confusion matrix" width="360"> | <img src="results/paper/figures/va_affect.png" alt="Intended versus recovered valence and arousal, affect tier" width="360"> |
 
 </details>
 
@@ -206,15 +207,11 @@ Locked before execution in [PREREGISTRATION.md](PREREGISTRATION.md); the GPU-day
 
 - [Russell (1980)](https://doi.org/10.1037/h0077714): the circumplex model, the valence and arousal axes.
 - [Demszky et al. (2020)](https://arxiv.org/abs/2005.00547): GoEmotions, the text source AffectBench is built from.
-- [Warriner et al. (2013)](https://doi.org/10.3758/s13428-012-0314-x): affect norms, the research-grade lexicon option.
 - [Radford et al. (2021)](https://arxiv.org/abs/2103.00020): CLIP, the default probe, treated as an instrument to validate.
 - [Sauer et al. (2023)](https://arxiv.org/abs/2311.17042): adversarial diffusion distillation, the SD-Turbo generator.
 - [Yang et al. (2023)](https://arxiv.org/abs/2307.07961): EmoSet, the in-domain set the probe ceiling is measured on.
-- [Rogan and Gladen (1978)](https://doi.org/10.1093/oxfordjournals.aje.a112510): prevalence correction, deconvolves probe error.
-- [Holm (1979)](https://www.jstor.org/stable/4615733): the family-wise correction applied across tiers.
-- [Mikels et al. (2005)](https://doi.org/10.3758/BF03192732): the taxonomy image-emotion evaluators train on.
-- [Stein et al. (2023)](https://arxiv.org/abs/2306.04675): precedent that critiquing a generative-evaluation metric is itself a contribution.
-- [Othmen et al. (2026)](https://arxiv.org/abs/2606.13247): EPIG, the closest training-free valence-arousal conditioning peer.
+
+Full bibliography, including the statistical methods and the emotion-conditioned generation literature, in [paper/references.bib](paper/references.bib).
 
 ## License
 
