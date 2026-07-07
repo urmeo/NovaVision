@@ -18,7 +18,7 @@ import math
 from pathlib import Path
 
 from novavision.affect.analyzer import EmotionAnalyzer
-from novavision.config import CLIP_REVISION
+from novavision.config import CLIP_MODEL, CLIP_REVISION
 from novavision.data import load_benchmark, load_content_bank, sha256
 from novavision.determinism import set_determinism
 from novavision.eval import figures
@@ -129,7 +129,7 @@ def _make_probe(kind: str, probe_model: str | None, clip_model: str, device: str
         raise ValueError(f"unknown probe kind '{kind}', expected 'clip' or 'hf'")
     model_id = probe_model or clip_model
     # The pinned revision is a ViT-B/32 commit; it must not leak onto other models.
-    revision = CLIP_REVISION if model_id == "openai/clip-vit-base-patch32" else None
+    revision = CLIP_REVISION if model_id == CLIP_MODEL else None
     return CLIPProbe(model_id=model_id, device=device, revision=revision)
 
 
@@ -149,7 +149,7 @@ def run_experiment(
     device: str | None = None,
     diffusion_model: str = "stabilityai/sd-turbo",
     probe: str = "clip",
-    clip_model: str = "openai/clip-vit-base-patch32",
+    clip_model: str = CLIP_MODEL,
     probe_model: str | None = None,
     emotion_model: str = "j-hartmann/emotion-english-distilroberta-base",
     coverage_override: float | None = None,
@@ -195,6 +195,7 @@ def run_experiment(
         track=track,
         diffusion_model=diffusion_model,
         probe=probe_obj.name,
+        clip_model=probe_model or clip_model,
         emotion_model=emotion_model if track == "text" else None,
         device=getattr(gen, "device", "n/a"),
         dtype=getattr(gen, "dtype", "n/a"),
@@ -533,7 +534,7 @@ def main() -> None:
     parser.add_argument("--style", default="artistic")
     parser.add_argument("--diffusion-model", default="stabilityai/sd-turbo")
     parser.add_argument("--probe", default="clip", choices=["clip", "hf"])
-    parser.add_argument("--clip-model", default="openai/clip-vit-base-patch32")
+    parser.add_argument("--clip-model", default=CLIP_MODEL)
     parser.add_argument("--probe-model", default=None, help="probe model id (CLIP or HF)")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
