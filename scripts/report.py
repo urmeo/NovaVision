@@ -7,8 +7,7 @@ import json
 from pathlib import Path
 
 from novavision.eval.metrics import cohens_h, holm_bonferroni
-
-CONDITIONS = ("raw", "naive", "emotion", "affect", "scene", "shuffled")
+from novavision.experiments.run import ALL_CONDITIONS as CONDITIONS
 
 
 def _fmt(x) -> str:
