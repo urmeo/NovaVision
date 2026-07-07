@@ -18,11 +18,12 @@ def _rho(m: dict, key: str) -> str:
     """Correlation with its bootstrap CI when available, never a bare 3-decimal."""
     rho = m.get(key)
     ci = m.get(f"{key}_ci")
-    lo = ci[0] if ci else None
     # A degenerate correlation writes NaN, which becomes null after a results.json
     # round-trip; render the CI only when the lower bound is a real number.
-    if lo is not None and not (isinstance(lo, float) and lo != lo):
-        return f"{_fmt(rho)} [{ci[0]:.2f}, {ci[1]:.2f}]"
+    if ci:
+        lo = ci[0]
+        if lo is not None and not (isinstance(lo, float) and lo != lo):
+            return f"{_fmt(rho)} [{ci[0]:.2f}, {ci[1]:.2f}]"
     return _fmt(rho)
 
 
