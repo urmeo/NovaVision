@@ -1,6 +1,6 @@
-"""Security helpers shared by the Flask API (`server.py`) and Gradio app (`app.py`).
+"""Security helpers for the Flask API (`server.py`).
 
-The two entry points must not disagree on defaults, so the rules live here once:
+The rules live here once, not in the entry point:
 bind localhost unless an operator explicitly opts into a public bind, and give the
 expensive generate route a per-client rate limit, a concurrency cap, and an
 optional bearer token. Everything is dependency-free and read from the
