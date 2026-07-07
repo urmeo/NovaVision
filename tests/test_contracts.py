@@ -128,7 +128,10 @@ def test_report_conditions_are_producible_by_run():
     from novavision.experiments import run
 
     producible = set(run.CONDITIONS["content"]) | set(run.CONDITIONS["text"])
-    assert set(report.CONDITIONS) <= producible, set(report.CONDITIONS) - producible
+    # Equality, not subset: a tier added to the harness must not silently
+    # vanish from the rendered tables (report imports run.ALL_CONDITIONS).
+    assert set(report.CONDITIONS) == producible
+    assert tuple(report.CONDITIONS) == run.ALL_CONDITIONS
 
 
 # --- Public provenance API (finding 34): resummarize depends on manifest's
@@ -165,3 +168,19 @@ def test_device_info_degrades_without_torch(monkeypatch):
     assert info["cuda_available"] is False
     assert info["device_name"] is None
     assert info["cuda"] is None
+
+
+def test_version_synced_across_metadata():
+    # __init__ owns the version (pyproject derives via setuptools dynamic); the
+    # two external formats that require a literal copy must match it.
+    import json
+    import re
+    from pathlib import Path
+
+    import novavision
+
+    root = Path(novavision.__file__).resolve().parents[1]
+    cff = (root / "CITATION.cff").read_text()
+    assert re.search(rf"^version: {re.escape(novavision.__version__)}$", cff, re.M)
+    zenodo = json.loads((root / ".zenodo.json").read_text())
+    assert zenodo["version"] == novavision.__version__
