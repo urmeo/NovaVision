@@ -10,8 +10,9 @@ judged, whichever way it comes out. Timestamped by its git commit.
 - **H1 (conditioning beats chance).** For each conditioning tier (`naive`,
   `emotion`, `affect`), recovery accuracy exceeds the shuffled-label permutation
   null (one-sided, n=2000 permutations).
-- **H2 (conditioning beats the template).** `emotion` and `affect` add recovery
-  over the `scene` template ceiling on the content track.
+- **H2 (conditioning beats the template).** Each conditioning tier adds recovery
+  over the `scene` template ceiling, tested as a paired per-item contrast on the
+  content track.
 - **H0 (the registered null).** Neither holds after multiple-comparison control;
   recovery is indistinguishable from chance label agreement.
 
@@ -42,9 +43,11 @@ properly powered null, not an underpowered one.
 3. Report **Cohen's h** effect size for every tier-vs-tier contrast.
 4. Report the **Rogan-Gladen** probe-error-corrected recovery
    (`scripts/correct_recovery.py`) beside the apparent recovery.
-5. Report the `probe_health` collapse diagnostic; a run whose probe collapses
-   (uses <= 2 of 7 labels in domain) is reported as instrument failure, not a
-   controllability result, regardless of the accuracy numbers.
+5. Report the `probe_health` collapse diagnostic; the probe gate requires more
+   than 2 of 7 labels used in domain AND in-domain accuracy above the majority
+   baseline with a 95% CI excluding it. A run whose probe fails either criterion
+   is reported as instrument failure, not a controllability result, regardless
+   of the accuracy numbers.
 
 ## Stopping rule
 
@@ -56,3 +59,8 @@ withheld and the probe is replaced (rerun the in-domain gate), not reinterpreted
 
 Any departure from this plan is recorded here with its reason before the numbers
 are read.
+
+- 2026-07-07, before any powered run: H2 broadened from {emotion, affect} to every
+  conditioning tier as a paired per-item contrast, and the probe gate tightened to
+  also require in-domain accuracy above the majority baseline with a 95% CI
+  excluding it. Only the committed pilot existed under the earlier wording.
