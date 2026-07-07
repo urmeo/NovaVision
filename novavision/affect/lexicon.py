@@ -85,9 +85,6 @@ class AffectLexicon:
     def __len__(self) -> int:
         return len(self._entries)
 
-    def __contains__(self, word: str) -> bool:
-        return word.lower() in self._entries
-
     def lookup(self, word: str) -> tuple[float, float] | None:
         for v in _variants(word.lower()):
             if v in STOPWORDS or v in NEGATORS:
