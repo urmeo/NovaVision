@@ -2,7 +2,7 @@
 
 ### The Control You Prompt Is Not the Control You Get: Measuring Emotion Steering in Text-to-Image Generation
 
-[Paper](paper/paper.md) · [Colab](reproduce.ipynb) · [Preregistration](PREREGISTRATION.md) · [Runbook](RUNBOOK.md) · [Benchmark](#benchmark-your-system)
+[Paper](paper/paper.md) · [Colab](reproduce.ipynb) · [Preregistration](PREREGISTRATION.md) · [Benchmark](#benchmark-your-system)
 
 <p align="center">
 <img src="screenshots/demo_preview.gif" alt="Typing a sentence, reading its emotion analysis, and generating a matching artwork" width="720">
@@ -168,7 +168,7 @@ Submissions validate against [benchmark/submission.schema.json](benchmark/submis
 | Layer | Tools |
 |---|---|
 | ML | PyTorch, Transformers, Diffusers (SD-Turbo), CLIP, DistilRoBERTa |
-| App | Flask, Gradio, gunicorn |
+| App | Flask, gunicorn |
 | Research | NumPy, Pillow, matplotlib, HF datasets (GoEmotions, EmoSet) |
 | Quality | pytest, ruff, mypy, gitleaks, pip-audit, GitHub Actions, Docker, uv |
 

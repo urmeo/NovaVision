@@ -50,5 +50,4 @@ content words matched.
 
 Project code: MIT. The shipped demo lexicon is original to NovaVision (MIT). Derived/external
 data inherits its source's terms (GoEmotions: Apache-2.0; Warriner norms / NRC-VAD: per their
-respective licenses). Full model + data + lexicon terms are in
-[../THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md).
+respective licenses).
