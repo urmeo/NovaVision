@@ -70,5 +70,5 @@ track. A hand-authored sample (test fixture) and a demo lexicon ship for offline
   core and its tests run anywhere and in CI.
 - **Seeded and reproducible.** The same seed is used per item across tiers for paired
   comparison; the null backend is deterministic for tests.
-- **One source of truth.** `server.py`, `app.py`, and `experiments/run.py` are thin adapters
+- **One source of truth.** `server.py` and `experiments/run.py` are thin adapters
   over `novavision/`; there is no duplicated logic.
