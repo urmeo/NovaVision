@@ -29,8 +29,6 @@ flowchart LR
     C -. bounded by .-> B["chance floor · scene ceiling · shuffled-label null · probe-error correction"]
 ```
 
-The tiers are the ablation. Content is never chosen by the emotion, so recovery can only come from the conditioning.
-
 | Tier | Prompt | Example fragment (sadness) <img width="1000" height="1"> |
 |---|---|---|
 | raw | content + style | negative control, no emotion at all |
