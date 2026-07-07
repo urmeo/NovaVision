@@ -2,7 +2,7 @@
 
 ### The Control You Prompt Is Not the Control You Get: Measuring Emotion Steering in Text-to-Image Generation
 
-[Paper](paper/paper.md) · [Colab](reproduce.ipynb) · [Preregistration](PREREGISTRATION.md) · [Benchmark](#benchmark-your-system)
+[Paper](paper/paper.pdf) · [Colab](reproduce.ipynb) · [Preregistration](PREREGISTRATION.md) · [Benchmark](#benchmark-your-system)
 
 <p align="center">
 <img src="screenshots/demo_preview.gif" alt="Typing a sentence, reading its emotion analysis, and generating a matching artwork" width="720">
@@ -79,7 +79,7 @@ xychart-beta
 |:---:|:---:|
 | <img src="results/paper/figures/confusion_scene.png" alt="Scene floor confusion matrix" width="360"> | <img src="results/paper/figures/va_affect.png" alt="Intended versus recovered valence and arousal, affect tier" width="360"> |
 
-Full write-up: [paper/paper.md](paper/paper.md). The records and derived metrics are drift-locked by make repro-check in CI; the tables here are rendered snapshots of the same artifacts (make paper).
+Full write-up: [paper/paper.pdf](paper/paper.pdf). The records and derived metrics are drift-locked by make repro-check in CI; the tables here are rendered snapshots of the same artifacts (make paper).
 
 ## Checks
 
@@ -108,7 +108,7 @@ One per failure mode, in the style of an instrument audit:
 Reproduce the committed numbers, no GPU, seconds:
 
 ```bash
-make setup && make test && make repro-check    # 201 tests, then re-derive the committed metrics
+make setup && make test && make repro-check    # 200 tests, then re-derive the committed metrics
 ```
 
 Try the app:
