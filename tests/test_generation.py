@@ -9,6 +9,14 @@ def test_factory():
         get_backend("nope")
 
 
+def test_hf_api_ignores_device_kwarg(monkeypatch):
+    # get_backend forwards `device` to every backend uniformly; the hosted API has
+    # no local device and must absorb it, not crash (the --backend hf-api --device combo).
+    monkeypatch.setenv("HF_TOKEN", "dummy")
+    b = get_backend("hf-api", model_id="stabilityai/sd-turbo", device="cpu")
+    assert b.name == "hf-api"
+
+
 def test_size_and_mode():
     img = NullBackend().generate("hi", width=64, height=48, seed=1)
     assert img.size == (64, 48)

@@ -15,7 +15,10 @@ class HFApiBackend(ImageBackend):
 
     name = "hf-api"
 
-    def __init__(self, model_id: str = "stabilityai/sd-turbo", token: str | None = None):
+    def __init__(self, model_id: str = "stabilityai/sd-turbo", token: str | None = None, **_):
+        # get_backend forwards model_id/device uniformly to every backend; a hosted
+        # API has no local device, so absorb-and-ignore it (as NullBackend does)
+        # rather than crash the documented `--backend hf-api --device ...` combo.
         self.token = token or os.getenv("HF_TOKEN")
         if not self.token:
             raise ValueError("HF_TOKEN not set")
