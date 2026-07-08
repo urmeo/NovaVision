@@ -46,6 +46,13 @@ def test_analyze_short_text(client):
     assert client.post("/api/analyze", json={"text": "hi"}).status_code == 400
 
 
+def test_non_string_text_is_rejected(client):
+    # A malformed "text" (number, list, bool, null) is a client error, not a 500.
+    for bad in (123, ["a", "b"], True, None, {"k": 1}):
+        for route in ("/api/analyze", "/api/generate"):
+            assert client.post(route, json={"text": bad}).status_code == 400
+
+
 def test_generate_ok(client):
     resp = client.post(
         "/api/generate", json={"text": "i feel great", "style": "artistic", "seed": 5}
