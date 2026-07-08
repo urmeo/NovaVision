@@ -135,7 +135,7 @@ make submission SYSTEM="name"            # schema-validated, numbers copied from
 |---|---|---|---|---|---|---|
 | SD-Turbo + CLIP ViT-B/32 (pilot) | content | 0.143 | 0.214 | 0.214 | 0.286 | no, a guarded null |
 
-Submissions validate against [benchmark/submission.schema.json](benchmark/submission.schema.json). Also useful: make power (sample size), make correct-recovery (probe-error correction), make validate-probe-hf (non-CLIP probe).
+Submissions validate against [benchmark/submission.schema.json](benchmark/submission.schema.json). Also useful: make power (sample size), make correct-recovery (probe-error correction), make compare-probes (the paper's McNemar p-values), make validate-probe-hf (non-CLIP probe).
 
 ## Pilot vs powered run
 
