@@ -37,7 +37,7 @@ CIs, paired tests, and Cohen's κ; all pure numpy, fully unit-tested. `experimen
 tracks (`content` over the neutral bank, `text` over AffectBench) across seeds, computes the
 floors and tier contrasts, and writes `results.json` (with a full provenance manifest) + figures.
 `eval/human_study.py` regenerates a sampled subset for raters and scores human-vs-probe
-agreement.
+agreement; the rater protocol is [docs/human_study_protocol.md](docs/human_study_protocol.md).
 
 ## Data
 
