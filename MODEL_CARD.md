@@ -50,8 +50,11 @@ every model is an off-the-shelf, pinned checkpoint.
 
 ## Evaluation and ethics
 
-- The committed result is an honest, properly powered null (see `paper/paper.pdf`,
-  `PREREGISTRATION.md`), enforced in CI (`make repro-check`).
+- The committed result is an honest, guarded null from a calibration pilot (n=14
+  per tier), read as a calibration of the instrument rather than a controllability
+  score; the *properly powered* run (n=420 per tier, preregistered) has not been
+  executed yet (see `paper/paper.pdf`, `PREREGISTRATION.md`). The committed numbers
+  are re-derived from the records in CI (`make repro-check`).
 - Generated images can carry the biases of SD-Turbo; the pipeline applies no
   content filtering and must not be exposed publicly without one.
 - MIT covers the code only; model weights and data keep their own upstream terms
