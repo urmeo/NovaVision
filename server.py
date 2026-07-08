@@ -70,8 +70,13 @@ _CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
 def _valid_text(data) -> tuple[str, str | None]:
     # A JSON body can legally be a list/str/number; only dicts have fields.
     data = data if isinstance(data, dict) else {}
+    raw = data.get("text", "")
+    # A non-string "text" (number, list, bool, null) is a malformed request, not a
+    # server fault: reject it as a length violation rather than let the regex raise.
+    if not isinstance(raw, str):
+        return "", f"Text must be {MIN_TEXT}-{MAX_TEXT} characters."
     # Strip control characters before length-checking the prompt.
-    text = _CONTROL_CHARS.sub(" ", data.get("text", "")).strip()
+    text = _CONTROL_CHARS.sub(" ", raw).strip()
     if not (MIN_TEXT <= len(text) <= MAX_TEXT):
         return text, f"Text must be {MIN_TEXT}-{MAX_TEXT} characters."
     return text, None
