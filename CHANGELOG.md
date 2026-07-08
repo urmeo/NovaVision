@@ -20,8 +20,7 @@ follow the git tags.
   `RUNBOOK.md`, `PROVENANCE.md`, and `THIRD_PARTY_LICENSES.md`; model pins and per-run
   manifests carry the provenance, upstream pages carry the license terms.
 - Removed `requirements.lock`; Docker and CI install from pyproject extras, and the
-  per-run manifest is the environment record. The `pydantic-settings` floor is
-  raised to 2.14.2, past a known advisory.
+  per-run manifest is the environment record.
 
 ## [1.0.0] - 2026-07-02
 
