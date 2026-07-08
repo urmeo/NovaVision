@@ -156,9 +156,8 @@ def generate():
         # int(2.9) truncates silently; the contract says integer.
         return jsonify({"error": "seed must be an integer."}), 400
     try:
-        # OverflowError: Flask's JSON parser admits the nonstandard Infinity literal.
         seed = random.randint(0, 2**31 - 1) if raw_seed is None else int(raw_seed)
-    except (TypeError, ValueError, OverflowError):
+    except (TypeError, ValueError):
         return jsonify({"error": "seed must be an integer."}), 400
     if abs(seed) >= 2**63:
         return jsonify({"error": "seed must fit in a signed 64-bit integer."}), 400
