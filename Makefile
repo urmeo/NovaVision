@@ -1,6 +1,6 @@
 .PHONY: setup setup-ml test lint format app serve-prod benchmark reproduce text validate-probe \
   validate-probe-scene validate-probe-hf robustness resummarize smoke pilot paper repro-check \
-  power ablate-blend submission correct-recovery
+  power ablate-blend submission correct-recovery compare-probes
 
 BIND ?= 127.0.0.1:8000
 DIFFUSION_MODEL ?= stabilityai/sd-turbo
@@ -79,6 +79,9 @@ power:                  # sample-size analysis for the powered run (no models)
 
 correct-recovery:       # probe-error-corrected recovery (Rogan-Gladen; no models)
 	python scripts/correct_recovery.py --tier emotion
+
+compare-probes:         # exact McNemar between two probe reports (the paper's p-values; no models)
+	python scripts/compare_probes.py results/paper/probe_validation_scene.json results/paper/probe_validation_scene_l14.json
 
 ablate-blend:           # affect-blend sensitivity on the text track (FORCE_C=0|0.8|1; needs models)
 	python -m novavision.experiments.run --backend diffusers --track text \
