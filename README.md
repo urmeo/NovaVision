@@ -108,7 +108,7 @@ One per failure mode, in the style of an instrument audit:
 Reproduce the committed numbers, no GPU, seconds:
 
 ```bash
-make setup && make test && make repro-check    # 200 tests, then re-derive the committed metrics
+make setup && make test && make repro-check    # 204 tests, then re-derive the committed metrics
 ```
 
 Try the app:
