@@ -42,7 +42,7 @@ def build_submission(results: dict, system: str) -> dict:
             "git_sha": manifest.get("git_sha", "unknown"),
             "seeds": cfg.get("seeds", 1),
             "base_seed": cfg.get("base_seed", 0),
-            "benchmark_sha256": manifest.get("benchmark_sha256"),
+            "benchmark_sha256": cfg.get("benchmark_sha256"),
         },
     }
     # probe_health is optional in the schema; include it only when the run carries
