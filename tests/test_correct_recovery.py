@@ -35,6 +35,21 @@ def test_sensitivity_specificity_from_confusion():
         assert sens == 1.0 and spec == 1.0
 
 
+def test_zero_support_class_serializes_null_not_nan():
+    import json
+
+    # A class the probe never saw has undefined sensitivity; it must become JSON
+    # null, never a bare NaN token (the results.json strict-JSON contract).
+    n = len(EMOTIONS)
+    conf = [[0] * n for _ in range(n)]
+    for i, e in enumerate(EMOTIONS):
+        if e != "neutral":
+            conf[i][i] = 10  # neutral's true row/col stay empty -> zero support
+    out = cr.correct({"records": _records(0.5)}, {"confusion": conf, "model": "x"}, "emotion")
+    assert out["per_class"]["neutral"]["sensitivity"] is None
+    json.dumps(out, allow_nan=False)  # raises if any bare NaN leaked through
+
+
 def test_correction_on_committed_pilot_reinforces_null():
     import json
     from pathlib import Path

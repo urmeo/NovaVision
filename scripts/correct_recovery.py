@@ -56,7 +56,7 @@ def correct(results: dict, validation: dict, tier: str) -> dict:
         c = rogan_gladen(a, sens, spec) if a == a else float("nan")
         per_class[e] = {
             "apparent": _round(a),
-            "sensitivity": round(sens, 4),
+            "sensitivity": _round(sens),
             "corrected": _round(c),
         }
         if c == c:
@@ -86,7 +86,8 @@ def main() -> None:
     results = json.loads(Path(args.results).read_text())
     validation = json.loads(Path(args.probe_validation).read_text())
     report = correct(results, validation, args.tier)
-    Path(args.out).write_text(json.dumps(report, indent=2))
+    # Match the results.json contract: standards-compliant JSON, no bare NaN.
+    Path(args.out).write_text(json.dumps(report, indent=2, allow_nan=False))
     print(json.dumps({k: v for k, v in report.items() if k != "per_class"}, indent=2))
 
 
