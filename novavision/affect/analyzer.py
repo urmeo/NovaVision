@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 
 from novavision.affect.lexicon import AffectLexicon
-from novavision.config import EMOTION_MODEL, EMOTION_REVISION
+from novavision.config import EMOTION_MODEL, EMOTION_REVISION, default_revision
 from novavision.taxonomy import prior
 
 DEFAULT_MODEL = EMOTION_MODEL
@@ -43,9 +43,7 @@ class EmotionAnalyzer:
         coverage_override: float | None = None,
     ):
         self.model_name = model_name
-        # The pinned revision is a commit of DEFAULT_MODEL only; applying it to a
-        # swapped model would request a commit that does not exist in that repo.
-        self.revision = revision or (EMOTION_REVISION if model_name == DEFAULT_MODEL else None)
+        self.revision = revision or default_revision(model_name, DEFAULT_MODEL, EMOTION_REVISION)
         # Ablation hook: force the lexicon/prior blend weight (0 = prior only,
         # 1 = lexicon only) instead of using measured coverage. None = normal.
         if coverage_override is not None and not 0.0 <= coverage_override <= 1.0:

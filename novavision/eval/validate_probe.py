@@ -12,6 +12,7 @@ import argparse
 import json
 from pathlib import Path
 
+from novavision.config import CLIP_MODEL, CLIP_REVISION, default_revision
 from novavision.eval.metrics import accuracy, confusion_matrix, macro_f1
 from novavision.taxonomy import EMOTIONS
 
@@ -138,11 +139,7 @@ def clip_revision_for(args) -> str | None:
     """
     if args.clip_revision:
         return args.clip_revision
-    if args.clip_model == "openai/clip-vit-base-patch32":
-        from novavision.config import CLIP_REVISION
-
-        return CLIP_REVISION
-    return None
+    return default_revision(args.clip_model, CLIP_MODEL, CLIP_REVISION)
 
 
 def main() -> None:
@@ -157,7 +154,7 @@ def main() -> None:
     parser.add_argument("--image-key", default="image", help="HF dataset image column")
     parser.add_argument("--label-key", default="label", help="HF dataset label column")
     parser.add_argument("--probe", default="clip", choices=["clip", "hf"])
-    parser.add_argument("--clip-model", default="openai/clip-vit-base-patch32")
+    parser.add_argument("--clip-model", default=CLIP_MODEL)
     parser.add_argument(
         "--probe-model",
         default=None,

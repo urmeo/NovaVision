@@ -18,7 +18,7 @@ import math
 from pathlib import Path
 
 from novavision.affect.analyzer import EmotionAnalyzer
-from novavision.config import CLIP_MODEL, CLIP_REVISION
+from novavision.config import CLIP_MODEL, CLIP_REVISION, default_revision
 from novavision.data import load_benchmark, load_content_bank, sha256
 from novavision.determinism import set_determinism
 from novavision.eval import figures
@@ -128,8 +128,7 @@ def _make_probe(kind: str, probe_model: str | None, clip_model: str, device: str
     if kind != "clip":
         raise ValueError(f"unknown probe kind '{kind}', expected 'clip' or 'hf'")
     model_id = probe_model or clip_model
-    # The pinned revision is a ViT-B/32 commit; it must not leak onto other models.
-    revision = CLIP_REVISION if model_id == CLIP_MODEL else None
+    revision = default_revision(model_id, CLIP_MODEL, CLIP_REVISION)
     return CLIPProbe(model_id=model_id, device=device, revision=revision)
 
 
