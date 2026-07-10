@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Emotion-controllable text-to-image generation and an affect-recovery benchmark"
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "urme-b" }]
+authors = [{ name = "Urme Bose" }]
 requires-python = ">=3.9"
 keywords = [
     "emotion", "affective-computing", "text-to-image", "diffusion", "clip",
