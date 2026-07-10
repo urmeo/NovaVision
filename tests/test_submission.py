@@ -27,6 +27,20 @@ def test_submission_from_committed_results_matches_schema():
     assert sub["provenance"]["git_sha"]  # copied from the manifest, not invented
 
 
+def test_submission_propagates_benchmark_sha256_from_config():
+    # benchmark_sha256 is nested under manifest.config (build_manifest puts every
+    # run kwarg there); the submission must read it from config, not the top level.
+    results = {
+        "manifest": {
+            "git_sha": "abc",
+            "config": {"seeds": 1, "base_seed": 0, "benchmark_sha256": "DEADBEEF"},
+        },
+        "metrics": {"raw": {"accuracy": 0.1, "accuracy_ci": [0.0, 0.3], "n": 7}},
+    }
+    sub = make_submission.build_submission(results, "hashed")
+    assert sub["provenance"]["benchmark_sha256"] == "DEADBEEF"
+
+
 def test_submission_never_invents_a_condition():
     # Only tiers actually present in the run may appear in the submission.
     results = {
