@@ -1,6 +1,6 @@
 {
   "upload_type": "software",
-  "title": "NovaVision: The Control You Prompt Is Not the Control You Get: Measuring Emotion Steering in Text-to-Image Generation",
+  "title": "NovaVision: The Probe Is the Bottleneck: Zero-Shot Round-Trip Recovery Does Not Yet Certify Emotion Controllability in Text-to-Image Generation",
   "description": "Emotion-conditioned text-to-image generation with an automatic, reproducible benchmark that recovers the emotion from generated images (via CLIP) and compares it to the intended affect.",
   "creators": [
     { "name": "Bose, Urme" }

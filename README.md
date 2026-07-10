@@ -1,6 +1,6 @@
 # NovaVision
 
-### The Control You Prompt Is Not the Control You Get: Measuring Emotion Steering in Text-to-Image Generation
+### The Probe Is the Bottleneck: Zero-Shot Round-Trip Recovery Does Not Yet Certify Emotion Controllability in Text-to-Image Generation
 
 [Paper](paper/paper.pdf) · [Colab](reproduce.ipynb) · [Preregistration](PREREGISTRATION.md) · [Benchmark](#benchmark-your-system)
 
