@@ -81,14 +81,13 @@ def build_manifest(**config) -> dict:
         DIFFUSION_REVISION,
         EMOTION_MODEL,
         EMOTION_REVISION,
+        default_revision,
     )
 
     def pin(key: str, default_id: str, revision: str) -> str | None:
-        # A pin belongs to its default checkpoint; a swapped model loads unpinned
-        # (see DiffusersBackend/_make_probe), so recording the default's commit
-        # for it would fabricate provenance.
-        model = config.get(key) or default_id
-        return revision if model == default_id else None
+        # Record a pin only if this run used the default checkpoint; the rule
+        # itself lives once in config.default_revision.
+        return default_revision(config.get(key) or default_id, default_id, revision)
 
     return {
         "git_sha": git_sha(),

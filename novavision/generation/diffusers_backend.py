@@ -6,7 +6,7 @@ import threading
 
 from PIL import Image
 
-from novavision.config import DIFFUSION_MODEL, DIFFUSION_REVISION
+from novavision.config import DIFFUSION_MODEL, DIFFUSION_REVISION, default_revision
 from novavision.generation.base import ImageBackend
 
 
@@ -33,9 +33,7 @@ class DiffusersBackend(ImageBackend):
         revision: str | None = None,
     ):
         self.model_id = model_id
-        # The pinned revision belongs to sd-turbo only; a swapped model gets its
-        # own latest revision rather than a nonexistent commit.
-        revision = revision or (DIFFUSION_REVISION if model_id == DIFFUSION_MODEL else None)
+        revision = revision or default_revision(model_id, DIFFUSION_MODEL, DIFFUSION_REVISION)
         self.device = device or _pick_device()
         self.dtype = "float16" if self.device == "cuda" else "float32"
         self.steps = steps

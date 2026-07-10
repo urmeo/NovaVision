@@ -15,6 +15,16 @@ CLIP_MODEL = "openai/clip-vit-base-patch32"
 CLIP_REVISION = "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268"
 
 
+def default_revision(model_id: str, default_model: str, revision: str) -> str | None:
+    """The pinned revision, but only when the default checkpoint is what loads.
+
+    Each pin is a commit in its default model's HF repo; a swapped model loads
+    unpinned, because applying the pin to another model would request a commit
+    that does not exist there (and, in a run manifest, fabricate provenance).
+    """
+    return revision if model_id == default_model else None
+
+
 class Settings(BaseSettings):
     # NOVA_ prefix keeps these consistent with the other NOVA_* env vars and stops
     # a generic BACKEND in a shell or base image from silently overriding the run.
