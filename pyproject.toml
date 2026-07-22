@@ -36,7 +36,7 @@ research = ["matplotlib>=3.7", "datasets>=2.18"]
 dev = ["pytest>=8.0", "ruff>=0.5", "matplotlib>=3.7", "flask>=3.0", "flask-cors>=4.0", "gunicorn>=21"]
 
 [project.urls]
-Repository = "https://github.com/urme-b/NovaVision"
+Repository = "https://github.com/urmeo/NovaVision"
 
 [tool.setuptools.packages.find]
 include = ["novavision*"]
