@@ -41,6 +41,11 @@ expect 400 "non-dict body"   -X POST "$BASE/api/generate" -H "$JSON" -H "X-API-T
 python -c "print('{\"text\": \"' + 'x' * 33800 + '\"}')" > "$BIG"
 expect 413 "oversize body"   -X POST "$BASE/api/analyze" -H "$JSON" --data-binary @"$BIG"
 
-curl -s "$BASE/" | grep -q tokenInput || { echo "FAIL frontend token field missing"; exit 1; }
+# Write to a file first: piping into `grep -q` makes grep exit on the first
+# match, and the SIGPIPE that gives curl would trip `pipefail`.
+PAGE=$(mktemp)
+curl -s "$BASE/" > "$PAGE"
+grep -q tokenInput "$PAGE" || { echo "FAIL frontend token field missing"; rm -f "$PAGE"; exit 1; }
+rm -f "$PAGE"
 echo "ok   frontend token field present"
 echo "SMOKE PASS"
