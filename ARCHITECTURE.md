@@ -45,7 +45,7 @@ agreement; the rater protocol is [docs/human_study_protocol.md](docs/human_study
 (`taxonomy.GOEMOTIONS_TO_EKMAN`), dedups, samples the **test** split, and writes a manifest with
 realized per-class counts. `data/content_bank.txt` holds the neutral subjects for the decoupled
 track. A hand-authored sample (test fixture) and a demo lexicon ship for offline use (see
-`data/README.md`, `data/DATASHEET.md`).
+`data/README.md`).
 
 ## Scope and known limits
 

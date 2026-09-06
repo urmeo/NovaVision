@@ -178,7 +178,7 @@ def render(results: dict) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render results as markdown tables")
     parser.add_argument("--results", default="results/paper/results.json")
-    parser.add_argument("--out", default="paper/tables.md")
+    parser.add_argument("--out", default="results/tables.md")
     args = parser.parse_args()
 
     results = json.loads(Path(args.results).read_text())

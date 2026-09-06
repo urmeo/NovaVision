@@ -22,8 +22,8 @@ tied to one visual domain. They are hand-authored for this project.
 
 ## AffectBench: text benchmark (derived from GoEmotions)
 
-Built on demand, not committed. Full composition, splits, and licensing are in the
-datasheet ([DATASHEET.md](DATASHEET.md)):
+Built on demand, not committed. Composition, splits, and licensing follow the
+GoEmotions source dataset:
 
 ```bash
 python -m novavision.data.build_benchmark --n 100 --out data/affectbench.csv
