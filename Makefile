@@ -71,8 +71,8 @@ repro-check:            # re-derive the committed headline numbers from the comm
 resummarize:            # refresh metrics/diagnostics/figures from existing records (no regen)
 	python scripts/resummarize.py --results results/paper/results.json
 
-paper:                  # regenerate the script-generated tables from the canonical results
-	python scripts/report.py --results results/paper/results.json --out paper/tables.md
+tables:                 # regenerate the script-generated tables from the canonical results
+	python scripts/report.py --results results/paper/results.json --out results/tables.md
 
 power:                  # sample-size analysis for the powered run (no models)
 	python scripts/power_analysis.py
