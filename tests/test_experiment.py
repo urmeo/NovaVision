@@ -181,7 +181,26 @@ def test_coverage_override_rejects_out_of_range():
 def test_resume_reuses_checkpoint_and_cleans_up(tmp_path, monkeypatch):
     monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
     out = tmp_path / "run"
+    render = run._render
+
+    def interrupted_render(*args, **kwargs):
+        if (out / "records.jsonl").read_text().count("\n") > 1:
+            raise RuntimeError("interrupted")
+        return render(*args, **kwargs)
+
+    monkeypatch.setattr(run, "_render", interrupted_render)
+    with pytest.raises(RuntimeError, match="interrupted"):
+        run.run_experiment(backend="null", contents=1, seeds=1, out=str(out), resume=True)
+
+    rendered = []
+
+    def resumed_render(*args, **kwargs):
+        rendered.append(args)
+        return render(*args, **kwargs)
+
+    monkeypatch.setattr(run, "_render", resumed_render)
     run.run_experiment(backend="null", contents=1, seeds=1, out=str(out), resume=True)
+    assert len(rendered) == len(EMOTIONS) * (len(run.TIERS) + 1) - 1
     # A completed run removes its checkpoint; results.json supersedes it.
     assert not (out / "records.jsonl").exists()
     assert (out / "results.json").exists()
@@ -193,8 +212,46 @@ def test_resume_skips_completed_records(tmp_path):
     from novavision.experiments.run import _Checkpoint
 
     path = tmp_path / "records.jsonl"
+    manifest = {"config": {"backend": "null", "base_seed": 0}}
     rec = {"tier": "raw", "intended": "joy", "index": 0, "seed": 0, "predicted": "joy"}
-    path.write_text(_json.dumps(rec) + "\n")
-    ckpt = _Checkpoint(path)
+    path.write_text(_json.dumps({"manifest": manifest}) + "\n" + _json.dumps(rec) + "\n")
+    ckpt = _Checkpoint(path, manifest)
     assert ckpt.cached("raw", "joy", 0, 0) == rec
     assert ckpt.cached("raw", "anger", 0, 0) is None
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [{"base_seed": 17}, {"width": 256}, {"diffusion_model": "example/other"}, {"device": "cuda"}],
+)
+def test_resume_rejects_changed_run(tmp_path, monkeypatch, changed):
+    monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
+    render = run._render
+    calls = 0
+
+    def interrupted_render(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError("interrupted")
+        return render(*args, **kwargs)
+
+    monkeypatch.setattr(run, "_render", interrupted_render)
+    options = {"backend": "null", "contents": 1, "seeds": 1, "out": str(tmp_path), "resume": True}
+    with pytest.raises(RuntimeError, match="interrupted"):
+        run.run_experiment(**options, device="cpu")
+    checkpoint = (tmp_path / "records.jsonl").read_bytes()
+    monkeypatch.setattr(run, "_render", render)
+
+    with pytest.raises(ValueError, match="checkpoint"):
+        run.run_experiment(**{**options, "device": "cpu", **changed})
+    assert (tmp_path / "records.jsonl").read_bytes() == checkpoint
+
+
+def test_resume_rejects_checkpoint_without_provenance(tmp_path):
+    import json
+
+    path = tmp_path / "records.jsonl"
+    path.write_text(json.dumps({"tier": "raw", "intended": "joy", "index": 0, "seed": 0}) + "\n")
+    with pytest.raises(ValueError, match="checkpoint"):
+        run._Checkpoint(path, {"config": {"backend": "null"}})

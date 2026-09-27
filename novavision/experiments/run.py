@@ -19,7 +19,7 @@ from pathlib import Path
 
 from novavision.affect.analyzer import EmotionAnalyzer
 from novavision.config import CLIP_MODEL, CLIP_REVISION, default_revision
-from novavision.data import load_benchmark, load_content_bank, sha256
+from novavision.data import CONTENT_BANK_PATH, load_benchmark, load_content_bank, sha256
 from novavision.determinism import set_determinism
 from novavision.eval import figures
 from novavision.eval.metrics import (
@@ -100,14 +100,23 @@ class _Checkpoint:
     ``path`` is None, so the default (non-resumable) path is unchanged.
     """
 
-    def __init__(self, path: Path | None):
+    def __init__(self, path: Path | None, manifest: dict):
         self.path = path
         self.done: dict = {}
         if path and path.exists():
-            for line in path.read_text().splitlines():
+            lines = path.read_text().splitlines()
+            if not lines or json.loads(lines[0]) != {"manifest": manifest}:
+                raise ValueError(
+                    "Resume checkpoint does not match this run's provenance; "
+                    "use a fresh output directory."
+                )
+            for line in lines[1:]:
                 if line.strip():
                     r = json.loads(line)
                     self.done[(r["tier"], r["intended"], r["index"], r["seed"])] = r
+        elif path:
+            with path.open("x", encoding="utf-8") as fh:
+                fh.write(json.dumps({"manifest": manifest}) + "\n")
 
     def cached(self, tier: str, intended: str, index: int, seed: int):
         return self.done.get((tier, intended, index, seed))
@@ -162,7 +171,6 @@ def run_experiment(
     probe_obj = _make_probe(probe, probe_model, clip_model, device)
     out_dir = Path(out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    ckpt = _Checkpoint(out_dir / "records.jsonl" if resume else None)
 
     if track == "text":
         if not benchmark:
@@ -171,24 +179,13 @@ def run_experiment(
         if limit is not None:
             rows = rows[:limit]
         n_items = len(rows)
-        _check_seed_domain(n_items, seeds)
-        analyzer = EmotionAnalyzer(model_name=emotion_model, coverage_override=coverage_override)
-        records = _text_records(
-            rows, gen, probe_obj, analyzer, style, seeds, base_seed, width, height, ckpt
-        )
     else:
         bank = load_content_bank()
         if contents is not None:
             bank = bank[:contents]
         n_items = len(bank)
-        _check_seed_domain(n_items, seeds)
-        records = _content_records(
-            bank, gen, probe_obj, style, seeds, base_seed, width, height, ckpt
-        )
 
-    conditions = CONDITIONS[track]
-    metrics = _summarize(records, conditions)
-    contrasts = _contrasts(records)
+    _check_seed_domain(n_items, seeds)
     manifest = build_manifest(
         backend=backend,
         track=track,
@@ -196,6 +193,7 @@ def run_experiment(
         probe=probe_obj.name,
         clip_model=probe_model or clip_model,
         emotion_model=emotion_model if track == "text" else None,
+        requested_device=device,
         device=getattr(gen, "device", "n/a"),
         dtype=getattr(gen, "dtype", "n/a"),
         style=style,
@@ -206,8 +204,22 @@ def run_experiment(
         height=height,
         benchmark=benchmark,
         benchmark_sha256=sha256(benchmark) if benchmark else None,
+        content_bank_sha256=sha256(CONTENT_BANK_PATH) if track == "content" else None,
         coverage_override=coverage_override,
     )
+    ckpt = _Checkpoint(out_dir / "records.jsonl" if resume else None, manifest)
+    if track == "text":
+        analyzer = EmotionAnalyzer(model_name=emotion_model, coverage_override=coverage_override)
+        records = _text_records(
+            rows, gen, probe_obj, analyzer, style, seeds, base_seed, width, height, ckpt
+        )
+    else:
+        records = _content_records(
+            bank, gen, probe_obj, style, seeds, base_seed, width, height, ckpt
+        )
+    conditions = CONDITIONS[track]
+    metrics = _summarize(records, conditions)
+    contrasts = _contrasts(records)
     _write(out, records, metrics, contrasts, manifest, conditions)
     if ckpt.path and ckpt.path.exists():
         ckpt.path.unlink()  # run completed; results.json supersedes the checkpoint

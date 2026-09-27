@@ -1,6 +1,6 @@
 .PHONY: setup setup-ml test lint format app serve-prod benchmark reproduce text validate-probe \
   validate-probe-scene validate-probe-hf robustness resummarize smoke pilot paper repro-check \
-  power ablate-blend submission correct-recovery compare-probes
+  power ablate-blend submission correct-recovery compare-probes tables
 
 BIND ?= 127.0.0.1:8000
 DIFFUSION_MODEL ?= stabilityai/sd-turbo
@@ -8,8 +8,8 @@ DIFFUSION_MODEL ?= stabilityai/sd-turbo
 setup:                  # tests, lint, benchmark build
 	python -m pip install -e ".[dev,research]"
 
-setup-ml:               # model runtime (torch, transformers, diffusers)
-	python -m pip install -e ".[ml]"
+setup-ml:               # app and model runtime (torch, transformers, diffusers)
+	python -m pip install -e ".[app,ml]"
 
 test:
 	pytest -q
@@ -73,6 +73,8 @@ resummarize:            # refresh metrics/diagnostics/figures from existing reco
 
 tables:                 # regenerate the script-generated tables from the canonical results
 	python scripts/report.py --results results/paper/results.json --out results/tables.md
+
+paper: tables
 
 power:                  # sample-size analysis for the powered run (no models)
 	python scripts/power_analysis.py

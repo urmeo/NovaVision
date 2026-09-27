@@ -45,6 +45,17 @@ def test_build_pipeline_returns_lazy_null_pipeline(monkeypatch):
     assert nv.analyzer is not None  # constructed, no model loaded yet
 
 
+def test_build_pipeline_uses_configured_hosted_model(monkeypatch):
+    from novavision.config import Settings
+    from novavision.pipeline import build_pipeline
+
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    settings = Settings(backend="hf-api", diffusion_model="example/custom-generator")
+    nv = build_pipeline(settings)
+
+    assert nv.backend.model_id == settings.diffusion_model
+
+
 def test_public_api_is_importable():
     assert novavision.__version__ == "1.0.0"
     assert callable(novavision.build_pipeline)
