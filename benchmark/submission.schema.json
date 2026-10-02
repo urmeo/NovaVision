@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/urmeo/NovaVision/benchmark/submission.schema.json",
   "title": "NovaVision benchmark submission",
-  "description": "A result produced by running the NovaVision protocol on a new generator and/or probe. Numbers must come from results.json (make paper), never hand-entered.",
+  "description": "A result produced by running the NovaVision protocol on a new generator and/or probe. Numbers must come from results.json (make tables), never hand-entered.",
   "type": "object",
   "required": ["system", "track", "generator", "probe", "conditions", "provenance"],
   "additionalProperties": false,

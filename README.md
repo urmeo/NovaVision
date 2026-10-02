@@ -79,7 +79,7 @@ xychart-beta
 |:---:|:---:|
 | <img src="results/paper/figures/confusion_scene.png" alt="Scene floor confusion matrix" width="360"> | <img src="results/paper/figures/va_affect.png" alt="Intended versus recovered valence and arousal, affect tier" width="360"> |
 
-The records and derived metrics are drift-locked by make repro-check in CI; the tables here are rendered snapshots of the same artifacts (make paper).
+The records and derived metrics are drift-locked by make repro-check in CI; the tables here are rendered snapshots of the same artifacts (make tables).
 
 ## Checks
 

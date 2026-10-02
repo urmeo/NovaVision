@@ -1,5 +1,5 @@
 .PHONY: setup setup-ml test lint format app serve-prod benchmark reproduce text validate-probe \
-  validate-probe-scene validate-probe-hf robustness resummarize smoke pilot paper repro-check \
+  validate-probe-scene validate-probe-hf robustness resummarize smoke pilot tables repro-check \
   power ablate-blend submission correct-recovery compare-probes
 
 BIND ?= 127.0.0.1:8000

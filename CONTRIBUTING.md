@@ -12,10 +12,10 @@ make test       # run the pytest suite, no models needed (runs in seconds)
 make lint       # ruff check + format
 make setup-ml   # model runtime (torch, transformers, diffusers, CLIP)
 make pilot      # the committed CPU pilot (256-px, 2 subjects, 1 seed -> n=14)
-make paper      # regenerate the paper tables from results/paper/results.json
+make tables     # regenerate the paper tables from results/paper/results.json
 ```
 
-The pilot results (results/paper/results.json) and AffectBench are committed, so tests and the paper tables run without downloading any models. make setup-ml then make pilot rebuilds the committed CPU pilot; make reproduce runs the powered content-track (512-px, 3 seeds) and needs a GPU box.
+The pilot results (results/paper/results.json) and a synthetic test fixture are committed, so tests and the tables run without downloading any models. Build the real AffectBench dataset from GoEmotions with make benchmark; the fixture is for tests only. make setup-ml then make pilot rebuilds the committed CPU pilot; make reproduce runs the powered content-track (512-px, 3 seeds) and needs a GPU box.
 
 Python 3.9 to 3.12 are supported and all tested in CI.
 
@@ -39,7 +39,7 @@ Then:
 - `tests/test_contracts.py` pins cross-module invariants (label ordering, backend-default parity,
   seed pairing, provenance API) that per-module tests miss; extend it when you couple two modules.
 - Keep the deterministic core dependency-light: heavy deps (torch, transformers, diffusers, CLIP) are imported *inside* the functions that use them, never at module top.
-- If you changed the pilot, commit the regenerated results.json and run make paper so the tables stay in sync.
+- If you changed the pilot, commit the regenerated results.json and run make tables so the tables stay in sync.
 
 ## Style
 
