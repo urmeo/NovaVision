@@ -2746,6 +2746,34 @@
             link.click();
         }
 
+        function wrapReportText(ctx, text, maxWidth) {
+            const lines = [];
+            for (const paragraph of text.split(/\r\n|[\r\n\u2028\u2029]/)) {
+                let line = '';
+                for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+                    const candidate = line ? line + ' ' + word : word;
+                    if (ctx.measureText(candidate).width <= maxWidth) {
+                        line = candidate;
+                        continue;
+                    }
+                    if (line) {
+                        lines.push(line);
+                        line = '';
+                    }
+                    for (const character of word) {
+                        if (line && ctx.measureText(line + character).width > maxWidth) {
+                            lines.push(line);
+                            line = character;
+                        } else {
+                            line += character;
+                        }
+                    }
+                }
+                lines.push(line);
+            }
+            return lines;
+        }
+
         function downloadReport() {
             if (!currentGenerationData) return;
             const generationData = currentGenerationData;
@@ -2753,7 +2781,17 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = 1200;
-            canvas.height = 1600;
+            const maxWidth = canvas.width - 80;
+            ctx.font = '14px Inter, sans-serif';
+            const promptLines = wrapReportText(ctx, generationData.prompt, maxWidth);
+            ctx.font = 'italic 16px Inter, sans-serif';
+            const inputLines = wrapReportText(ctx, '"' + generationData.original_text + '"', maxWidth);
+            const promptStartY = 920;
+            const promptEndY = promptStartY + (promptLines.length - 1) * 24;
+            const inputHeadingY = promptEndY + 60;
+            const inputStartY = inputHeadingY + 35;
+            const inputEndY = inputStartY + (inputLines.length - 1) * 26;
+            canvas.height = Math.max(1600, inputEndY + 100);
 
 
             ctx.fillStyle = '#fafafa';
@@ -2842,32 +2880,20 @@
                 ctx.fillStyle = '#64748b';
 
 
-                const words = generationData.prompt.split(' ');
-                let line = '';
-                let lineY = 920;
-                const maxWidth = canvas.width - 80;
-
-                words.forEach(word => {
-                    const testLine = line + word + ' ';
-                    const metrics = ctx.measureText(testLine);
-                    if (metrics.width > maxWidth && line !== '') {
-                        ctx.fillText(line, 40, lineY);
-                        line = word + ' ';
-                        lineY += 24;
-                    } else {
-                        line = testLine;
-                    }
+                promptLines.forEach((line, index) => {
+                    ctx.fillText(line, 40, promptStartY + index * 24);
                 });
-                ctx.fillText(line, 40, lineY);
 
 
                 ctx.fillStyle = '#0f172a';
                 ctx.font = 'bold 20px Inter, sans-serif';
-                ctx.fillText('Original Input', 40, lineY + 60);
+                ctx.fillText('Original Input', 40, inputHeadingY);
 
                 ctx.font = 'italic 16px Inter, sans-serif';
                 ctx.fillStyle = '#64748b';
-                ctx.fillText('"' + generationData.original_text + '"', 40, lineY + 95);
+                inputLines.forEach((line, index) => {
+                    ctx.fillText(line, 40, inputStartY + index * 26);
+                });
 
 
                 ctx.fillStyle = '#e2e8f0';
@@ -2876,7 +2902,7 @@
                 ctx.font = '14px Inter, sans-serif';
                 ctx.fillStyle = '#94a3b8';
                 ctx.textAlign = 'center';
-                ctx.fillText('Generated with NovaVision - AI-powered emotion visualization', canvas.width / 2, canvas.height - 25);
+                ctx.fillText('NovaVision · Image generation guided by emotion labels', canvas.width / 2, canvas.height - 25);
 
 
                 const link = document.createElement('a');

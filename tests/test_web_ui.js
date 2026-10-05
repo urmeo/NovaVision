@@ -13,6 +13,8 @@ function createApp(fetch) {
     const downloads = [];
     const reportText = [];
     const reportImages = [];
+    const reportDraws = [];
+    const reportCanvases = [];
     const clipboard = [];
     const errors = [];
     const timers = new Map();
@@ -62,11 +64,16 @@ function createApp(fetch) {
         focus() {}
         getContext() {
             return new Proxy({}, {
-                get: (_, name) => {
+                get: (target, name) => {
                     if (name === 'createLinearGradient') return () => ({ addColorStop() {} });
                     if (name === 'measureText') return text => ({ width: text.length * 7 });
-                    if (name === 'fillText') return text => reportText.push(text);
+                    if (name === 'fillText') return (text, x, y) => {
+                        reportText.push(text);
+                        reportDraws.push({ text, x, y, width: text.length * 7, font: target.font });
+                    };
+                    if (name === 'fillRect') return () => { this.firstDrawHeight ??= this.height; };
                     if (name === 'drawImage') return image => reportImages.push(image.src);
+                    if (name in target) return target[name];
                     return () => {};
                 }
             });
@@ -84,7 +91,11 @@ function createApp(fetch) {
     const context = vm.createContext({
         document: {
             getElementById,
-            createElement: tag => new Element(tag),
+            createElement: tag => {
+                const element = new Element(tag);
+                if (tag === 'canvas') reportCanvases.push(element);
+                return element;
+            },
             querySelector: () => null,
             querySelectorAll: selector => selector === '.history-thumbnail'
                 ? getElementById('historyThumbnails').children.filter(el => el.classList.contains('history-thumbnail'))
@@ -110,7 +121,8 @@ function createApp(fetch) {
     // Execute the whole shipped script, including the real input and history handlers.
     vm.runInContext(script, context, { filename: 'static/index.html' });
     const api = vm.runInContext('({ generateImage, analyzeLive, downloadImage, downloadReport })', context);
-    return { api, getElementById, downloads, reportText, reportImages, clipboard, errors, timers };
+    return { api, getElementById, downloads, reportText, reportImages, reportDraws,
+        reportCanvases, clipboard, errors, timers };
 }
 
 function generation(text, seed, emotion = 'joy', backend = 'null') {
@@ -162,6 +174,37 @@ test('history selection restores analysis, seed, image and report downloads', as
     assert(app.reportText.includes('Sadness'));
     assert(app.reportText.includes('"older"'));
     assert(!app.reportText.includes('"latest"'));
+    assert.equal(app.reportCanvases[0].height, 1600);
+    assert.deepEqual(app.errors, []);
+});
+
+test('report wraps a full length input and long prompt tokens before sizing the canvas', async () => {
+    const input = 'W'.repeat(1000) + ' ' + 'long input '.repeat(100).slice(0, 999);
+    assert.equal(input.length, 2000);
+    const prompt = 'W'.repeat(2000) + ', mood and style modifiers';
+    const app = createApp(async () => ({ json: async () => ({
+        ...generation(input, 1), prompt
+    }) }));
+    app.getElementById('emotionInput').value = input;
+    await app.api.generateImage();
+    app.api.downloadReport();
+
+    const canvas = app.reportCanvases[0];
+    const promptDraws = app.reportDraws.filter(draw => draw.x === 40 && draw.y >= 920
+        && draw.font === '14px Inter, sans-serif');
+    const inputDraws = app.reportDraws.filter(draw => draw.font === 'italic 16px Inter, sans-serif');
+    assert(canvas.height > 1600);
+    assert.equal(canvas.firstDrawHeight, canvas.height);
+    assert(promptDraws.length > 1);
+    assert(inputDraws.length > 1);
+    for (const draw of [...promptDraws, ...inputDraws]) {
+        assert(draw.width <= canvas.width - 80, 'text exceeds the report margins');
+        assert(draw.y < canvas.height - 80, 'text overlaps the footer');
+    }
+    assert(inputDraws[0].y > promptDraws.at(-1).y + 60);
+    assert.equal(promptDraws.map(draw => draw.text).join('').replace(/\s/g, ''), prompt.replace(/\s/g, ''));
+    assert.equal(inputDraws.map(draw => draw.text).join('').replace(/\s/g, ''), ('"' + input + '"').replace(/\s/g, ''));
+    assert.equal(app.downloads[0].href, 'data:image/png;report');
     assert.deepEqual(app.errors, []);
 });
 
