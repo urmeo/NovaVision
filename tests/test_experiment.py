@@ -10,6 +10,27 @@ from novavision.taxonomy import EMOTIONS
 FIXTURE = Path(__file__).parent / "fixtures" / "affectbench_sample.csv"
 
 
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"track": "typo"},
+        {"seeds": 0},
+        {"seeds": -1},
+        {"contents": -1},
+        {"limit": -1},
+        {"width": 0},
+        {"height": 0},
+    ],
+)
+def test_invalid_run_settings_fail_before_backend_initialization(monkeypatch, options):
+    def unexpected_backend(*args, **kwargs):
+        raise AssertionError("Invalid settings initialized a backend")
+
+    monkeypatch.setattr(run, "get_backend", unexpected_backend)
+    with pytest.raises(ValueError):
+        run.run_experiment(**options)
+
+
 def _records(tier: str, correct: bool):
     rows = []
     for sk in range(2):
@@ -194,7 +215,185 @@ def test_resume_skips_completed_records(tmp_path):
 
     path = tmp_path / "records.jsonl"
     rec = {"tier": "raw", "intended": "joy", "index": 0, "seed": 0, "predicted": "joy"}
-    path.write_text(_json.dumps(rec) + "\n")
-    ckpt = _Checkpoint(path)
+    manifest = {"config": {"base_seed": 0}}
+    path.write_text(_json.dumps({"manifest": manifest}) + "\n" + _json.dumps(rec) + "\n")
+    ckpt = _Checkpoint(path, manifest)
     assert ckpt.cached("raw", "joy", 0, 0) == rec
     assert ckpt.cached("raw", "anger", 0, 0) is None
+
+
+@pytest.mark.parametrize("changed", ["config", "source_sha256", "packages", "git_sha"])
+def test_resume_refuses_changed_provenance(tmp_path, changed):
+    manifest = {
+        "config": {"base_seed": 0},
+        "source_sha256": "abc",
+        "packages": {},
+        "git_sha": "old",
+    }
+    path = tmp_path / "records.jsonl"
+    run._Checkpoint(path, manifest)
+    altered = dict(manifest, **{changed: "different"})
+    with pytest.raises(ValueError, match="provenance"):
+        run._Checkpoint(path, altered)
+
+
+def test_resume_refuses_legacy_records_without_manifest(tmp_path):
+    path = tmp_path / "records.jsonl"
+    path.write_text('{"tier": "raw", "intended": "joy", "index": 0, "seed": 0}\n')
+    with pytest.raises(ValueError, match="provenance"):
+        run._Checkpoint(path, {"config": {}})
+
+
+def test_interrupted_run_resumes_unchanged_but_rejects_changed_seed(tmp_path, monkeypatch):
+    class InterruptedProbe(FakeProbe):
+        calls = 0
+
+        def recover(self, image):
+            type(self).calls += 1
+            if type(self).calls == 2:
+                raise RuntimeError("interrupted")
+            return super().recover(image)
+
+    monkeypatch.setattr(run, "CLIPProbe", InterruptedProbe)
+    kwargs = dict(
+        backend="null", contents=1, seeds=1, width=8, height=8, out=str(tmp_path), resume=True
+    )
+    with pytest.raises(RuntimeError, match="interrupted"):
+        run.run_experiment(**kwargs)
+    before = (tmp_path / "records.jsonl").read_bytes()
+    with pytest.raises(ValueError, match="provenance"):
+        run.run_experiment(**kwargs, base_seed=1)
+    with pytest.raises(ValueError, match="provenance"):
+        run.run_experiment(**kwargs, save_images=True)
+    assert (tmp_path / "records.jsonl").read_bytes() == before
+    monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
+    run.run_experiment(**kwargs)
+    assert not (tmp_path / "records.jsonl").exists()
+
+
+def test_resume_binds_sampled_data_not_only_item_count(tmp_path, monkeypatch):
+    class InterruptedProbe(FakeProbe):
+        def recover(self, image):
+            raise RuntimeError("interrupted")
+
+    monkeypatch.setattr(run, "CLIPProbe", InterruptedProbe)
+    monkeypatch.setattr(run, "load_content_bank", lambda: ["original subject"])
+    kwargs = dict(backend="null", contents=1, seeds=1, out=str(tmp_path), resume=True)
+    with pytest.raises(RuntimeError):
+        run.run_experiment(**kwargs)
+    monkeypatch.setattr(run, "load_content_bank", lambda: ["replacement subject"])
+    with pytest.raises(ValueError, match="provenance"):
+        run.run_experiment(**kwargs)
+
+
+def test_save_images_provides_verified_originals_for_hosted_human_study(tmp_path, monkeypatch):
+    import json
+
+    from PIL import Image
+
+    from novavision.eval import human_study
+    from novavision.generation.base import NullBackend
+
+    # Exercise the hosted workflow without an API token or external call.
+    monkeypatch.setattr(run, "get_backend", lambda *a, **kw: NullBackend())
+    monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
+    measured = []
+
+    class MeasuredProbe(FakeProbe):
+        def recover(self, image):
+            measured.append(run._image_digest(image))
+            return super().recover(image)
+
+    monkeypatch.setattr(run, "CLIPProbe", MeasuredProbe)
+    run.run_experiment(
+        backend="hf-api",
+        contents=1,
+        seeds=1,
+        width=8,
+        height=8,
+        out=str(tmp_path),
+        save_images=True,
+    )
+    payload = json.loads((tmp_path / "results.json").read_text())
+    assert payload["manifest"]["config"]["save_images"] is True
+    assert len(measured) == len(payload["records"])
+    for record, digest in zip(payload["records"], measured):
+        source = tmp_path / record["image_path"]
+        assert record["image_path"].startswith("images/")
+        with Image.open(source) as image:
+            assert run._image_digest(image) == digest == record["image_pixel_sha256"]
+    monkeypatch.setattr(
+        human_study,
+        "get_backend",
+        lambda *a, **kw: pytest.fail("originals must avoid model loading"),
+    )
+    study = human_study.build_sheet(tmp_path, n=2, out=tmp_path / "ratings")
+    assert (study / "ratings_template.csv").exists()
+
+
+@pytest.mark.parametrize("problem", [None, "missing", "changed"])
+def test_resume_preserves_and_verifies_saved_originals(tmp_path, monkeypatch, problem):
+    import json
+
+    from PIL import Image
+
+    class InterruptedProbe(FakeProbe):
+        calls = 0
+
+        def recover(self, image):
+            type(self).calls += 1
+            if type(self).calls == 2:
+                raise RuntimeError("interrupted")
+            return super().recover(image)
+
+    monkeypatch.setattr(run, "CLIPProbe", InterruptedProbe)
+    kwargs = dict(
+        backend="null",
+        contents=1,
+        seeds=1,
+        width=8,
+        height=8,
+        out=str(tmp_path),
+        resume=True,
+        save_images=True,
+    )
+    with pytest.raises(RuntimeError, match="interrupted"):
+        run.run_experiment(**kwargs)
+    lines = (tmp_path / "records.jsonl").read_text().splitlines()
+    cached = json.loads(lines[1])
+    saved = tmp_path / cached["image_path"]
+    original = saved.read_bytes()
+    if problem == "missing":
+        saved.unlink()
+    elif problem == "changed":
+        Image.new("RGB", (8, 8), "red").save(saved)
+    monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
+    if problem:
+        with pytest.raises(ValueError, match="Saved original image"):
+            run.run_experiment(**kwargs)
+        assert not (tmp_path / "results.json").exists()
+    else:
+        run.run_experiment(**kwargs)
+        assert saved.read_bytes() == original  # cached original was retained, not regenerated
+        payload = json.loads((tmp_path / "results.json").read_text())
+        assert payload["records"][0] == cached
+
+
+def test_default_run_keeps_images_unstored(tmp_path, monkeypatch):
+    import json
+
+    monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
+    run.run_experiment(backend="null", contents=0, seeds=1, width=8, height=8, out=str(tmp_path))
+    records = json.loads((tmp_path / "results.json").read_text())["records"]
+    assert all("image_path" not in r for r in records)
+    assert not (tmp_path / "images").exists()
+
+
+def test_cli_can_save_original_images(monkeypatch):
+    import sys
+
+    received = []
+    monkeypatch.setattr(sys, "argv", ["run", "--save-images"])
+    monkeypatch.setattr(run, "run_experiment", lambda **kw: received.append(kw) or {})
+    run.main()
+    assert received[0]["save_images"] is True

@@ -1,4 +1,5 @@
 import correct_recovery as cr  # scripts/ on sys.path via conftest.py
+import pytest
 
 from novavision.taxonomy import EMOTIONS
 
@@ -35,6 +36,43 @@ def test_sensitivity_specificity_from_confusion():
         assert sens == 1.0 and spec == 1.0
 
 
+def test_labelled_validation_can_use_a_different_class_order():
+    labels = list(EMOTIONS)
+    confusion = _identity_confusion()
+    # Use unequal support and an off-diagonal error to catch row/column swaps.
+    confusion[0][0] = 20
+    confusion[0][1] = 5
+    results = {"records": _records(0.5)}
+    canonical = cr.correct(results, {"confusion": confusion, "labels": labels}, "emotion")
+    reversed_report = cr.correct(
+        results,
+        {"confusion": [row[::-1] for row in confusion[::-1]], "labels": labels[::-1]},
+        "emotion",
+    )
+    assert reversed_report == canonical
+
+
+def test_correction_rejects_mismatched_probe_models():
+    results = {"records": _records(0.5), "manifest": {"config": {"clip_model": "org/run-probe"}}}
+    with pytest.raises(ValueError, match="probe models differ"):
+        cr.correct(
+            results, {"confusion": _identity_confusion(), "model": "org/other-probe"}, "emotion"
+        )
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), -1])
+def test_correction_rejects_invalid_confusion_counts(bad):
+    confusion = _identity_confusion()
+    confusion[0][0] = bad
+    with pytest.raises(ValueError, match="finite nonnegative 7x7"):
+        cr.correct({"records": _records(0.5)}, {"confusion": confusion}, "emotion")
+
+
+def test_correction_rejects_wrong_matrix_shape():
+    with pytest.raises(ValueError, match="finite nonnegative 7x7"):
+        cr.correct({"records": _records(0.5)}, {"confusion": [[1]]}, "emotion")
+
+
 def test_zero_support_class_serializes_null_not_nan():
     import json
 
@@ -47,10 +85,13 @@ def test_zero_support_class_serializes_null_not_nan():
             conf[i][i] = 10  # neutral's true row/col stay empty -> zero support
     out = cr.correct({"records": _records(0.5)}, {"confusion": conf, "model": "x"}, "emotion")
     assert out["per_class"]["neutral"]["sensitivity"] is None
+    assert out["corrected_recovery"] is None
+    assert out["coverage"]["estimable"] == 6
+    assert out["estimable_class_comparison"]["scope"] == "partial"
     json.dumps(out, allow_nan=False)  # raises if any bare NaN leaked through
 
 
-def test_correction_on_committed_pilot_reinforces_null():
+def test_committed_pilot_correction_reports_partial_common_class_comparison():
     import json
     from pathlib import Path
 
@@ -58,5 +99,19 @@ def test_correction_on_committed_pilot_reinforces_null():
     results = json.loads((root / "results.json").read_text())
     validation = json.loads((root / "probe_validation_scene.json").read_text())
     out = cr.correct(results, validation, "emotion")
-    # Correcting for the B/32 probe's measured error does not lift recovery above chance.
-    assert out["corrected_recovery"] <= 0.2
+    # Neutral is unsupported, surprise cannot discriminate. This is not an
+    # estimate of overall seven-class recovery or evidence of a chance-level null.
+    assert out["corrected_recovery"] is None
+    assert out["apparent_recovery"] == 0.2143
+    assert out["coverage"] == {
+        "estimable": 5,
+        "total": 7,
+        "unestimable_classes": ["neutral", "surprise"],
+    }
+    comparison = out["estimable_class_comparison"]
+    assert comparison["scope"] == "partial"
+    assert comparison["labels"] == ["anger", "disgust", "fear", "joy", "sadness"]
+    assert comparison["apparent_recovery"] == 0.1
+    assert comparison["corrected_recovery"] == 0.1651
+    assert out["per_class"]["neutral"]["status"] == "no_validation_support"
+    assert out["per_class"]["surprise"]["status"] == "non_discriminating_probe"

@@ -23,7 +23,11 @@ def test_analyze_reports_every_effect():
     report = pa.analyze(ceiling=0.455, planned_n=420)
     assert report["probe_ceiling"] == 0.455
     assert len(report["rows"]) == len(pa.EFFECTS)
-    # The planned run must be well powered for a mid effect against this ceiling.
+    assert report["method"] == "binomial_mixture_simulation"
+    assert report["protocol_power"] is False
+    assert "permutation" in report["assumptions"]["null"]
+    assert "not power of" in pa._format(report)
+    # Under the stated binomial model, this mid effect has high simulated power.
     mid = next(r for r in report["rows"] if r["effect_strength"] == 0.5)
     assert mid["power_at_planned_n"] >= 0.8
 

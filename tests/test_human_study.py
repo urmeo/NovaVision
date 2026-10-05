@@ -1,10 +1,46 @@
 import json
 
 import pytest
+from PIL import Image
 
 from novavision.eval import human_study
 from novavision.eval.metrics import cohen_kappa
+from novavision.experiments import run
+from novavision.experiments.manifest import build_manifest
+from novavision.generation.base import NullBackend
+from novavision.prompting import NEGATIVE_PROMPT, build_prompt
 from novavision.taxonomy import EMOTIONS
+
+
+def _replayable_payload(records, width=64, height=64):
+    cfg = {
+        "backend": "null",
+        "diffusion_model": "stabilityai/sd-turbo",
+        "style": "artistic",
+        "base_seed": 0,
+        "width": width,
+        "height": height,
+    }
+    manifest = build_manifest(**cfg)
+    manifest["source_sha256"] = run._source_fingerprint()
+    for r in records:
+        idx = r.get("index", 0)
+        image = NullBackend().generate(
+            build_prompt(
+                r["content"],
+                emotion=r["intended"],
+                valence=r["intended_valence"],
+                arousal=r["intended_arousal"],
+                style="artistic",
+                tier=r["tier"],
+            ),
+            width=width,
+            height=height,
+            seed=idx * 97 + EMOTIONS.index(r["intended"]) * 13 + r["seed"],
+            negative_prompt=NEGATIVE_PROMPT,
+        )
+        r["image_pixel_sha256"] = run._image_digest(image)
+    return {"manifest": manifest, "records": records}
 
 
 def test_cohen_kappa_perfect_and_chance():
@@ -32,18 +68,7 @@ def _fake_results(tmp_path):
                     "clip_t": 0.2,
                 }
             )
-    payload = {
-        "manifest": {
-            "config": {
-                "backend": "null",
-                "diffusion_model": "stabilityai/sd-turbo",
-                "base_seed": 0,
-                "width": 64,
-                "height": 64,
-            }
-        },
-        "records": records,
-    }
+    payload = _replayable_payload(records)
     out = tmp_path / "results.json"
     out.write_text(json.dumps(payload))
     return tmp_path
@@ -88,18 +113,7 @@ def _text_record(with_index: bool) -> dict:
 
 
 def _text_payload(record) -> dict:
-    return {
-        "manifest": {
-            "config": {
-                "backend": "null",
-                "diffusion_model": "stabilityai/sd-turbo",
-                "base_seed": 0,
-                "width": 32,
-                "height": 32,
-            }
-        },
-        "records": [record],
-    }
+    return _replayable_payload([record], width=32, height=32)
 
 
 def test_build_sheet_text_track_with_index(tmp_path):
@@ -153,4 +167,145 @@ def test_build_sheet_refuses_nondeterministic_backend(tmp_path):
 
 def test_build_sheet_reports_per_class_counts(tmp_path):
     study = human_study.build_sheet(_fake_results(tmp_path), n=4, seed=0)
-    assert "per-class counts" in (study / "README.md").read_text()
+    counts = human_study._read_csv(study / "counts.csv")
+    assert {r["emotion"] for r in counts} == set(EMOTIONS)
+    assert sum(int(r["n"]) for r in counts) == 4
+    assert not (study / "README.md").exists()
+
+
+def test_historical_pilot_fails_before_backend_initialization(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    pilot = Path(__file__).resolve().parents[1] / "results" / "paper" / "results.json"
+    (tmp_path / "results.json").write_bytes(pilot.read_bytes())
+    monkeypatch.setattr(
+        human_study, "get_backend", lambda *a, **kw: pytest.fail("backend initialized")
+    )
+    with pytest.raises(ValueError, match="missing pixel digests"):
+        human_study.build_sheet(tmp_path)
+
+
+@pytest.mark.parametrize("changed", ["source_sha256", "python", "packages"])
+def test_build_sheet_refuses_changed_provenance_before_loading(tmp_path, monkeypatch, changed):
+    _fake_results(tmp_path)
+    path = tmp_path / "results.json"
+    payload = json.loads(path.read_text())
+    payload["manifest"][changed] = {} if changed == "packages" else "different"
+    path.write_text(json.dumps(payload))
+    monkeypatch.setattr(
+        human_study, "get_backend", lambda *a, **kw: pytest.fail("backend initialized")
+    )
+    with pytest.raises(ValueError, match="provenance differs"):
+        human_study.build_sheet(tmp_path)
+
+
+def test_replay_allows_new_head_when_source_and_environment_match(tmp_path, monkeypatch):
+    from novavision.experiments import manifest
+
+    _fake_results(tmp_path)
+    original = manifest.build_manifest
+
+    def later_commit(**cfg):
+        current = original(**cfg)
+        current["git_sha"] = "a" * 40  # a docs/output-only commit changed HEAD
+        return current
+
+    monkeypatch.setattr(manifest, "build_manifest", later_commit)
+    assert (human_study.build_sheet(tmp_path, n=1) / "ratings_template.csv").exists()
+
+
+def test_replay_still_requires_known_recorded_git_sha(tmp_path):
+    _fake_results(tmp_path)
+    path = tmp_path / "results.json"
+    payload = json.loads(path.read_text())
+    payload["manifest"]["git_sha"] = "unknown"
+    path.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="provenance differs"):
+        human_study.build_sheet(tmp_path)
+
+
+def _saved_original_payload(tmp_path):
+    image = Image.new("RGB", (8, 8), "blue")
+    image.save(tmp_path / "original.png")
+    record = _text_record(with_index=False)
+    record.update(image_path="original.png", image_pixel_sha256=run._image_digest(image))
+    # Original pixels can be verified even when historical replay provenance is absent.
+    return {"manifest": {"config": {"backend": "hf-api"}}, "records": [record]}
+
+
+def test_build_sheet_uses_verified_original_and_custom_destination(tmp_path, monkeypatch):
+    (tmp_path / "results.json").write_text(json.dumps(_saved_original_payload(tmp_path)))
+    monkeypatch.setattr(
+        human_study, "get_backend", lambda *a, **kw: pytest.fail("backend initialized")
+    )
+    destination = tmp_path / "separate" / "study"
+    study = human_study.build_sheet(tmp_path, n=1, out=destination)
+    assert study == destination
+    assert run._image_digest(Image.open(study / "images" / "000.png")) == run._image_digest(
+        Image.open(tmp_path / "original.png")
+    )
+    assert not (tmp_path / "human_study").exists()
+
+
+def test_saved_original_with_wrong_digest_is_rejected(tmp_path):
+    (tmp_path / "results.json").write_text(json.dumps(_saved_original_payload(tmp_path)))
+    Image.new("RGB", (8, 8), "red").save(tmp_path / "original.png")
+    with pytest.raises(ValueError, match="pixel digest differs"):
+        human_study.build_sheet(tmp_path, n=1)
+
+
+def test_supplied_backend_does_not_bypass_missing_provenance(tmp_path):
+    _fake_results(tmp_path)
+    path = tmp_path / "results.json"
+    payload = json.loads(path.read_text())
+    del payload["manifest"]["source_sha256"]
+    path.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="incomplete provenance"):
+        human_study.build_sheet(tmp_path, gen=NullBackend())
+
+
+def test_rebuilt_image_must_match_recorded_pixels(tmp_path):
+    _fake_results(tmp_path)
+
+    class WrongGenerator:
+        def generate(self, *a, **kw):
+            return Image.new("RGB", (64, 64), "red")
+
+    with pytest.raises(ValueError, match="pixel digest differs"):
+        human_study.build_sheet(tmp_path, gen=WrongGenerator())
+
+
+def test_diffusers_replay_uses_recorded_generator_settings(tmp_path, monkeypatch):
+    _fake_results(tmp_path)
+    path = tmp_path / "results.json"
+    payload = json.loads(path.read_text())
+    cfg = payload["manifest"]["config"]
+    cfg.update(backend="diffusers", device="cpu", dtype="float32", generation_steps=2)
+    path.write_text(json.dumps(payload))
+    revision = payload["manifest"]["model_revisions"]["diffusion"]
+    calls = []
+
+    class SavedSettingsGenerator(NullBackend):
+        device = "cpu"
+        dtype = "float32"
+        steps = 2
+        model_id = cfg["diffusion_model"]
+
+    SavedSettingsGenerator.revision = revision
+
+    def backend(name, **kwargs):
+        calls.append((name, kwargs))
+        return SavedSettingsGenerator()
+
+    monkeypatch.setattr(human_study, "get_backend", backend)
+    human_study.build_sheet(tmp_path, n=1)
+    assert calls == [
+        (
+            "diffusers",
+            {"model_id": cfg["diffusion_model"], "device": "cpu", "steps": 2, "revision": revision},
+        )
+    ]
+    wrong = SavedSettingsGenerator()
+    wrong.device = "mps"
+    with pytest.raises(ValueError, match="supplied backend differs"):
+        human_study.build_sheet(tmp_path, n=1, gen=wrong)
