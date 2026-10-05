@@ -40,6 +40,7 @@ class DiffusersBackend(ImageBackend):
         self.revision = revision
         self._pipe = None
         self._lock = threading.Lock()
+        self._generate_lock = threading.Lock()
 
     @property
     def pipe(self):
@@ -72,13 +73,16 @@ class DiffusersBackend(ImageBackend):
         # manual_seed rejects negative seeds; normalize into torch's valid range.
         generator = torch.Generator(device=self.device).manual_seed(int(seed) % (2**63 - 1))
         turbo = "turbo" in self.model_id.lower()
-        out = self.pipe(
-            prompt=prompt,
-            width=width,
-            height=height,
-            num_inference_steps=self.steps,
-            guidance_scale=0.0 if turbo else 7.0,
-            negative_prompt=None if turbo else negative_prompt,
-            generator=generator,
-        )
+        # The cached scheduler mutates during inference; sharing it across
+        # concurrent requests can corrupt its step index and generated images.
+        with self._generate_lock:
+            out = self.pipe(
+                prompt=prompt,
+                width=width,
+                height=height,
+                num_inference_steps=self.steps,
+                guidance_scale=0.0 if turbo else 7.0,
+                negative_prompt=None if turbo else negative_prompt,
+                generator=generator,
+            )
         return out.images[0]

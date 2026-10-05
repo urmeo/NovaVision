@@ -45,6 +45,27 @@ def test_build_pipeline_returns_lazy_null_pipeline(monkeypatch):
     assert nv.analyzer is not None  # constructed, no model loaded yet
 
 
+@pytest.mark.parametrize("backend", ["diffusers", "DIFFUSERS", "hf-api", "HF-API"])
+def test_build_pipeline_honors_configured_diffusion_model(backend, monkeypatch):
+    from novavision.config import Settings
+    from novavision.generation import diffusers_backend
+    from novavision.pipeline import build_pipeline
+
+    monkeypatch.setenv("HF_TOKEN", "dummy")
+    monkeypatch.setattr(diffusers_backend, "_pick_device", lambda: "cpu")
+    settings = Settings(backend=backend, diffusion_model="organization/custom-model")
+
+    nv = build_pipeline(settings)
+
+    assert nv.backend.name == backend.lower()
+    assert nv.backend.model_id == settings.diffusion_model
+    if backend.lower() == "diffusers":
+        assert nv.backend._pipe is None
+        assert nv.backend.revision is None
+    else:
+        assert nv.backend._client is None
+
+
 def test_public_api_is_importable():
     assert novavision.__version__ == "1.0.0"
     assert callable(novavision.build_pipeline)

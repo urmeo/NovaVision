@@ -1,3 +1,8 @@
+import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from types import SimpleNamespace
+
 import pytest
 
 from novavision.generation import NullBackend, get_backend
@@ -67,6 +72,54 @@ def test_diffusers_dtype_known_before_first_generation():
     # The manifest reads backend.dtype; it must exist without loading the pipe.
     assert DiffusersBackend(device="cpu").dtype == "float32"
     assert DiffusersBackend(device="cuda").dtype == "float16"
+
+
+def test_diffusers_serializes_requests_using_the_cached_pipeline(monkeypatch):
+    from PIL import Image
+
+    from novavision.generation.diffusers_backend import DiffusersBackend
+
+    class FakeGenerator:
+        def __init__(self, **kwargs):
+            pass
+
+        def manual_seed(self, seed):
+            return self
+
+    monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(Generator=FakeGenerator))
+    first_entered = threading.Event()
+    release_first = threading.Event()
+    second_attempted = threading.Event()
+    second_entered = threading.Event()
+    image = Image.new("RGB", (8, 8))
+
+    def fake_pipe(**kwargs):
+        if kwargs["prompt"] == "first":
+            first_entered.set()
+            assert release_first.wait(3), "test did not release the first request"
+        else:
+            second_entered.set()
+        return SimpleNamespace(images=[image])
+
+    backend = DiffusersBackend(device="cpu")
+    backend._pipe = fake_pipe
+
+    def second_request():
+        second_attempted.set()
+        return backend.generate("second", width=8, height=8)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first = executor.submit(backend.generate, "first", width=8, height=8)
+        try:
+            assert first_entered.wait(3)
+            second = executor.submit(second_request)
+            assert second_attempted.wait(3)
+            assert not second_entered.wait(0.1), "shared pipeline ran two requests at once"
+        finally:
+            release_first.set()
+        assert first.result(timeout=3) is image
+        assert second.result(timeout=3) is image
+        assert second_entered.is_set()
 
 
 def test_null_backend_prompt_sensitivity():

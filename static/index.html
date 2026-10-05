@@ -2563,7 +2563,8 @@
         const liveEmotionBars = document.getElementById('liveEmotionBars');
         const liveTip = document.getElementById('liveTip');
         let debounceTimer = null;
-        let lastAnalyzedText = '';
+        let liveAnalysisController = null;
+        let liveAnalysisVersion = 0;
 
         const emotionOrder = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'disgust', 'neutral'];
 
@@ -2593,7 +2594,14 @@
             return hasEmotionWord || isSentence;
         }
 
+        function cancelLiveAnalysis() {
+            liveAnalysisVersion += 1;
+            if (liveAnalysisController) liveAnalysisController.abort();
+            liveAnalysisController = null;
+        }
+
         function resetToEmpty() {
+            cancelLiveAnalysis();
             liveEmotionBars.classList.add('muted');
             liveTip.classList.remove('visible');
             liveStatus.classList.remove('analyzing', 'active');
@@ -2652,6 +2660,7 @@
         }
 
         async function analyzeLive(text) {
+            cancelLiveAnalysis();
             liveStatus.classList.add('analyzing');
             liveStatus.classList.remove('active');
             liveStatusText.textContent = 'Analyzing...';
@@ -2667,14 +2676,19 @@
                 return;
             }
 
+            const controller = new AbortController();
+            const version = liveAnalysisVersion;
+            liveAnalysisController = controller;
             try {
                 const response = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text })
+                    body: JSON.stringify({ text }),
+                    signal: controller.signal
                 });
 
                 const data = await response.json();
+                if (controller.signal.aborted || version !== liveAnalysisVersion) return;
 
                 if (data.success) {
                     const showTip = !hasEmotion && wordCount < 5;
@@ -2684,9 +2698,12 @@
                     liveStatusText.textContent = 'Ready';
                 }
             } catch (error) {
+                if (controller.signal.aborted || version !== liveAnalysisVersion) return;
                 console.error('Live analysis error:', error);
                 liveStatus.classList.remove('analyzing');
                 liveStatusText.textContent = 'Ready';
+            } finally {
+                if (liveAnalysisController === controller) liveAnalysisController = null;
             }
         }
 
@@ -2696,11 +2713,12 @@
 
         emotionInput.addEventListener('input', () => {
             clearTimeout(debounceTimer);
+            // Invalidate immediately, including the debounce gap before the next fetch.
+            cancelLiveAnalysis();
             const text = emotionInput.value.trim();
 
-            if (text.length === 0) {
+            if (text.length < 2) {
                 resetToEmpty();
-                lastAnalyzedText = '';
                 generateBtn.classList.remove('ready');
                 return;
             }
@@ -2710,9 +2728,8 @@
                 generateBtn.classList.add('ready');
             }
 
-            if (text !== lastAnalyzedText && text.length >= 2) {
+            if (text.length >= 2) {
                 debounceTimer = setTimeout(() => {
-                    lastAnalyzedText = text;
                     analyzeLive(text);
                 }, 500);
             }
@@ -2733,6 +2750,7 @@
 
         function downloadReport() {
             if (!currentGenerationData) return;
+            const generationData = currentGenerationData;
 
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -2758,7 +2776,7 @@
             // Timestamp
             ctx.font = '16px Inter, sans-serif';
             ctx.fillStyle = 'rgba(255,255,255,0.8)';
-            const date = new Date(currentGenerationData.timestamp).toLocaleString();
+            const date = new Date(generationData.timestamp).toLocaleString();
             ctx.textAlign = 'right';
             ctx.fillText(date, canvas.width - 40, 52);
             ctx.textAlign = 'left';
@@ -2787,17 +2805,17 @@
 
                 ctx.font = 'bold 36px Inter, sans-serif';
                 ctx.fillStyle = '#6366f1';
-                const primaryText = currentGenerationData.primary_emotion.charAt(0).toUpperCase() +
-                    currentGenerationData.primary_emotion.slice(1);
+                const primaryText = generationData.primary_emotion.charAt(0).toUpperCase() +
+                    generationData.primary_emotion.slice(1);
                 ctx.fillText(primaryText, 780, 240);
 
                 ctx.font = '16px Inter, sans-serif';
                 ctx.fillStyle = '#94a3b8';
-                ctx.fillText(currentGenerationData.confidence + '% confidence', 780, 270);
+                ctx.fillText(generationData.confidence + '% confidence', 780, 270);
 
                 // Emotion bars
                 let yPos = 320;
-                currentGenerationData.emotions.forEach((e, i) => {
+                generationData.emotions.forEach((e, i) => {
                     ctx.font = '13px Inter, sans-serif';
                     ctx.fillStyle = '#64748b';
                     ctx.fillText(e.name.charAt(0).toUpperCase() + e.name.slice(1), 780, yPos);
@@ -2826,7 +2844,7 @@
                 ctx.fillStyle = '#64748b';
 
                 // Word wrap the prompt
-                const words = currentGenerationData.prompt.split(' ');
+                const words = generationData.prompt.split(' ');
                 let line = '';
                 let lineY = 920;
                 const maxWidth = canvas.width - 80;
@@ -2851,7 +2869,7 @@
 
                 ctx.font = 'italic 16px Inter, sans-serif';
                 ctx.fillStyle = '#64748b';
-                ctx.fillText('"' + currentGenerationData.original_text + '"', 40, lineY + 95);
+                ctx.fillText('"' + generationData.original_text + '"', 40, lineY + 95);
 
                 // Footer
                 ctx.fillStyle = '#e2e8f0';
@@ -2869,7 +2887,7 @@
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             };
-            img.src = currentGenerationData.image;
+            img.src = generationData.image;
         }
 
         document.getElementById('downloadImageBtn').addEventListener('click', downloadImage);
@@ -2918,11 +2936,7 @@
         const historyCount = document.getElementById('historyCount');
 
         function addToHistory(data) {
-            imageHistory.unshift({
-                image: data.image,
-                prompt: data.original_text,
-                timestamp: Date.now()
-            });
+            imageHistory.unshift(data);
 
             if (imageHistory.length > maxHistoryItems) {
                 imageHistory.pop();
@@ -2936,21 +2950,18 @@
             historyCount.textContent = `${imageHistory.length} of ${maxHistoryItems}`;
 
             // Add actual thumbnails
-            imageHistory.forEach((item, index) => {
+            imageHistory.forEach(item => {
                 const thumb = document.createElement('div');
-                thumb.className = 'history-thumbnail' + (index === 0 ? ' active' : '');
+                thumb.className = 'history-thumbnail' + (item === currentGenerationData ? ' active' : '');
                 const thumbImg = document.createElement('img');
                 thumbImg.src = item.image;
                 thumbImg.alt = 'Previous generation';
                 const tooltip = document.createElement('div');
                 tooltip.className = 'history-tooltip';
-                tooltip.textContent = item.prompt;
+                tooltip.textContent = item.original_text;
                 thumb.append(thumbImg, tooltip);
                 thumb.addEventListener('click', () => {
-                    generatedImage.src = item.image;
-                    generatedImage.classList.add('visible');
-                    imageDisplay.classList.add('has-image');
-                    placeholder.style.display = 'none';
+                    displayGeneration(item);
                     document.querySelectorAll('.history-thumbnail').forEach(t => t.classList.remove('active'));
                     thumb.classList.add('active');
                 });
@@ -3045,6 +3056,84 @@
             errorDisplay.classList.add('visible');
         }
 
+        function displayGeneration(data) {
+            currentGenerationData = data;
+
+            lastUsedSeed = data.seed;
+            lastSeedValue.textContent = lastUsedSeed;
+            usedSeedDisplay.classList.add('visible');
+
+            generatedImage.src = data.image;
+            generatedImage.classList.add('visible');
+            imageDisplay.classList.add('has-image');
+            placeholder.style.display = 'none';
+
+            generationTimeValue.textContent = data.generationSeconds;
+            generationTimeEl.classList.add('visible');
+
+            // Show download buttons
+            downloadActions.classList.add('visible');
+
+            // Update primary emotion (remove default styling)
+            const primaryEmotionEl = document.getElementById('primaryEmotion');
+            primaryEmotionEl.classList.remove('default');
+            primaryEmotionEl.textContent =
+                data.primary_emotion.charAt(0).toUpperCase() + data.primary_emotion.slice(1);
+            document.getElementById('primaryConfidence').textContent =
+                data.confidence + '% confidence';
+
+            // Update valence display (guard: a malformed response must not throw)
+            const valence = Number(data.valence);
+            const arousal = Number(data.arousal);
+            const valenceDisplay = document.getElementById('valenceDisplay');
+            const valenceLabel = valence >= 0 ? 'Positive' : 'Negative';
+            const valenceClass = valence >= 0 ? 'positive' : 'negative';
+            valenceDisplay.className = 'dimension-value ' + valenceClass;
+            valenceDisplay.innerHTML = valenceLabel + '<span class="dimension-number">(' +
+                (Number.isFinite(valence) ? (valence >= 0 ? '+' : '') + valence.toFixed(1) : 'n/a') + ')</span>';
+
+            // Update arousal display
+            const arousalDisplay = document.getElementById('arousalDisplay');
+            const arousalLabel = arousal >= 0.5 ? 'Energized' : 'Calm';
+            const arousalClass = arousal >= 0.5 ? 'energized' : 'calm';
+            arousalDisplay.className = 'dimension-value ' + arousalClass;
+            arousalDisplay.innerHTML = arousalLabel + '<span class="dimension-number">(' +
+                (Number.isFinite(arousal) ? arousal.toFixed(1) : 'n/a') + ')</span>';
+
+            // Update all 7 emotion bars
+            const emotionBars = document.getElementById('emotionBars');
+            emotionBars.innerHTML = '';
+            data.emotions.forEach((e, i) => {
+                const bar = document.createElement('div');
+                bar.className = 'emotion-bar';
+                const name = document.createElement('span');
+                name.className = 'emotion-name';
+                name.textContent = e.name.charAt(0).toUpperCase() + e.name.slice(1);
+                const track = document.createElement('div');
+                track.className = 'emotion-track';
+                const fill = document.createElement('div');
+                fill.className = 'emotion-fill' + (i > 0 ? ' secondary' : '');
+                fill.style.width = Math.max(0, Math.min(100, Number(e.score) || 0)) + '%';
+                track.appendChild(fill);
+                const value = document.createElement('span');
+                value.className = 'emotion-value';
+                value.textContent = (Number(e.score) || 0).toFixed(1) + '%';
+                bar.append(name, track, value);
+                emotionBars.appendChild(bar);
+            });
+
+            // Update prompt text (remove default styling)
+            const promptTextEl = document.getElementById('promptText');
+            promptTextEl.classList.remove('default');
+            promptTextEl.textContent = '"' + data.prompt + '"';
+
+            // Update Prompt Engineering Display
+            document.getElementById('userInputDisplay').textContent = data.original_text;
+            document.getElementById('enhancedPromptDisplay').textContent = data.prompt;
+            document.getElementById('modUserText').textContent = '"' + data.original_text + '"';
+            document.getElementById('modStyleText').textContent = '"' + styleDescriptions[data.style] + '"';
+        }
+
         async function generateImage() {
             if (!emotionInput.value.trim()) {
                 emotionInput.focus();
@@ -3053,8 +3142,15 @@
 
             // A typoed seed must fail loudly: parseInt('12a') would silently
             // generate a different image than the one the user meant to reproduce.
-            if (seedInput.value.trim() && !/^\d+$/.test(seedInput.value.trim())) {
+            const userSeed = seedInput.value.trim();
+            if (userSeed && !/^\d+$/.test(userSeed)) {
                 showError('Seed must be a whole number.', 'Fix the seed field and try again.');
+                return;
+            }
+            const seed = userSeed ? Number(userSeed) : Math.floor(Math.random() * 2147483647);
+            if (!Number.isSafeInteger(seed)) {
+                showError('Seed is too large to preserve exactly.',
+                    `Choose a whole number from 0 to ${Number.MAX_SAFE_INTEGER}.`);
                 return;
             }
 
@@ -3068,9 +3164,6 @@
             startLoadingAnimation();
 
             const startTime = performance.now();
-
-            const userSeed = seedInput.value.trim();
-            const seed = userSeed ? parseInt(userSeed, 10) : Math.floor(Math.random() * 2147483647);
 
             try {
                 // Token-protected deploys (NOVA_API_TOKEN set): send the token the
@@ -3100,87 +3193,10 @@
                 const endTime = performance.now();
                 const generationSeconds = ((endTime - startTime) / 1000).toFixed(1);
 
-                // Store generation data for downloads
-                currentGenerationData = data;
-
-                lastUsedSeed = data.seed ?? seed;
-                lastSeedValue.textContent = lastUsedSeed;
-                usedSeedDisplay.classList.add('visible');
-
-                // Stop loading animation
                 stopLoadingAnimation();
-
-                    generatedImage.src = data.image;
-                generatedImage.classList.add('visible');
-                imageDisplay.classList.add('has-image');
-                placeholder.style.display = 'none';
-
-                generationTimeValue.textContent = generationSeconds;
-                generationTimeEl.classList.add('visible');
-
-                // Show download buttons
-                downloadActions.classList.add('visible');
-
-                addToHistory(data);
-
-                // Update primary emotion (remove default styling)
-                const primaryEmotionEl = document.getElementById('primaryEmotion');
-                primaryEmotionEl.classList.remove('default');
-                primaryEmotionEl.textContent =
-                    data.primary_emotion.charAt(0).toUpperCase() + data.primary_emotion.slice(1);
-                document.getElementById('primaryConfidence').textContent =
-                    data.confidence + '% confidence';
-
-                // Update valence display (guard: a malformed response must not throw)
-                const valence = Number(data.valence);
-                const arousal = Number(data.arousal);
-                const valenceDisplay = document.getElementById('valenceDisplay');
-                const valenceLabel = valence >= 0 ? 'Positive' : 'Negative';
-                const valenceClass = valence >= 0 ? 'positive' : 'negative';
-                valenceDisplay.className = 'dimension-value ' + valenceClass;
-                valenceDisplay.innerHTML = valenceLabel + '<span class="dimension-number">(' +
-                    (Number.isFinite(valence) ? (valence >= 0 ? '+' : '') + valence.toFixed(1) : 'n/a') + ')</span>';
-
-                // Update arousal display
-                const arousalDisplay = document.getElementById('arousalDisplay');
-                const arousalLabel = arousal >= 0.5 ? 'Energized' : 'Calm';
-                const arousalClass = arousal >= 0.5 ? 'energized' : 'calm';
-                arousalDisplay.className = 'dimension-value ' + arousalClass;
-                arousalDisplay.innerHTML = arousalLabel + '<span class="dimension-number">(' +
-                    (Number.isFinite(arousal) ? arousal.toFixed(1) : 'n/a') + ')</span>';
-
-                // Update all 7 emotion bars
-                const emotionBars = document.getElementById('emotionBars');
-                emotionBars.innerHTML = '';
-                data.emotions.forEach((e, i) => {
-                    const bar = document.createElement('div');
-                    bar.className = 'emotion-bar';
-                    const name = document.createElement('span');
-                    name.className = 'emotion-name';
-                    name.textContent = e.name.charAt(0).toUpperCase() + e.name.slice(1);
-                    const track = document.createElement('div');
-                    track.className = 'emotion-track';
-                    const fill = document.createElement('div');
-                    fill.className = 'emotion-fill' + (i > 0 ? ' secondary' : '');
-                    fill.style.width = Math.max(0, Math.min(100, Number(e.score) || 0)) + '%';
-                    track.appendChild(fill);
-                    const value = document.createElement('span');
-                    value.className = 'emotion-value';
-                    value.textContent = (Number(e.score) || 0).toFixed(1) + '%';
-                    bar.append(name, track, value);
-                    emotionBars.appendChild(bar);
-                });
-
-                // Update prompt text (remove default styling)
-                const promptTextEl = document.getElementById('promptText');
-                promptTextEl.classList.remove('default');
-                promptTextEl.textContent = '"' + data.prompt + '"';
-
-                // Update Prompt Engineering Display
-                document.getElementById('userInputDisplay').textContent = data.original_text;
-                document.getElementById('enhancedPromptDisplay').textContent = data.prompt;
-                document.getElementById('modUserText').textContent = '"' + data.original_text + '"';
-                document.getElementById('modStyleText').textContent = '"' + styleDescriptions[data.style] + '"';
+                const generation = { ...data, seed: data.seed ?? seed, generationSeconds };
+                displayGeneration(generation);
+                addToHistory(generation);
 
             } catch (error) {
                 console.error('Error:', error);
