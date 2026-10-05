@@ -80,6 +80,7 @@ function createApp(fetch) {
     };
     getElementById('liveEmotionBars').children = Array.from({ length: 7 }, () => new Element());
     getElementById('styleSelect').value = 'artistic';
+    getElementById('generationBackend').textContent = html.match(/id="generationBackend"[^>]*>([^<]*)</)[1];
     const context = vm.createContext({
         document: {
             getElementById,
@@ -111,7 +112,7 @@ function createApp(fetch) {
     return { api, getElementById, downloads, reportText, reportImages, clipboard, errors, timers };
 }
 
-function generation(text, seed, emotion = 'joy') {
+function generation(text, seed, emotion = 'joy', backend = 'null') {
     return {
         success: true,
         image: `data:image/png;base64,${text}`,
@@ -124,6 +125,7 @@ function generation(text, seed, emotion = 'joy') {
         arousal: 0.4,
         style: 'artistic',
         seed,
+        backend,
         timestamp: '2026-10-05T00:00:00Z'
     };
 }
@@ -131,7 +133,8 @@ function generation(text, seed, emotion = 'joy') {
 test('history selection restores analysis, seed, image and report downloads', async () => {
     const app = createApp(async (_, options) => {
         const request = JSON.parse(options.body);
-        return { json: async () => generation(request.text, request.seed, request.text === 'older' ? 'sadness' : 'joy') };
+        return { json: async () => generation(request.text, request.seed,
+            request.text === 'older' ? 'sadness' : 'joy', request.text === 'older' ? 'null' : 'hf-api') };
     });
     app.getElementById('emotionInput').value = 'older';
     app.getElementById('seedInput').value = '123';
@@ -139,6 +142,7 @@ test('history selection restores analysis, seed, image and report downloads', as
     app.getElementById('emotionInput').value = 'latest';
     app.getElementById('seedInput').value = '456';
     await app.api.generateImage();
+    assert.equal(app.getElementById('generationBackend').textContent, 'Hosted generation · hf-api backend');
 
     app.getElementById('historyThumbnails').children[1].click();
 
@@ -147,6 +151,7 @@ test('history selection restores analysis, seed, image and report downloads', as
     assert.equal(app.getElementById('promptText').textContent, '"Prompt for older"');
     assert.equal(app.getElementById('userInputDisplay').textContent, 'older');
     assert.equal(app.getElementById('lastSeedValue').textContent, '123');
+    assert.equal(app.getElementById('generationBackend').textContent, 'Test image · null backend');
     app.getElementById('copySeedBtn').click();
     app.api.downloadImage();
     app.api.downloadReport();
@@ -158,6 +163,22 @@ test('history selection restores analysis, seed, image and report downloads', as
     assert(!app.reportText.includes('"latest"'));
     assert.deepEqual(app.errors, []);
 });
+
+for (const [backend, label] of [
+    ['null', 'Test image · null backend'],
+    ['diffusers', 'Local generation · diffusers backend'],
+    ['hf-api', 'Hosted generation · hf-api backend'],
+    ['custom-generator', 'Image backend · custom-generator']
+]) {
+    test(`generation identifies the ${backend} backend after a neutral empty state`, async () => {
+        const app = createApp(async () => ({ json: async () => generation('image', 1, 'joy', backend) }));
+        assert.equal(app.getElementById('generationBackend').textContent, 'Image backend');
+        app.getElementById('emotionInput').value = 'I feel happy';
+        await app.api.generateImage();
+        assert.equal(app.getElementById('generationBackend').textContent, label);
+        assert.deepEqual(app.errors, []);
+    });
+}
 
 test('superseded analysis cannot overwrite newer input or repopulate cleared input', async () => {
     const pending = [];

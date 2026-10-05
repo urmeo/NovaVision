@@ -195,6 +195,7 @@ def generate():
             "original_text": text,
             "style": style,
             "seed": result.seed,
+            "backend": result.backend,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     )

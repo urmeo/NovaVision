@@ -16,10 +16,13 @@ class FakeAnalyzer:
 
 class FakePipeline:
     analyzer = FakeAnalyzer()
+    backend_name = "null"
 
     def auto_run(self, text, style="artistic", seed=0):
         image = Image.new("RGB", (8, 8), (10, 20, 30))
-        return Result(image, "prompt", self.analyzer.analyze(text), "affect", seed, "null")
+        return Result(
+            image, "prompt", self.analyzer.analyze(text), "affect", seed, self.backend_name
+        )
 
 
 @pytest.fixture
@@ -61,6 +64,17 @@ def test_generate_ok(client):
     data = resp.get_json()
     assert data["image"].startswith("data:image/png;base64,")
     assert data["seed"] == 5
+    assert data["backend"] == "null"
+
+
+@pytest.mark.parametrize("backend", ["null", "diffusers", "hf-api"])
+def test_generate_identifies_the_backend_that_produced_the_result(client, backend):
+    server._pipeline.backend_name = backend
+
+    response = client.post("/api/generate", json={"text": "i feel great"})
+
+    assert response.status_code == 200
+    assert response.get_json()["backend"] == backend
 
 
 def test_control_chars_stripped():
