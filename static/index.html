@@ -2442,9 +2442,9 @@
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                         </svg>
                     </div>
-                    <h3 class="feature-title">Fast, Reproducible Artwork</h3>
+                    <h3 class="feature-title">Images Ready to Download</h3>
                     <p class="feature-description">
-                        512×512 images from a fixed seed, ready to download, share, or regenerate exactly.
+                        Download 512×512 images and copy the seed used for each generation.
                     </p>
                 </div>
             </div>
@@ -2460,15 +2460,14 @@
             </div>
             <div class="about-content fade-in">
                 <p class="about-text">
-                    NovaVision combines transformer-based emotion detection with diffusion-based image
-                    generation to create a bridge between human emotion and visual art, transforming
-                    the intangible nature of feelings into personalized artwork.
+                    NovaVision uses emotion detection to guide image prompts and supports local,
+                    hosted, and test image generation backends.
                 </p>
                 <div class="tech-stack fade-in" data-delay="1">
                     <span class="tech-badge">Python</span>
                     <span class="tech-badge">HuggingFace</span>
                     <span class="tech-badge">Transformers</span>
-                    <span class="tech-badge">Stable Diffusion</span>
+                    <span class="tech-badge" id="generationBackend">Image backend</span>
                 </div>
             </div>
         </div>
@@ -3058,6 +3057,13 @@
 
         function displayGeneration(data) {
             currentGenerationData = data;
+            const backendLabels = new Map([
+                ['null', 'Test image · null backend'],
+                ['diffusers', 'Local generation · diffusers backend'],
+                ['hf-api', 'Hosted generation · hf-api backend']
+            ]);
+            document.getElementById('generationBackend').textContent =
+                backendLabels.get(data.backend) || `Image backend · ${data.backend || 'unknown'}`;
 
             lastUsedSeed = data.seed;
             lastSeedValue.textContent = lastUsedSeed;
