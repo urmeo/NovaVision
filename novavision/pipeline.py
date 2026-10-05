@@ -88,6 +88,7 @@ def build_pipeline(settings=None) -> NovaVision:
     from novavision.config import get_settings
 
     cfg = settings or get_settings()
-    kwargs = {"model_id": cfg.diffusion_model} if cfg.backend == "diffusers" else {}
-    backend = get_backend(cfg.backend, **kwargs)
+    backend_name = cfg.backend.lower()
+    kwargs = {"model_id": cfg.diffusion_model} if backend_name in {"diffusers", "hf-api"} else {}
+    backend = get_backend(backend_name, **kwargs)
     return NovaVision(backend=backend, analyzer=EmotionAnalyzer(cfg.emotion_model))
