@@ -18,7 +18,7 @@ def test_hf_probe_maps_and_aggregates():
         {"label": "anger", "score": 0.2},
     ]
     rec = probe.recover(_img())
-    assert rec.emotion == "joy"  # happy->joy aggregates to 0.8
+    assert rec.emotion == "joy"
     assert round(rec.scores["joy"], 4) == 0.8
 
 

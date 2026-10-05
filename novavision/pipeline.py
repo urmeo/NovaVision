@@ -53,12 +53,7 @@ class NovaVision:
         width: int = 512,
         height: int = 512,
     ) -> Result:
-        """App helper: skip emotion conditioning for neutral text.
-
-        The default ``seed=0`` is a fixed seed, not a random one: omitting it
-        reproduces the same image. Pass an explicit seed (server.py randomizes
-        per request) for variety.
-        """
+        "App helper: skip emotion conditioning for neutral text."
         analysis = self.analyzer.analyze(text)
         tier = "raw" if analysis.primary == NEUTRAL else "affect"
         return self._render(text, analysis, style, tier, seed, width, height)
@@ -79,12 +74,7 @@ class NovaVision:
 
 
 def build_pipeline(settings=None) -> NovaVision:
-    """Construct the pipeline from settings, the one factory both entry points use.
-
-    Heavy backends stay lazy (no model loads here), so importing this is cheap; the
-    Flask API calls it instead of assembling the pipeline by hand (one source of
-    truth).
-    """
+    "Construct the pipeline from settings, the one factory both entry points use."
     from novavision.config import get_settings
 
     cfg = settings or get_settings()

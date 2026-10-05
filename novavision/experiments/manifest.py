@@ -12,11 +12,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def package_version(pkg: str) -> str:
-    """Installed version of a package, or ``"absent"`` if it is not installed.
-
-    Public API: other modules (e.g. ``scripts/resummarize.py``) record provenance
-    with this, so it is a supported name, not an internal helper.
-    """
+    'Installed version of a package, or ``"absent"`` if it is not installed.'
     try:
         return metadata.version(pkg)
     except metadata.PackageNotFoundError:
@@ -26,8 +22,6 @@ def package_version(pkg: str) -> str:
 def git_sha() -> str:
     """Current commit SHA, or ``"unknown"`` outside a git checkout. Public API."""
     try:
-        # Anchor to the package checkout: run from another repo's directory,
-        # the inherited CWD would silently record that repo's HEAD instead.
         out = subprocess.run(
             ["git", "rev-parse", "HEAD"],
             capture_output=True,
@@ -41,13 +35,7 @@ def git_sha() -> str:
 
 
 def device_info() -> dict:
-    """Best-effort accelerator provenance.
-
-    Bit-exactness depends on the device, so the accelerator name and CUDA/cuDNN
-    versions are the fields most likely to explain a non-reproduction. Degrades to
-    a torch-absent stub without raising, so the deterministic (no-torch) path still
-    builds a manifest.
-    """
+    "Best-effort accelerator provenance."
     info: dict = {
         "cuda_available": False,
         "mps_available": False,
@@ -85,8 +73,7 @@ def build_manifest(**config) -> dict:
     )
 
     def pin(key: str, default_id: str, revision: str) -> str | None:
-        # Record a pin only if this run used the default checkpoint; the rule
-        # itself lives once in config.default_revision.
+
         return default_revision(config.get(key) or default_id, default_id, revision)
 
     return {

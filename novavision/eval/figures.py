@@ -8,11 +8,7 @@ import numpy as np
 
 
 def _pyplot():
-    """pyplot on a non-interactive backend.
-
-    Runs (CI, servers) are headless; force ``Agg`` before pyplot is first
-    imported so it never tries to reach a display and warn or stall.
-    """
+    "pyplot on a non-interactive backend."
     import matplotlib
 
     matplotlib.use("Agg", force=False)
@@ -22,11 +18,7 @@ def _pyplot():
 
 
 def _row_normalize(matrix: np.ndarray) -> np.ndarray:
-    """Row-normalized confusion; a class absent from y_true becomes NaN, not 0.
-
-    Dividing by a clipped row-sum would render an empty row as 0.00 everywhere,
-    indistinguishable from "present but never recovered".
-    """
+    "Row-normalized confusion; a class absent from y_true becomes NaN, not 0."
     row_n = matrix.sum(axis=1, keepdims=True)
     norm = np.divide(matrix, row_n.clip(min=1), dtype=float)
     norm[row_n.ravel() == 0, :] = np.nan
@@ -64,6 +56,8 @@ def plot_accuracy(
     *,
     accuracy_ci: dict[str, list[float | None]] | None = None,
 ) -> None:
+    from matplotlib.ticker import PercentFormatter
+
     plt = _pyplot()
 
     tiers = list(tier_acc)
@@ -76,13 +70,14 @@ def plot_accuracy(
                 ax.vlines(i, bounds[0], bounds[1], color="#1e293b", linewidth=1.5)
                 ax.hlines(bounds, i - 0.08, i + 0.08, color="#1e293b", linewidth=1.5)
         ax.set_title("Recovery accuracy · bootstrap 95% CI")
-    ax.set_ylabel("affect-recovery accuracy")
+    ax.set_ylabel("Recovery accuracy")
+    ax.yaxis.set_major_formatter(PercentFormatter(1))
     ax.set_ylim(0, 1)
     for i, t in enumerate(tiers):
         ax.text(i, max(0.025, tier_acc[t] / 2), f"{tier_acc[t]:.1%}", ha="center", color="white")
     if chance is not None:
-        ax.axhline(chance, ls="--", lw=0.9, color="#888")
-        ax.text(len(tiers) - 0.5, chance + 0.02, "chance", ha="right", fontsize=8, color="#888")
+        ax.axhline(chance, ls="--", lw=0.9, color="#888", label=f"Chance: {chance:.1%}")
+        ax.legend(loc="upper right", frameon=False)
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)

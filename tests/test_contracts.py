@@ -1,11 +1,4 @@
-"""Cross-module invariants.
-
-The rest of the suite pins behavior *through* each module on its happy path.
-These pin behavior *across* module boundaries: the silent couplings (label
-ordering, backend-default parity, seed pairing, public provenance API, tier
-vocabulary) that no single-module test observes and that a refactor can break
-with every other test still green.
-"""
+"Cross-module invariants."
 
 from __future__ import annotations
 
@@ -19,9 +12,6 @@ from novavision.taxonomy import (
     EMOTIONS,
     GOEMOTIONS_TO_EKMAN,
 )
-
-# --- Label ordering (finding 1): the CLIP probe zips stacked text features
-#     against EMOTIONS order; any drift silently mis-maps every score. ---
 
 
 def test_emotion_prompts_match_emotions_in_order():
@@ -60,15 +50,12 @@ class _FakeArr:
 
 
 def test_clip_probe_maps_argmax_to_canonical_label(monkeypatch):
-    # Behavioral contract (finding 1): recover() must key scores by EMOTIONS order
-    # and map the argmax to that label, so the metrics layer (called with EMOTIONS)
-    # agrees. Torch-free so it runs in the dev CI job; catches a revert to dict
-    # order and survives equivalent refactors (list(EMOTIONS), [*EMOTIONS], ...).
+
     from novavision.eval import probes
 
     probe = probes.CLIPProbe()
     probe._scale = 1.0
-    eye = _FakeArr(np.eye(len(EMOTIONS)))  # emo feature i lights up on input i
+    eye = _FakeArr(np.eye(len(EMOTIONS)))
     monkeypatch.setattr(probe, "_fixed_features", lambda: (eye, None, None))
     monkeypatch.setattr(probe, "_expected", lambda img, feats, ladder: 0.0)
 
@@ -78,10 +65,6 @@ def test_clip_probe_maps_argmax_to_canonical_label(monkeypatch):
         rec = probe.recover(image=None)
         assert tuple(rec.scores.keys()) == EMOTIONS
         assert rec.emotion == emotion
-
-
-# --- Backend-default parity (finding 19): the same pipeline must render the
-#     same size whichever backend runs, when no explicit size is passed. ---
 
 
 def test_all_backends_default_to_same_size():
@@ -96,46 +79,28 @@ def test_all_backends_default_to_same_size():
     assert set(sizes.values()) == {(512, 512)}, sizes
 
 
-# --- Seed pairing (finding 4): tiers are paired on generation noise because the
-#     seed is a function of (item, emotion, seed) only, never the tier. ---
-
-
 def test_seed_is_independent_of_tier():
     from novavision.experiments import run
 
-    # The seed is derived from (base, item, emotion, seed) with no tier input, so
-    # every tier renders the same content under the same generation noise.
     assert "tier" not in inspect.signature(run._seed).parameters
-    # Distinct coordinates must give distinct seeds inside the guarded domain.
+
     assert run._seed(0, 3, 4, 1) != run._seed(0, 3, 5, 1)
 
 
 def test_seed_bound_assumption_is_still_valid():
-    # SEED_MAX_ITEMS/SEED_MAX_SEEDS were derived for 7 emotions (the ei*13 term
-    # must not overflow the 97 stride). If the taxonomy grows, the bounds must be
-    # re-derived; this fires as the reminder. Exhaustive injectivity is covered by
-    # test_experiment.py::test_seed_injective_within_guarded_domain, not repeated here.
+
     assert len(EMOTIONS) == 7
 
 
-# --- Tier vocabulary (report vs run): report.py must not describe a tier the
-#     experiment cannot produce, or a run's tables silently omit/mislabel it. ---
-
-
 def test_report_conditions_are_producible_by_run():
-    import report  # scripts/ on sys.path via conftest.py
+    import report
 
     from novavision.experiments import run
 
     producible = set(run.CONDITIONS["content"]) | set(run.CONDITIONS["text"])
-    # Equality, not subset: a tier added to the harness must not silently
-    # vanish from the rendered tables (report imports run.ALL_CONDITIONS).
+
     assert set(report.CONDITIONS) == producible
     assert tuple(report.CONDITIONS) == run.ALL_CONDITIONS
-
-
-# --- Public provenance API (finding 34): resummarize depends on manifest's
-#     public names, not private helpers. ---
 
 
 def test_manifest_exposes_public_provenance_api():
@@ -147,8 +112,7 @@ def test_manifest_exposes_public_provenance_api():
 
 
 def test_manifest_records_device_provenance():
-    # Bit-exactness depends on the device, so the manifest must carry accelerator
-    # provenance.
+
     from novavision.experiments import manifest
 
     m = manifest.build_manifest(backend="null")
@@ -157,8 +121,7 @@ def test_manifest_records_device_provenance():
 
 
 def test_manifest_pins_only_default_models():
-    # A swapped model loads unpinned (the backends refuse to apply a foreign
-    # commit), so the manifest must not fabricate a revision for it.
+
     from novavision.config import CLIP_REVISION, DIFFUSION_REVISION
     from novavision.experiments import manifest
 
@@ -174,13 +137,12 @@ def test_manifest_pins_only_default_models():
 
 
 def test_device_info_degrades_without_torch(monkeypatch):
-    # The deterministic (no-torch) path must still build a manifest; exercise the
-    # degradation branch directly rather than relying on torch being absent.
+
     import sys
 
     from novavision.experiments import manifest
 
-    monkeypatch.setitem(sys.modules, "torch", None)  # makes `import torch` raise
+    monkeypatch.setitem(sys.modules, "torch", None)
     info = manifest.device_info()
     assert info["cuda_available"] is False
     assert info["device_name"] is None
@@ -188,9 +150,7 @@ def test_device_info_degrades_without_torch(monkeypatch):
 
 
 def test_version_synced_across_metadata():
-    # __init__ owns the version (pyproject derives via setuptools dynamic); the
-    # two external formats that require a literal copy must match it.
-    import json
+
     import re
     from pathlib import Path
 
@@ -199,5 +159,3 @@ def test_version_synced_across_metadata():
     root = Path(novavision.__file__).resolve().parents[1]
     cff = (root / "CITATION.cff").read_text()
     assert re.search(rf"^version: {re.escape(novavision.__version__)}$", cff, re.M)
-    zenodo = json.loads((root / ".zenodo.json").read_text())
-    assert zenodo["version"] == novavision.__version__

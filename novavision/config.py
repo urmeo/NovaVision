@@ -6,9 +6,6 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Default checkpoints and the exact HF commits used for the paper; pin so a
-# rerun pulls the same weights. Each pin belongs to its default model only:
-# a swapped model loads unpinned (a foreign commit would not exist on it).
 EMOTION_MODEL = "j-hartmann/emotion-english-distilroberta-base"
 EMOTION_REVISION = "0e1cd914e3d46199ed785853e12b57304e04178b"
 DIFFUSION_MODEL = "stabilityai/sd-turbo"
@@ -18,18 +15,11 @@ CLIP_REVISION = "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268"
 
 
 def default_revision(model_id: str, default_model: str, revision: str) -> str | None:
-    """The pinned revision, but only when the default checkpoint is what loads.
-
-    Each pin is a commit in its default model's HF repo; a swapped model loads
-    unpinned, because applying the pin to another model would request a commit
-    that does not exist there (and, in a run manifest, fabricate provenance).
-    """
+    "The pinned revision, but only when the default checkpoint is what loads."
     return revision if model_id == default_model else None
 
 
 class Settings(BaseSettings):
-    # NOVA_ prefix keeps these consistent with the other NOVA_* env vars and stops
-    # a generic BACKEND in a shell or base image from silently overriding the run.
     model_config = SettingsConfigDict(env_prefix="NOVA_", extra="ignore")
 
     backend: str = "null"

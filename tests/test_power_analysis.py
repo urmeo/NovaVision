@@ -1,8 +1,8 @@
-import power_analysis as pa  # scripts/ on sys.path via conftest.py
+import power_analysis as pa
 
 
 def test_no_effect_is_unreachable():
-    # An effect at or below chance can never reach target power.
+
     assert pa.min_n_for_power(pa.CHANCE, pa.CHANCE, _rng()) is None
 
 
@@ -27,7 +27,7 @@ def test_analyze_reports_every_effect():
     assert report["protocol_power"] is False
     assert "permutation" in report["assumptions"]["null"]
     assert "not power of" in pa._format(report)
-    # Under the stated binomial model, this mid effect has high simulated power.
+
     mid = next(r for r in report["rows"] if r["effect_strength"] == 0.5)
     assert mid["power_at_planned_n"] >= 0.8
 

@@ -28,7 +28,7 @@ def test_curate_balances_per_class():
 def test_interleave_prefix_is_stratified():
     sampled = _curate(_examples(), n_per_class=3, seed=0)
     rows = _interleave(sampled)
-    # First len(EMOTIONS) rows cover every class once.
+
     assert {e for _, e in rows[: len(EMOTIONS)]} == set(EMOTIONS)
 
 
@@ -36,15 +36,14 @@ def test_drop_overlap_removes_cross_split_leakage():
     examples = [("Loved it!", "joy"), ("so scared", "fear"), ("unique line", "joy")]
     train_norms = {_normalize("loved it!"), _normalize("SO   scared")}
     kept = _drop_overlap(examples, train_norms)
-    # train-overlapping items dropped, case/space-insensitive
+
     assert kept == [("unique line", "joy")]
-    # No exclusion set -> passthrough.
+
     assert _drop_overlap(examples, set()) == examples
 
 
 def test_cli_threads_revision_into_build(monkeypatch):
-    # Regression: --revision was accepted by build() but never exposed on the CLI,
-    # so the pinned default could not be overridden without editing source.
+
     from novavision.data import build_benchmark as bb
 
     captured = {}

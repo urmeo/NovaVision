@@ -13,8 +13,7 @@ from novavision.taxonomy import prior
 
 DEFAULT_MODEL = EMOTION_MODEL
 
-# A fully in-lexicon input ("happy") must not discard the classifier prior
-# entirely: the lexicon reads words, not context, so it never gets full weight.
+
 MAX_LEXICON_BLEND = 0.8
 
 
@@ -28,7 +27,7 @@ class EmotionAnalysis:
     scores: Mapping[str, float]
 
     def __post_init__(self):
-        # frozen=True does not deep-freeze; make the scores read-only too.
+
         object.__setattr__(self, "scores", MappingProxyType(dict(self.scores)))
 
 
@@ -44,22 +43,20 @@ class EmotionAnalyzer:
     ):
         self.model_name = model_name
         self.revision = revision or default_revision(model_name, DEFAULT_MODEL, EMOTION_REVISION)
-        # Ablation hook: force the lexicon/prior blend weight (0 = prior only,
-        # 1 = lexicon only) instead of using measured coverage. None = normal.
+
         if coverage_override is not None and not 0.0 <= coverage_override <= 1.0:
             raise ValueError("coverage_override must be in [0, 1]")
         self.coverage_override = coverage_override
         self._lexicon = lexicon
         self._classifier = None
-        # Independent resources get independent locks: neither load can ever
-        # wait on, or re-enter through, the other (Lock is not reentrant).
+
         self._lex_lock = threading.Lock()
         self._clf_lock = threading.Lock()
 
     @property
     def lexicon(self) -> AffectLexicon:
         if self._lexicon is None:
-            with self._lex_lock:  # double-checked: one load under concurrent first calls
+            with self._lex_lock:
                 if self._lexicon is None:
                     self._lexicon = AffectLexicon.load()
         return self._lexicon
@@ -84,8 +81,6 @@ class EmotionAnalyzer:
         if not text or not text.strip():
             raise ValueError("Input text cannot be empty")
 
-        # Truncate at the model limit: MAX_TEXT (2000 chars) can exceed 512 tokens,
-        # and an untruncated overflow raises inside transformers.
         raw = self.classifier(text, truncation=True)[0]
         scores = {r["label"].lower(): float(r["score"]) for r in raw}
         primary = max(scores, key=lambda k: scores[k])
@@ -105,6 +100,6 @@ class EmotionAnalyzer:
             confidence=scores[primary],
             valence=round(valence, 4),
             arousal=round(arousal, 4),
-            coverage=affect.coverage,  # raw diagnostic; the blend weight is capped
+            coverage=affect.coverage,
             scores=scores,
         )

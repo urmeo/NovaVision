@@ -36,7 +36,7 @@ def test_validate_reports_accuracy(tmp_path):
     _make_dataset(tmp_path)
     report = validate_probe.validate(FakeProbe(), validate_probe.load_image_folder(tmp_path))
     assert report["n"] == 2
-    assert report["accuracy"] == 0.5  # joy right, anger wrong
+    assert report["accuracy"] == 0.5
     assert len(report["confusion"]) == len(EMOTIONS)
 
 
@@ -63,7 +63,7 @@ def test_pinned_clip_revision_only_applies_to_its_model():
     ns = argparse.Namespace(clip_model="openai/clip-vit-base-patch32", clip_revision=None)
     assert clip_revision_for(ns) == CLIP_REVISION
     ns = argparse.Namespace(clip_model="openai/clip-vit-large-patch14", clip_revision=None)
-    assert clip_revision_for(ns) is None  # B/32's pin must not leak onto other models
+    assert clip_revision_for(ns) is None
     ns = argparse.Namespace(clip_model="openai/clip-vit-large-patch14", clip_revision="abc")
     assert clip_revision_for(ns) == "abc"
 
@@ -77,14 +77,13 @@ class _StubDS:
         return len(self._rows)
 
     def __getitem__(self, key):
-        if isinstance(key, str):  # column access, like a real datasets.Dataset
+        if isinstance(key, str):
             return [r[key] for r in self._rows]
         return self._rows[key]
 
 
 def _stub_datasets(monkeypatch, rows):
-    # Fake the module wholesale: the loader imports it lazily, and the real
-    # `datasets` package is a research extra that CI's test job never installs.
+
     import sys
     import types
 
@@ -103,7 +102,7 @@ def test_load_hf_dataset_maps_string_label_column(monkeypatch):
 
 
 def test_load_hf_dataset_fails_loudly_when_nothing_maps(monkeypatch):
-    # EmoSet118K shape: `label` is a bare int with no ClassLabel names.
+
     rows = [{"image": Image.new("RGB", (4, 4)), "label": 0}]
     _stub_datasets(monkeypatch, rows)
     with pytest.raises(ValueError, match="label-key"):

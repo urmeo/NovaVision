@@ -1,14 +1,4 @@
-"""Recompute metrics, contrasts, and figures from an existing run's records.
-
-Refreshes a ``results.json`` produced by an earlier analysis version with the
-current diagnostics (``probe_health``, majority-class baseline, prediction
-collapse, valence/arousal bootstrap CIs) **without regenerating any images**;
-the per-image records are the original measured outputs, so the headline numbers
-are preserved and merely re-derived. A tier that was never measured (e.g. one
-added to the code after the run) stays absent. Provenance stays honest: the
-original manifest is kept and a ``reanalysis`` stamp records that only the
-summary was recomputed, at the current commit.
-"""
+"Recompute metrics, contrasts, and figures from an existing run's records."
 
 from __future__ import annotations
 
@@ -26,7 +16,7 @@ def _conditions_for(records: list[dict]) -> tuple[str, ...]:
     return run_mod.CONDITIONS[track]
 
 
-def resummarize(results_path: str | Path) -> dict:
+def resummarize(results_path: str | Path, *, figures_dir: str | Path | None = None) -> dict:
     path = Path(results_path)
     payload = json.loads(path.read_text())
     records = payload["records"]
@@ -40,15 +30,24 @@ def resummarize(results_path: str | Path) -> dict:
         "packages": {pkg: package_version(pkg) for pkg in ("numpy",)},
     }
     run_mod.dump_results(payload, path)
-    run_mod._write_figures(path.parent, records, payload["metrics"], conditions)
+    run_mod._write_figures(
+        path.parent, records, payload["metrics"], conditions, figures_dir=figures_dir
+    )
     return payload
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Recompute summary from existing records")
-    parser.add_argument("--results", default="results/paper/results.json")
+    parser.add_argument("--results", default="outputs/results/results.json")
+    parser.add_argument("--figures", default=None, help="override the figure directory")
     args = parser.parse_args()
-    payload = resummarize(args.results)
+    figures_dir = args.figures
+    if (
+        figures_dir is None
+        and Path(args.results).resolve() == Path("outputs/results/results.json").resolve()
+    ):
+        figures_dir = "outputs/figures"
+    payload = resummarize(args.results, figures_dir=figures_dir)
     health = payload["metrics"].get("probe_health", {})
     print(json.dumps({"reanalyzed": args.results, "probe_health": health}, indent=2))
 

@@ -1,11 +1,4 @@
-"""Security helpers for the Flask API (`server.py`).
-
-The rules live here once, not in the entry point:
-bind localhost unless an operator explicitly opts into a public bind, and give the
-expensive generate route a per-client rate limit, a concurrency cap, and an
-optional bearer token. Everything is dependency-free and read from the
-environment at call time, so deployment never needs a code change.
-"""
+"Security helpers for the Flask API (`server.py`)."
 
 from __future__ import annotations
 
@@ -16,7 +9,7 @@ import time
 from collections import defaultdict, deque
 
 LOCAL_HOST = "127.0.0.1"
-PUBLIC_HOST = "0.0.0.0"  # only ever returned behind an explicit opt-in (see resolve_host)
+PUBLIC_HOST = "0.0.0.0"
 
 
 def _truthy(value: str | None) -> bool:
@@ -24,11 +17,7 @@ def _truthy(value: str | None) -> bool:
 
 
 def public_enabled() -> bool:
-    """Whether the operator explicitly asked to expose the server publicly.
-
-    True only on an explicit ``NOVA_PUBLIC`` opt-in or inside a genuine Hugging
-    Face Spaces sandbox (which sets ``SPACE_ID`` and is meant to be public).
-    """
+    "Whether the operator explicitly asked to expose the server publicly."
     return _truthy(os.getenv("NOVA_PUBLIC")) or bool(os.getenv("SPACE_ID"))
 
 
@@ -38,17 +27,13 @@ def resolve_host(default: str = LOCAL_HOST) -> str:
 
 
 def token_ok(provided: str | None) -> bool:
-    """Constant-time comparison of a presented token against ``NOVA_API_TOKEN``.
-
-    Returns True when no token is configured (the check is opt-in), so local
-    development keeps working; once ``NOVA_API_TOKEN`` is set it is enforced.
-    """
+    "Constant-time comparison of a presented token against ``NOVA_API_TOKEN``."
     expected = os.getenv("NOVA_API_TOKEN", "").strip() or None
     if expected is None:
         return True
     if provided is None:
         return False
-    # Compare bytes: hmac.compare_digest rejects non-ASCII str operands.
+
     return hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
 
 
@@ -59,8 +44,6 @@ def env_int(name: str, default: int) -> int:
     try:
         return int(raw)
     except ValueError:
-        # These knobs guard a public bind; a typo must fail at startup, not
-        # silently run with the default.
         raise ValueError(f"{name} must be an integer, got {raw!r}") from None
 
 
@@ -75,12 +58,7 @@ class RateLimiter:
         self._gc_threshold = gc_threshold
 
     def allow(self, key: str, *, now: float | None = None) -> bool:
-        """Record a hit for ``key`` and report whether it is within the window budget.
-
-        Memory is bounded to clients with a live hit: when the table grows past
-        ``gc_threshold`` we sweep keys whose window has fully expired, so a flood of
-        distinct (e.g. spoofed) keys cannot grow the limiter without limit.
-        """
+        "Record a request within the sliding-window budget."
         now = time.monotonic() if now is None else now
         with self._lock:
             cutoff = now - self.window
@@ -97,12 +75,7 @@ class RateLimiter:
 
 
 class ConcurrencyGuard:
-    """A non-blocking concurrency cap: a fixed number of slots, no queueing.
-
-    A bounded semaphore would block; here a slot that cannot be acquired
-    immediately is refused so an overloaded generator sheds load instead of
-    piling up requests behind a slow GPU job.
-    """
+    "A non-blocking concurrency cap: a fixed number of slots, no queueing."
 
     def __init__(self, max_concurrent: int):
         self._sem = threading.BoundedSemaphore(max(1, max_concurrent))
@@ -111,5 +84,5 @@ class ConcurrencyGuard:
         return self._sem.acquire(blocking=False)
 
     def release(self) -> None:
-        # A mispaired release is a caller bug; BoundedSemaphore fails loudly on it.
+
         self._sem.release()

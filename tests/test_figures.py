@@ -7,7 +7,7 @@ def test_row_normalize_masks_empty_rows():
     matrix = np.array([[2, 0, 0], [0, 0, 0], [1, 0, 1]])
     norm = figures._row_normalize(matrix)
     assert norm[0, 0] == 1.0
-    assert np.isnan(norm[1]).all()  # absent class, not "all wrong"
+    assert np.isnan(norm[1]).all()
     assert norm[2, 0] == 0.5 and norm[2, 2] == 0.5
 
 

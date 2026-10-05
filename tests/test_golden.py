@@ -1,12 +1,8 @@
-"""End-to-end golden path: run -> results.json -> paper tables, no models.
-
-Every stage is unit-tested in isolation; this pins the whole chain so a break at
-any seam (record schema, summary keys, report renderer) fails one obvious test.
-"""
+"End-to-end golden path: run -> results.json -> paper tables, no models."
 
 import json
 
-import report  # scripts/ on sys.path via conftest.py
+import report
 
 from novavision.eval.probes import Recovery
 from novavision.experiments import run
@@ -32,9 +28,8 @@ def test_run_to_report_end_to_end(tmp_path, monkeypatch):
 
     payload = json.loads((tmp_path / "results.json").read_text())
     assert set(payload) >= {"manifest", "metrics", "contrasts", "records"}
-    assert payload["manifest"]["device_info"]  # provenance present
+    assert payload["manifest"]["device_info"]
 
-    # The renderer consumes the committed schema and produces both tables.
     tables = report.render(payload)
     assert "Table 1" in tables and "Table 2" in tables
     for tier in run.CONDITIONS["content"]:

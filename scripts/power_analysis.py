@@ -1,23 +1,4 @@
-"""How large must the powered run be to detect a controllability effect?
-
-A null is only meaningful if the study was powered to detect a real effect. This
-turns the measured probe ceiling into a sample-size answer: given that the probe
-recovers the intended emotion at only ``ceiling`` on real scenes (``make
-validate-probe-scene``), what per-tier ``n`` is needed to distinguish a
-conditioning effect from the chance/shuffled-label baseline?
-
-Model. A conditioning effect of strength ``s`` (the fraction of generated images
-that genuinely convey the intended emotion) yields recovery accuracy
-
-    p1 = s * ceiling + (1 - s) * chance,
-
-because a conveyed emotion is recovered at the probe's ceiling rate and a
-non-conveyed one at chance. This is an illustrative planning model: correctness
-is assumed to be independent Bernoulli trials, and the critical count comes from
-a binomial chance null. The benchmark instead permutes fixed target labels
-against fixed predictions; its null depends on both label distributions. These
-simulations therefore do not estimate power of that permutation protocol.
-"""
+"How large must the powered run be to detect a controllability effect?"
 
 from __future__ import annotations
 
@@ -30,7 +11,7 @@ import numpy as np
 CHANCE = 1.0 / 7.0
 ALPHA = 0.05
 TARGET_POWER = 0.80
-EFFECTS = (0.2, 0.3, 0.4, 0.5, 0.7, 1.0)  # conditioning strengths s
+EFFECTS = (0.2, 0.3, 0.4, 0.5, 0.7, 1.0)
 _SIM = 4000
 
 
@@ -115,11 +96,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Sample-size analysis for the powered run")
     parser.add_argument(
         "--probe-validation",
-        default="results/paper/probe_validation_scene_l14.json",
+        default="outputs/results/probe_validation_scene_l14.json",
         help="probe validation JSON; its accuracy is the recovery ceiling",
     )
     parser.add_argument("--planned-n", type=int, default=420, help="per-tier n of the planned run")
-    parser.add_argument("--out", default="results/paper/power_analysis.json")
+    parser.add_argument("--out", default="outputs/results/power_analysis.json")
     args = parser.parse_args()
 
     ceiling = json.loads(Path(args.probe_validation).read_text())["accuracy"]

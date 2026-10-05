@@ -40,7 +40,7 @@ def test_content_bank_is_neutral_and_nonempty():
 
 
 def test_load_benchmark_tolerates_utf8_bom(tmp_path):
-    # Excel/Sheets export CSVs with a BOM; the columns are present and must be accepted.
+
     p = tmp_path / "bom.csv"
     p.write_text("text,emotion\nhello there,joy\n", encoding="utf-8-sig")
     assert load_benchmark(p) == [{"text": "hello there", "emotion": "joy"}]

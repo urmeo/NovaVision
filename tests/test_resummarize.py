@@ -1,12 +1,12 @@
 import json
 
-import resummarize  # scripts/ on sys.path via conftest.py
+import resummarize
 
 from novavision.taxonomy import EMOTIONS
 
 
 def _run_with_records(tmp_path):
-    # A degenerate probe: predicts 'neutral' for everything (the real failure mode).
+
     records = []
     for tier in ("raw", "emotion", "affect", "scene"):
         for sk in range(1):
@@ -38,15 +38,22 @@ def test_resummarize_adds_collapse_diagnostic_without_touching_records(tmp_path)
 
     payload = resummarize.resummarize(path)
 
-    # Records are untouched, no images were regenerated.
     assert payload["records"] == before
-    # The probe-collapse diagnostic is surfaced from the real records.
+
     health = payload["metrics"]["probe_health"]
     assert health["majority_label"] == "neutral"
     assert health["distinct_labels"] == 1
     assert health["majority_rate"] == 1.0
-    # Provenance stays honest: original manifest kept, reanalysis stamped.
+
     assert "reanalysis" in payload["manifest"]
     assert payload["manifest"]["git_sha"] == "old"
-    # Figures were refreshed from the records.
+
     assert (tmp_path / "figures" / "accuracy.png").exists()
+
+
+def test_resummarize_writes_figures_to_explicit_directory(tmp_path):
+    path = _run_with_records(tmp_path)
+    destination = tmp_path / "published-figures"
+    resummarize.resummarize(path, figures_dir=destination)
+    assert (destination / "accuracy.png").exists()
+    assert not (tmp_path / "figures").exists()

@@ -32,7 +32,7 @@ class NullBackend(ImageBackend):
     name = "null"
 
     def __init__(self, **kwargs):
-        pass  # get_backend forwards model_id/device to every backend uniformly
+        pass
 
     def generate(
         self,
@@ -44,7 +44,7 @@ class NullBackend(ImageBackend):
         negative_prompt: str | None = None,
     ) -> Image.Image:
         digest = hashlib.sha256(prompt.encode("utf-8")).digest()
-        # Mask to a valid non-negative 64-bit seed (negative seeds otherwise raise).
+
         rng = np.random.default_rng((seed ^ int.from_bytes(digest[:8], "big")) & (2**64 - 1))
         tint = np.frombuffer(digest[:3], dtype=np.uint8).astype(np.float32)
         noise = rng.integers(0, 64, size=(height, width, 3), dtype=np.uint8)

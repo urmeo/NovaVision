@@ -16,9 +16,7 @@ class HFApiBackend(ImageBackend):
     name = "hf-api"
 
     def __init__(self, model_id: str = "stabilityai/sd-turbo", token: str | None = None, **_):
-        # get_backend forwards model_id/device uniformly to every backend; a hosted
-        # API has no local device, so absorb-and-ignore it (as NullBackend does)
-        # rather than crash the documented `--backend hf-api --device ...` combo.
+
         self.token = token or os.getenv("HF_TOKEN")
         if not self.token:
             raise ValueError("HF_TOKEN not set")
@@ -29,7 +27,7 @@ class HFApiBackend(ImageBackend):
     @property
     def client(self):
         if self._client is None:
-            with self._lock:  # double-checked: don't build two clients under concurrency
+            with self._lock:
                 if self._client is None:
                     from huggingface_hub import InferenceClient
 
@@ -45,10 +43,7 @@ class HFApiBackend(ImageBackend):
         seed: int = 0,
         negative_prompt: str | None = None,
     ) -> Image.Image:
-        # Defaults match DiffusersBackend (512): the two backends must be
-        # comparable when a caller forgets to pass an explicit size.
-        # Turbo runs with guidance off, so a negative prompt is a no-op there (mirrors
-        # DiffusersBackend); forward it only for non-turbo models, plus the seed.
+
         turbo = "turbo" in self.model_id.lower()
         return self.client.text_to_image(
             prompt,
@@ -56,6 +51,5 @@ class HFApiBackend(ImageBackend):
             width=width,
             height=height,
             negative_prompt=None if turbo else negative_prompt,
-            # Same normalization as DiffusersBackend: the hosted API rejects negatives.
             seed=int(seed) % (2**63 - 1),
         )

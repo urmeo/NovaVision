@@ -2,7 +2,7 @@ import hashlib
 import io
 import zipfile
 
-import download_lexicon as dl  # scripts/ on sys.path via conftest.py
+import download_lexicon as dl
 import pytest
 
 _CSV = "Word,V.Mean.Sum,A.Mean.Sum\nhappy,7.0,5.0\ngloom,2.0,3.0\n"
@@ -27,7 +27,7 @@ def test_verify_sha256_rejects_tampering():
 
 
 def test_verify_sha256_empty_expected_skips():
-    # verify_sha256("") is the no-op branch; main() only reaches it via --no-verify.
+
     assert dl.verify_sha256(b"anything", "")
 
 
@@ -46,12 +46,12 @@ def test_extract_and_convert_roundtrip():
     raw = dl.extract_csv(_zip_bytes())
     rows = dl.convert(raw)
     words = {w: (v, a) for w, v, a in rows}
-    assert words["happy"] == (0.5, 0.5)  # (7-5)/4, (5-1)/8
+    assert words["happy"] == (0.5, 0.5)
     assert words["gloom"][0] < 0
 
 
 def test_convert_normalizes_range():
     rows = dl.convert("Word,V.Mean.Sum,A.Mean.Sum\nX,9.0,9.0\nY,1.0,1.0\n")
-    vals = {w: (v, a) for w, v, a in rows}  # convert lowercases words
-    assert vals["x"] == (1.0, 1.0)  # max valence, max arousal
-    assert vals["y"] == (-1.0, 0.0)  # min valence, min arousal
+    vals = {w: (v, a) for w, v, a in rows}
+    assert vals["x"] == (1.0, 1.0)
+    assert vals["y"] == (-1.0, 0.0)

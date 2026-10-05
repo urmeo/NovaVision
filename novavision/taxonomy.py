@@ -14,8 +14,7 @@ EMOTIONS: tuple[str, ...] = (
 
 NEUTRAL = "neutral"
 
-# Per-emotion valence/arousal priors: author estimates placed on the Russell (1980)
-# circumplex, not values reported in that paper. Valence -1..1, arousal 0..1.
+
 EMOTION_PRIORS: dict[str, tuple[float, float]] = {
     "joy": (0.80, 0.70),
     "sadness": (-0.70, 0.30),
@@ -26,7 +25,7 @@ EMOTION_PRIORS: dict[str, tuple[float, float]] = {
     "neutral": (0.00, 0.30),
 }
 
-# Official GoEmotions -> Ekman grouping (Demszky et al., 2020)
+
 GOEMOTIONS_TO_EKMAN: dict[str, str] = {
     "anger": "anger",
     "annoyance": "anger",
@@ -58,7 +57,7 @@ GOEMOTIONS_TO_EKMAN: dict[str, str] = {
     "neutral": "neutral",
 }
 
-# Zero-shot recovery prompts for CLIP (ensemble per emotion, averaged)
+
 EMOTION_PROMPTS: dict[str, tuple[str, ...]] = {
     "anger": (
         "an angry, intense image",
@@ -97,12 +96,11 @@ EMOTION_PROMPTS: dict[str, tuple[str, ...]] = {
     ),
 }
 
-# The CLIP probe zips these keys against its stacked text features; a key-set or
-# order drift against EMOTIONS would silently misalign every label→score mapping.
+
 assert tuple(EMOTION_PROMPTS) == EMOTIONS
 assert set(EMOTION_PRIORS) == set(EMOTIONS)
 
-# Ordered anchor ladders for graded valence/arousal (expected value over softmax)
+
 VALENCE_LADDER: tuple[tuple[str, float], ...] = (
     ("a very unpleasant, miserable, repulsive scene", -1.0),
     ("an unpleasant, negative, gloomy scene", -0.5),

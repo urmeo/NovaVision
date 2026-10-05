@@ -1,4 +1,4 @@
-import report  # scripts/ on sys.path via conftest.py
+import report
 
 
 def _results():
@@ -32,8 +32,8 @@ def _results():
 
 def test_render_includes_ci_and_significance():
     out = report.render(_results())
-    assert "[0.450, 0.650]" in out  # CI rendered
-    assert "+0.410" in out  # contrast delta
+    assert "[0.450, 0.650]" in out
+    assert "+0.410" in out
     assert "chance" in out.lower()
 
 
@@ -43,14 +43,14 @@ def test_nan_renders_as_placeholder():
 
 
 def test_shuffled_note_survives_partial_control_dict():
-    # An older results.json may carry shuffled_control without p_value/null_mean.
+
     metrics = {
-        "emotion": {"shuffled_control": {}},  # present but empty
+        "emotion": {"shuffled_control": {}},
         "affect": {"shuffled_control": {"p_value": 0.14, "null_mean": 0.142}},
     }
     note = report._shuffled_note(metrics)
     assert "affect p=0.14" in note
-    assert "null mean 0.142" in note  # falls back to the tier that has it
+    assert "null mean 0.142" in note
 
 
 def test_shuffled_note_empty_when_no_pvalues():
@@ -58,8 +58,7 @@ def test_shuffled_note_empty_when_no_pvalues():
 
 
 def test_tables_tolerate_null_bounds():
-    # A degenerate (n<2) run writes null CI/contrast bounds via json_safe; the
-    # tables must render "n/a", not crash on None.__format__.
+
     metrics = {
         "raw": {
             "accuracy": 0.14,
@@ -80,7 +79,7 @@ def test_tables_tolerate_null_bounds():
 
 
 def test_rho_tolerates_null_ci():
-    # NaN CI bounds round-trip to null; _rho must not crash on None[0].
+
     assert (
         report._rho({"valence_rho": None, "valence_rho_ci": [None, None]}, "valence_rho") == "n/a"
     )

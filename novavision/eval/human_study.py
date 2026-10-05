@@ -1,11 +1,4 @@
-"""Human-study harness: sample images for rating, then score agreement.
-
-The probe is only a proxy for perceived emotion until that proxy is checked
-against people. ``build_sheet`` uses verified saved images or rebuilds a sample
-only with matching provenance and pixel digests. It writes a blank rating sheet
-plus a hidden key; ``analyze`` reports human-vs-probe agreement
-(Cohen's kappa) once raters fill the sheet.
-"""
+"Human-study harness: sample images for rating, then score agreement."
 
 from __future__ import annotations
 
@@ -44,11 +37,7 @@ def _sample_records(records: list[dict], n: int, seed: int) -> list[dict]:
 
 
 def _record_index(r: dict, bank: list[str]) -> int:
-    """The content/row position used as the seed salt, for reproducing the image.
-
-    New runs store it as ``index`` (so both tracks work); older pre-index runs fall
-    back to the content-bank position, which only exists for the content track.
-    """
+    "The content/row position used as the seed salt, for reproducing the image."
     if "index" in r:
         return int(r["index"])
     if r["content"] in bank:
@@ -105,12 +94,7 @@ def _verify_rebuild_provenance(data: dict) -> None:
 def build_sheet(
     results_dir: str | Path, n: int = 60, seed: int = 0, gen=None, *, out: str | Path | None = None
 ) -> Path:
-    """Build blinded ratings from verified images; ``out`` selects the study directory.
-
-    A record may point to its saved original with ``image_path`` (relative to
-    results_dir or absolute). Both saved and rebuilt images are checked against
-    its ``image_pixel_sha256`` digest. Supplied backends do not bypass checks.
-    """
+    "Build blinded ratings from verified images; ``out`` selects the study directory."
     if n < 1:
         raise ValueError("n must be positive")
     results_dir = Path(results_dir)
@@ -132,7 +116,7 @@ def build_sheet(
 
     if rebuild:
         _verify_rebuild_provenance(data)
-        # Validate seed reconstruction before backend initialization.
+
         for r in rebuild:
             _record_index(r, bank)
         set_determinism(cfg["base_seed"])
@@ -159,8 +143,7 @@ def build_sheet(
             )
     counts = Counter(r["intended"] for r in picked)
     per_class = {e: counts.get(e, 0) for e in EMOTIONS}
-    # Stratification under-fills silently when a class is scarce in the pool;
-    # surface the realized counts the same way the benchmark builder does.
+
     print(f"[human-study] realized per-class counts: {per_class}", flush=True)
 
     study = Path(out) if out is not None else results_dir / "human_study"
@@ -199,10 +182,9 @@ def build_sheet(
 
 
 def _rebuild_image(r, bank, gen, cfg, style, seed_fn):
-    idx = _record_index(r, bank)  # seed salt, works for both tracks
+    idx = _record_index(r, bank)
     ei = EMOTIONS.index(r["intended"])
-    # Use the record's own valence/arousal (text-grounded on the text track,
-    # the prior on the content track) so the image reproduces exactly.
+
     prompt = build_prompt(
         r["content"],
         emotion=r["intended"],
@@ -224,7 +206,7 @@ def analyze(ratings_csv: str | Path, key_csv: str | Path) -> dict:
     from novavision.eval.validate_probe import EKMAN_ALIASES
 
     raw = {int(r["id"]): r["emotion"].strip().lower() for r in _read_csv(ratings_csv)}
-    # Absorb synonyms/typos (happy->joy, sad->sadness) so one bad cell can't void the sheet.
+
     ratings = {i: EKMAN_ALIASES.get(v, v) for i, v in raw.items() if v}
     key = {int(r["id"]): r for r in _read_csv(key_csv)}
     known = set(EMOTIONS)
@@ -261,11 +243,13 @@ def main() -> None:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     b = sub.add_parser("build")
-    b.add_argument("--results", default="results/paper")
+    b.add_argument("--results", default="outputs/results")
     b.add_argument("--n", type=int, default=60)
     b.add_argument("--seed", type=int, default=0)
     b.add_argument(
-        "--out", default=None, help="destination directory for ratings, images and counts"
+        "--out",
+        default="outputs/generated/human_study",
+        help="destination directory for ratings, images and counts",
     )
 
     a = sub.add_parser("analyze")
@@ -279,7 +263,6 @@ def main() -> None:
     else:
         from novavision.experiments.run import json_safe
 
-        # An unfilled sheet yields nan agreement; json_safe keeps the output valid JSON.
         print(json.dumps(json_safe(analyze(args.ratings, args.key)), indent=2))
 
 

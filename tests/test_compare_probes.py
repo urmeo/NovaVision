@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-import compare_probes  # scripts/ on sys.path via conftest.py
+import compare_probes
 import pytest
 
 
@@ -12,7 +12,7 @@ def test_mcnemar_no_discordants_is_one():
 
 
 def test_mcnemar_one_sided_discordants():
-    # b beats a on all five discordant items: p = 2 * C(5,0)/2^5 = 0.0625
+
     gold = ["joy"] * 5
     r = compare_probes.mcnemar_exact(gold, ["anger"] * 5, ["joy"] * 5)
     assert (r["only_a_correct"], r["only_b_correct"]) == (0, 5)
@@ -26,8 +26,8 @@ def test_mcnemar_symmetric_is_capped_at_one():
 
 
 def test_committed_probe_reports_are_paired_and_significant():
-    # The paper's section-7 claim regenerates from the committed artifacts.
-    root = Path(__file__).resolve().parents[1] / "results" / "paper"
+
+    root = Path(__file__).resolve().parents[1] / "outputs" / "results"
     a = json.loads((root / "probe_validation_scene.json").read_text())
     b = json.loads((root / "probe_validation_scene_l14.json").read_text())
     assert a["gold"] == b["gold"]

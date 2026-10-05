@@ -1,18 +1,18 @@
-import correct_recovery as cr  # scripts/ on sys.path via conftest.py
+import correct_recovery as cr
 import pytest
 
 from novavision.taxonomy import EMOTIONS
 
 
 def _identity_confusion(n_per_class=10):
-    # A perfect probe: every true class recovered exactly.
+
     return [
         [n_per_class if i == j else 0 for j in range(len(EMOTIONS))] for i in range(len(EMOTIONS))
     ]
 
 
 def _records(recovery_rate):
-    # `recovery_rate` correct predictions per class, over 10 items each.
+
     recs = []
     for e in EMOTIONS:
         for k in range(10):
@@ -25,7 +25,7 @@ def test_perfect_probe_leaves_recovery_unchanged():
     results = {"records": _records(0.5)}
     validation = {"confusion": _identity_confusion(), "model": "perfect"}
     out = cr.correct(results, validation, "emotion")
-    # sens=spec=1 -> corrected == apparent.
+
     assert out["corrected_recovery"] == out["apparent_recovery"]
 
 
@@ -39,7 +39,7 @@ def test_sensitivity_specificity_from_confusion():
 def test_labelled_validation_can_use_a_different_class_order():
     labels = list(EMOTIONS)
     confusion = _identity_confusion()
-    # Use unequal support and an off-diagonal error to catch row/column swaps.
+
     confusion[0][0] = 20
     confusion[0][1] = 5
     results = {"records": _records(0.5)}
@@ -76,31 +76,28 @@ def test_correction_rejects_wrong_matrix_shape():
 def test_zero_support_class_serializes_null_not_nan():
     import json
 
-    # A class the probe never saw has undefined sensitivity; it must become JSON
-    # null, never a bare NaN token (the results.json strict-JSON contract).
     n = len(EMOTIONS)
     conf = [[0] * n for _ in range(n)]
     for i, e in enumerate(EMOTIONS):
         if e != "neutral":
-            conf[i][i] = 10  # neutral's true row/col stay empty -> zero support
+            conf[i][i] = 10
     out = cr.correct({"records": _records(0.5)}, {"confusion": conf, "model": "x"}, "emotion")
     assert out["per_class"]["neutral"]["sensitivity"] is None
     assert out["corrected_recovery"] is None
     assert out["coverage"]["estimable"] == 6
     assert out["estimable_class_comparison"]["scope"] == "partial"
-    json.dumps(out, allow_nan=False)  # raises if any bare NaN leaked through
+    json.dumps(out, allow_nan=False)
 
 
 def test_committed_pilot_correction_reports_partial_common_class_comparison():
     import json
     from pathlib import Path
 
-    root = Path(cr.__file__).resolve().parents[1] / "results" / "paper"
+    root = Path(cr.__file__).resolve().parents[1] / "outputs" / "results"
     results = json.loads((root / "results.json").read_text())
     validation = json.loads((root / "probe_validation_scene.json").read_text())
     out = cr.correct(results, validation, "emotion")
-    # Neutral is unsupported, surprise cannot discriminate. This is not an
-    # estimate of overall seven-class recovery or evidence of a chance-level null.
+
     assert out["corrected_recovery"] is None
     assert out["apparent_recovery"] == 0.2143
     assert out["coverage"] == {

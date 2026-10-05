@@ -17,7 +17,7 @@ def test_naive_adds_bare_emotion_word():
     prompt = build_prompt("a city street", emotion="joy", tier="naive")
     assert "a city street" in prompt
     assert "joy" in prompt
-    assert "mood" not in prompt  # bare word, not the engineered modifier
+    assert "mood" not in prompt
 
 
 def test_emotion_tier_keeps_content_and_adds_mood():
