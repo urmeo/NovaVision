@@ -12,10 +12,11 @@ that genuinely convey the intended emotion) yields recovery accuracy
     p1 = s * ceiling + (1 - s) * chance,
 
 because a conveyed emotion is recovered at the probe's ceiling rate and a
-non-conveyed one at chance. The test mirrors the benchmark's own control: reject
-when observed accuracy clears the one-sided 95th percentile of the chance
-(shuffled-label) null. Power is estimated by simulation, so it needs no scipy and
-matches the permutation test the harness actually runs.
+non-conveyed one at chance. This is an illustrative planning model: correctness
+is assumed to be independent Bernoulli trials, and the critical count comes from
+a binomial chance null. The benchmark instead permutes fixed target labels
+against fixed predictions; its null depends on both label distributions. These
+simulations therefore do not estimate power of that permutation protocol.
 """
 
 from __future__ import annotations
@@ -70,6 +71,16 @@ def analyze(ceiling: float, planned_n: int) -> dict:
             }
         )
     return {
+        "method": "binomial_mixture_simulation",
+        "protocol_power": False,
+        "assumptions": {
+            "independent_trials": True,
+            "non_conveyed_accuracy": "uniform chance (1/7)",
+            "conveyed_accuracy": "supplied real-image validation accuracy",
+            "mixture": "p1 = s * ceiling + (1 - s) * chance",
+            "null": "Binomial(n, chance), not the benchmark's fixed-label permutation null",
+            "validation_transfer": "validation accuracy is assumed to transfer to generated images",
+        },
         "chance": round(CHANCE, 4),
         "probe_ceiling": round(ceiling, 4),
         "alpha": ALPHA,
@@ -81,6 +92,7 @@ def analyze(ceiling: float, planned_n: int) -> dict:
 
 def _format(report: dict) -> str:
     lines = [
+        "Illustrative binomial planning simulation; not power of the benchmark's permutation test.",
         f"Probe ceiling {report['probe_ceiling']} (real-scene recovery); "
         f"chance {report['chance']}; alpha {report['alpha']}; "
         f"target power {report['target_power']}.",

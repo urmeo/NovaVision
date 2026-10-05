@@ -58,17 +58,28 @@ def plot_confusion(matrix: np.ndarray, labels, path: str | Path, title: str = ""
 
 
 def plot_accuracy(
-    tier_acc: dict[str, float], path: str | Path, chance: float | None = None
+    tier_acc: dict[str, float],
+    path: str | Path,
+    chance: float | None = None,
+    *,
+    accuracy_ci: dict[str, list[float | None]] | None = None,
 ) -> None:
     plt = _pyplot()
 
     tiers = list(tier_acc)
     fig, ax = plt.subplots(figsize=(5, 3.5))
     ax.bar(tiers, [tier_acc[t] for t in tiers], color="#4c72b0")
+    if accuracy_ci:
+        for i, tier in enumerate(tiers):
+            bounds = accuracy_ci.get(tier)
+            if bounds and all(b is not None and np.isfinite(b) for b in bounds):
+                ax.vlines(i, bounds[0], bounds[1], color="#1e293b", linewidth=1.5)
+                ax.hlines(bounds, i - 0.08, i + 0.08, color="#1e293b", linewidth=1.5)
+        ax.set_title("Recovery accuracy · bootstrap 95% CI")
     ax.set_ylabel("affect-recovery accuracy")
     ax.set_ylim(0, 1)
     for i, t in enumerate(tiers):
-        ax.text(i, tier_acc[t] + 0.02, f"{tier_acc[t]:.2f}", ha="center")
+        ax.text(i, max(0.025, tier_acc[t] / 2), f"{tier_acc[t]:.1%}", ha="center", color="white")
     if chance is not None:
         ax.axhline(chance, ls="--", lw=0.9, color="#888")
         ax.text(len(tiers) - 0.5, chance + 0.02, "chance", ha="right", fontsize=8, color="#888")

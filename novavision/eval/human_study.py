@@ -1,9 +1,9 @@
 """Human-study harness: sample images for rating, then score agreement.
 
 The probe is only a proxy for perceived emotion until that proxy is checked
-against people. ``build_sheet`` regenerates a stratified sample of images
-deterministically (so no large blobs live in the repo) and writes a blank
-rating sheet plus a hidden key; ``analyze`` reports human-vs-probe agreement
+against people. ``build_sheet`` uses verified saved images or rebuilds a sample
+only with matching provenance and pixel digests. It writes a blank rating sheet
+plus a hidden key; ``analyze`` reports human-vs-probe agreement
 (Cohen's kappa) once raters fill the sheet.
 """
 
@@ -59,57 +59,130 @@ def _record_index(r: dict, bank: list[str]) -> int:
     )
 
 
-def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -> Path:
+def _verify_rebuild_provenance(data: dict) -> None:
+    """Reject unverified replay before constructing or loading a model backend."""
+    from novavision.experiments.manifest import build_manifest, package_version
+    from novavision.experiments.run import _source_fingerprint
+
+    manifest = data["manifest"]
+    cfg = manifest["config"]
+    if cfg["backend"] not in ("diffusers", "null"):
+        raise ValueError("Backend is non-deterministic; supply verified saved original images")
+    required = ("git_sha", "source_sha256", "python", "platform", "packages", "device_info")
+    if any(key not in manifest for key in required):
+        raise ValueError("Cannot rebuild images: incomplete provenance; use saved original images")
+    current = build_manifest(**cfg)
+    recorded_sha = manifest["git_sha"]
+    if (
+        not isinstance(recorded_sha, str)
+        or len(recorded_sha) != 40
+        or any(c not in "0123456789abcdef" for c in recorded_sha)
+        or manifest["source_sha256"] != _source_fingerprint()
+        or any(manifest[key] != current[key] for key in ("python", "platform", "device_info"))
+        or not set(current["packages"]).issubset(manifest["packages"])
+        or any(package_version(pkg) != ver for pkg, ver in manifest["packages"].items())
+    ):
+        raise ValueError(
+            "Cannot rebuild images: source/environment provenance differs from the run"
+        )
+    if cfg["backend"] == "diffusers":
+        revision = manifest.get("model_revisions", {}).get("diffusion")
+        if not revision or any(
+            cfg.get(k) in (None, "n/a")
+            for k in (
+                "device",
+                "dtype",
+                "generation_steps",
+                "style",
+                "base_seed",
+                "width",
+                "height",
+            )
+        ):
+            raise ValueError("Cannot rebuild images: generator provenance is incomplete")
+
+
+def build_sheet(
+    results_dir: str | Path, n: int = 60, seed: int = 0, gen=None, *, out: str | Path | None = None
+) -> Path:
+    """Build blinded ratings from verified images; ``out`` selects the study directory.
+
+    A record may point to its saved original with ``image_path`` (relative to
+    results_dir or absolute). Both saved and rebuilt images are checked against
+    its ``image_pixel_sha256`` digest. Supplied backends do not bypass checks.
+    """
+    if n < 1:
+        raise ValueError("n must be positive")
     results_dir = Path(results_dir)
     data = json.loads((results_dir / "results.json").read_text())
     cfg = data["manifest"]["config"]
     style = cfg.get("style", "artistic")
-    bank = load_content_bank()
+    picked = _sample_records(data["records"], n, seed)
+    if not picked:
+        raise ValueError("No conditioned records available for a human study")
+    if any(not r.get("image_pixel_sha256") for r in picked):
+        raise ValueError(
+            "Cannot rebuild or verify images: missing pixel digests; use recorded originals"
+        )
+    rebuild = [r for r in picked if not r.get("image_path")]
+    bank = load_content_bank() if rebuild else []
 
     from novavision.determinism import set_determinism
     from novavision.experiments.run import _seed
 
-    # The rated images must be bit-identical to the scored images, so the rebuild
-    # runs under the same determinism settings as the original run.
-    set_determinism(cfg["base_seed"])
-    if gen is None and cfg["backend"] not in ("diffusers", "null"):
-        raise ValueError(
-            f"Backend '{cfg['backend']}' is non-deterministic: rebuilt images would not be "
-            "the images the probe scored. Pass gen= explicitly to override."
-        )
-    gen = gen or get_backend(cfg["backend"], model_id=cfg["diffusion_model"])
-    picked = _sample_records(data["records"], n, seed)
+    if rebuild:
+        _verify_rebuild_provenance(data)
+        # Validate seed reconstruction before backend initialization.
+        for r in rebuild:
+            _record_index(r, bank)
+        set_determinism(cfg["base_seed"])
+        kwargs = {"model_id": cfg["diffusion_model"]}
+        if cfg["backend"] == "diffusers":
+            kwargs.update(
+                device=cfg["device"],
+                steps=cfg["generation_steps"],
+                revision=data["manifest"]["model_revisions"]["diffusion"],
+            )
+        gen = gen or get_backend(cfg["backend"], **kwargs)
+        if cfg["backend"] == "diffusers" and any(
+            getattr(gen, attr, None) != expected
+            for attr, expected in (
+                ("device", cfg["device"]),
+                ("dtype", cfg["dtype"]),
+                ("steps", cfg["generation_steps"]),
+                ("revision", data["manifest"]["model_revisions"]["diffusion"]),
+                ("model_id", cfg["diffusion_model"]),
+            )
+        ):
+            raise ValueError(
+                "Cannot rebuild images: supplied backend differs from recorded generator"
+            )
     counts = Counter(r["intended"] for r in picked)
     per_class = {e: counts.get(e, 0) for e in EMOTIONS}
     # Stratification under-fills silently when a class is scarce in the pool;
     # surface the realized counts the same way the benchmark builder does.
     print(f"[human-study] realized per-class counts: {per_class}", flush=True)
 
-    study = results_dir / "human_study"
+    study = Path(out) if out is not None else results_dir / "human_study"
     images = study / "images"
     images.mkdir(parents=True, exist_ok=True)
 
     sheet, key = [], []
     for i, r in enumerate(picked):
-        idx = _record_index(r, bank)  # seed salt, works for both tracks
-        ei = EMOTIONS.index(r["intended"])
-        # Use the record's own valence/arousal (text-grounded on the text track,
-        # the prior on the content track) so the image reproduces exactly.
-        prompt = build_prompt(
-            r["content"],
-            emotion=r["intended"],
-            valence=r["intended_valence"],
-            arousal=r["intended_arousal"],
-            style=style,
-            tier=r["tier"],
-        )
-        image = gen.generate(
-            prompt,
-            width=cfg["width"],
-            height=cfg["height"],
-            seed=_seed(cfg["base_seed"], idx, ei, r["seed"]),
-            negative_prompt=NEGATIVE_PROMPT,
-        )
+        from PIL import Image
+
+        from novavision.experiments.run import _image_digest
+
+        if r.get("image_path"):
+            source = Path(r["image_path"])
+            if not source.is_absolute():
+                source = results_dir / source
+            with Image.open(source) as saved:
+                image = saved.convert("RGB")
+        else:
+            image = _rebuild_image(r, bank, gen, cfg, style, _seed)
+        if _image_digest(image) != r["image_pixel_sha256"]:
+            raise ValueError("Image pixel digest differs from the image the probe scored")
         rel = f"images/{i:03d}.png"
         image.save(study / rel)
         sheet.append({"id": i, "image": rel, "emotion": ""})
@@ -117,10 +190,34 @@ def build_sheet(results_dir: str | Path, n: int = 60, seed: int = 0, gen=None) -
 
     _write_csv(study / "ratings_template.csv", ["id", "image", "emotion"], sheet)
     _write_csv(study / "key.csv", ["id", "intended", "probe"], key)
-    (study / "README.md").write_text(
-        _INSTRUCTIONS.format(labels=", ".join(EMOTIONS), counts=json.dumps(per_class))
+    _write_csv(
+        study / "counts.csv",
+        ["emotion", "n"],
+        [{"emotion": e, "n": count} for e, count in per_class.items()],
     )
     return study
+
+
+def _rebuild_image(r, bank, gen, cfg, style, seed_fn):
+    idx = _record_index(r, bank)  # seed salt, works for both tracks
+    ei = EMOTIONS.index(r["intended"])
+    # Use the record's own valence/arousal (text-grounded on the text track,
+    # the prior on the content track) so the image reproduces exactly.
+    prompt = build_prompt(
+        r["content"],
+        emotion=r["intended"],
+        valence=r["intended_valence"],
+        arousal=r["intended_arousal"],
+        style=style,
+        tier=r["tier"],
+    )
+    return gen.generate(
+        prompt,
+        width=cfg["width"],
+        height=cfg["height"],
+        seed=seed_fn(cfg["base_seed"], idx, ei, r["seed"]),
+        negative_prompt=NEGATIVE_PROMPT,
+    )
 
 
 def analyze(ratings_csv: str | Path, key_csv: str | Path) -> dict:
@@ -159,22 +256,6 @@ def _read_csv(path):
         return list(csv.DictReader(fh))
 
 
-_INSTRUCTIONS = """# Human study
-
-Open each image in `images/` and, in `ratings_template.csv`, fill the `emotion`
-column with the single best-fitting label from: {labels}.
-
-Realized per-class counts: {counts} (uneven counts mean the run pool
-under-covers a class; report them with any agreement number).
-
-Use three or more independent raters (one sheet each). Then score agreement:
-
-    python -m novavision.eval.human_study analyze --ratings rater1.csv --key key.csv
-
-`key.csv` holds the intended and probe labels; keep it hidden from raters.
-"""
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Human-study harness")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -183,6 +264,9 @@ def main() -> None:
     b.add_argument("--results", default="results/paper")
     b.add_argument("--n", type=int, default=60)
     b.add_argument("--seed", type=int, default=0)
+    b.add_argument(
+        "--out", default=None, help="destination directory for ratings, images and counts"
+    )
 
     a = sub.add_parser("analyze")
     a.add_argument("--ratings", required=True)
@@ -190,7 +274,7 @@ def main() -> None:
 
     args = parser.parse_args()
     if args.cmd == "build":
-        path = build_sheet(args.results, n=args.n, seed=args.seed)
+        path = build_sheet(args.results, n=args.n, seed=args.seed, out=args.out)
         print(f"Wrote rating sheet to {path}")
     else:
         from novavision.experiments.run import json_safe
