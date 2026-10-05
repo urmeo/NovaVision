@@ -1,4 +1,14 @@
 {
+  "method": "binomial_mixture_simulation",
+  "protocol_power": false,
+  "assumptions": {
+    "independent_trials": true,
+    "non_conveyed_accuracy": "uniform chance (1/7)",
+    "conveyed_accuracy": "supplied real-image validation accuracy",
+    "mixture": "p1 = s * ceiling + (1 - s) * chance",
+    "null": "Binomial(n, chance), not the benchmark's fixed-label permutation null",
+    "validation_transfer": "validation accuracy is assumed to transfer to generated images"
+  },
   "chance": 0.1429,
   "probe_ceiling": 0.455,
   "alpha": 0.05,

@@ -25,10 +25,10 @@
       "height": 256
     },
     "reanalysis": {
-      "git_sha": "3df5ba59bc270f045ac0c3508b99e397d30579f5",
+      "git_sha": "7ea1d69c9f96fb0545213734640e6c370c7be0c7",
       "note": "metrics/diagnostics recomputed from the original records; no images regenerated",
       "packages": {
-        "numpy": "2.4.6"
+        "numpy": "2.5.3"
       }
     }
   },

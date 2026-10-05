@@ -2,42 +2,76 @@
   "tier": "emotion",
   "probe": "openai/clip-vit-base-patch32",
   "apparent_recovery": 0.2143,
-  "corrected_recovery": 0.1651,
+  "corrected_recovery": null,
+  "coverage": {
+    "estimable": 5,
+    "total": 7,
+    "unestimable_classes": [
+      "neutral",
+      "surprise"
+    ]
+  },
+  "estimable_class_comparison": {
+    "scope": "partial",
+    "labels": [
+      "anger",
+      "disgust",
+      "fear",
+      "joy",
+      "sadness"
+    ],
+    "apparent_recovery": 0.1,
+    "corrected_recovery": 0.1651
+  },
   "per_class": {
     "anger": {
       "apparent": 0.0,
       "sensitivity": 0.5522,
-      "corrected": 0.0
+      "specificity": 0.9009,
+      "corrected": 0.0,
+      "status": "estimable"
     },
     "disgust": {
       "apparent": 0.0,
       "sensitivity": 0.5085,
-      "corrected": 0.0
+      "specificity": 0.9062,
+      "corrected": 0.0,
+      "status": "estimable"
     },
     "fear": {
       "apparent": 0.0,
       "sensitivity": 0.3485,
-      "corrected": 0.0
+      "specificity": 0.988,
+      "corrected": 0.0,
+      "status": "estimable"
     },
     "joy": {
       "apparent": 0.0,
       "sensitivity": 0.4531,
-      "corrected": 0.0
+      "specificity": 0.9524,
+      "corrected": 0.0,
+      "status": "estimable"
     },
     "neutral": {
       "apparent": 1.0,
       "sensitivity": null,
-      "corrected": null
+      "specificity": 0.7175,
+      "corrected": null,
+      "status": "no_validation_support"
     },
     "sadness": {
       "apparent": 0.5,
       "sensitivity": 0.5857,
-      "corrected": 0.8257
+      "specificity": 0.9061,
+      "corrected": 0.8257,
+      "status": "estimable"
     },
     "surprise": {
       "apparent": 0.0,
       "sensitivity": 0.0135,
-      "corrected": null
+      "specificity": 0.9693,
+      "corrected": null,
+      "status": "non_discriminating_probe"
     }
   }
 }
