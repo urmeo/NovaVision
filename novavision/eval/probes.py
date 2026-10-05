@@ -1,10 +1,4 @@
-"""Affect recovery probes.
-
-A probe reads an emotion (and graded valence/arousal) back from an image. The
-benchmark's validity rests on the probe being independent of the conditioning,
-so probes are swappable behind one interface and the headline result is checked
-across more than one of them.
-"""
+"Affect recovery probes."
 
 from __future__ import annotations
 
@@ -23,9 +17,6 @@ from novavision.taxonomy import (
     prior,
 )
 
-# Emotion is an argmax, so the full CLIP temperature is right. Valence/arousal
-# are an expected value over a ladder, where that temperature would collapse the
-# readout to one anchor; a gentler temperature keeps it graded.
 _VA_TEMPERATURE = 10.0
 
 
@@ -46,18 +37,11 @@ class Probe(ABC):
     def recover(self, image: Image.Image) -> Recovery: ...
 
     def clip_t(self, image: Image.Image, text: str) -> float:
-        return float("nan")  # undefined off CLIP
+        return float("nan")
 
 
 class HFImageClassifierProbe(Probe):
-    """A non-CLIP image-emotion classifier, independent of the prompt vocabulary.
-
-    Wraps a HuggingFace image-classification model. Its labels are mapped to the
-    Ekman set (identity if already Ekman); valence/arousal fall back to the
-    recovered emotion's prior, so this probe's strength is independent emotion
-    recovery, not graded affect. Pair with ``eval.validate_probe`` to report its
-    known error before trusting it.
-    """
+    "A non-CLIP image-emotion classifier, independent of the prompt vocabulary."
 
     def __init__(
         self,
@@ -84,10 +68,9 @@ class HFImageClassifierProbe(Probe):
                 revision=self.revision,
                 device=0 if self.device == "cuda" else -1,
             )
-            # Assign only after the coverage check, so a failed load stays retryable.
+
             self._check_label_coverage(pipe.model.config.id2label)
-            # transformers drops top_k=None and defaults to top 5, which could leave
-            # zero mappable labels for one image; ask for every label explicitly.
+
             self._top_k = int(pipe.model.config.num_labels)
             self._pipe = pipe
 
@@ -113,8 +96,6 @@ class HFImageClassifierProbe(Probe):
             if label in known:
                 scores[label] = scores.get(label, 0.0) + float(pred["score"])
         if not scores:
-            # A silent `neutral` here would be indistinguishable from a genuine
-            # neutral prediction and inflate the collapse diagnostic.
             raise RuntimeError(f"{self.model_id} produced no Ekman-mappable labels for this image")
         emotion = max(scores, key=lambda k: scores[k])
         v, a = prior(emotion)
@@ -131,13 +112,7 @@ def _softmax(values):
 
 
 class CLIPProbe(Probe):
-    """Zero-shot emotion and graded valence/arousal with CLIP.
-
-    Logits are scaled by the model's learned temperature before softmax, so the
-    recovered valence/arousal span a usable range instead of being squeezed
-    toward zero. Valence/arousal are read as the expected value over an ordered
-    ladder of anchor prompts, not a single positive/negative contrast.
-    """
+    "Zero-shot emotion and graded valence/arousal with CLIP."
 
     def __init__(
         self,
@@ -199,8 +174,8 @@ class CLIPProbe(Probe):
             import torch
 
             means = []
-            for label in EMOTIONS:  # canonical order, not dict order
-                feats = self._text_features(EMOTION_PROMPTS[label])  # ensemble
+            for label in EMOTIONS:
+                feats = self._text_features(EMOTION_PROMPTS[label])
                 mean = feats.mean(dim=0)
                 means.append(mean / mean.norm())
             self._emo_feats = torch.stack(means)
@@ -216,7 +191,7 @@ class CLIPProbe(Probe):
         return float(np.dot(probs, [v for _, v in ladder]))
 
     def recover(self, image: Image.Image) -> Recovery:
-        labels = list(EMOTIONS)  # must match _fixed_features stacking order
+        labels = list(EMOTIONS)
         emo_feats, val_feats, aro_feats = self._fixed_features()
         img = self._image_features(image)
 

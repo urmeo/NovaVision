@@ -45,7 +45,7 @@ class DiffusersBackend(ImageBackend):
     @property
     def pipe(self):
         if self._pipe is None:
-            with self._lock:  # double-checked: don't load the multi-GB pipe twice under concurrency
+            with self._lock:
                 if self._pipe is None:
                     import torch
                     from diffusers import AutoPipelineForText2Image
@@ -70,11 +70,9 @@ class DiffusersBackend(ImageBackend):
     ) -> Image.Image:
         import torch
 
-        # manual_seed rejects negative seeds; normalize into torch's valid range.
         generator = torch.Generator(device=self.device).manual_seed(int(seed) % (2**63 - 1))
         turbo = "turbo" in self.model_id.lower()
-        # The cached scheduler mutates during inference; sharing it across
-        # concurrent requests can corrupt its step index and generated images.
+
         with self._generate_lock:
             out = self.pipe(
                 prompt=prompt,

@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Same-origin only: no external scripts, styles, or fetches. This SPA is a
-         single self-contained file, so inline script/style need 'unsafe-inline'. -->
+
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'">
     <title>NovaVision - Transform Emotions into AI Art</title>
-    <!-- No external fonts: a research demo should not leak visitor IPs to a CDN. -->
+
     <style>
         * {
             margin: 0;
@@ -19,7 +18,7 @@
             scroll-behavior: smooth;
         }
 
-        /* Custom text selection */
+
         ::selection {
             background: rgba(124, 58, 237, 0.2);
             color: #0f172a;
@@ -51,7 +50,7 @@
             }
         }
 
-        /* Navigation */
+
         nav {
             position: fixed;
             top: 0;
@@ -140,7 +139,7 @@
         }
 
 
-        /* App Header - with subtle gradient */
+
         .app-header {
             text-align: center;
             padding-top: 120px;
@@ -188,7 +187,7 @@
             font-weight: 400;
         }
 
-        /* Section Styling */
+
         section {
             padding: 100px 24px;
         }
@@ -240,7 +239,7 @@
             line-height: 1.7;
         }
 
-        /* Try It Section */
+
         #try-it {
             background: #fff;
             padding-top: 0;
@@ -404,7 +403,7 @@
             animation: none;
         }
 
-        /* Gentle pulse when button is ready */
+
         .generate-btn.ready {
             animation: readyPulse 2s ease-in-out infinite;
         }
@@ -498,7 +497,7 @@
             cursor: zoom-in;
         }
 
-        /* Glow effect when image is present */
+
         .image-display.has-image {
             box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15), 0 0 0 1px rgba(99, 102, 241, 0.1);
         }
@@ -530,7 +529,7 @@
             50% { opacity: 0.7; }
         }
 
-        /* Analysis Section */
+
         .analysis-section {
             margin-top: 40px;
             max-width: 1000px;
@@ -625,7 +624,7 @@
             font-style: italic;
         }
 
-        /* Enhanced Analysis Section - Always Visible */
+
         .analysis-section {
             display: block;
         }
@@ -674,7 +673,7 @@
             font-weight: 500;
         }
 
-        /* Default state styling */
+
         .primary-emotion-value.default {
             opacity: 0.5;
             background: #94a3b8;
@@ -775,7 +774,7 @@
             margin-bottom: 12px;
         }
 
-        /* Live Emotion Timeline */
+
         .live-emotions {
             margin-top: 18px;
             padding: 18px;
@@ -932,7 +931,7 @@
             font-weight: 500;
         }
 
-        /* Download Buttons */
+
         .download-actions {
             display: none;
             gap: 12px;
@@ -946,7 +945,7 @@
             animation: fadeInUp 0.3s ease;
         }
 
-        /* Enhanced Loading Animation */
+
         .skeleton-loader {
             position: absolute;
             inset: 0;
@@ -1010,7 +1009,7 @@
             color: #94a3b8;
         }
 
-        /* Generation Time Display */
+
         .generation-time {
             display: none;
             text-align: center;
@@ -1031,7 +1030,7 @@
             color: #6366f1;
         }
 
-        /* Regenerate Button */
+
         .regenerate-btn {
             display: flex;
             align-items: center;
@@ -1075,7 +1074,7 @@
             height: 16px;
         }
 
-        /* Example Prompts */
+
         .example-prompts {
             margin-top: 12px;
         }
@@ -1119,7 +1118,7 @@
             transform: translateY(0) scale(0.98);
         }
 
-        /* Advanced Settings & Seed Control */
+
         .advanced-settings {
             margin-top: 16px;
             border-top: 1px solid #e2e8f0;
@@ -1242,7 +1241,7 @@
             color: #6366f1;
         }
 
-        /* Error Handling */
+
         .error-display {
             display: none;
             padding: 16px;
@@ -1316,7 +1315,7 @@
             height: 14px;
         }
 
-        /* Image History */
+
         .image-history {
             display: block;
             padding: 20px;
@@ -1487,7 +1486,7 @@
             transform: translateY(-2px);
         }
 
-        /* Prompt Engineering Display - Always Visible */
+
         .prompt-engineering-section {
             display: block;
             margin-top: 32px;
@@ -1682,7 +1681,7 @@
             }
         }
 
-        /* How It Works Section */
+
         #how-it-works {
             background: linear-gradient(180deg, #faf9fc 0%, #f5f3f9 100%);
             position: relative;
@@ -1707,7 +1706,7 @@
             position: relative;
         }
 
-        /* Flowing connection line behind all steps */
+
         .steps-container::before {
             content: '';
             position: absolute;
@@ -1779,7 +1778,7 @@
             line-height: 1.7;
         }
 
-        /* Features Section */
+
         #features {
             background: linear-gradient(180deg, #fff 0%, #faf9fc 100%);
             position: relative;
@@ -1860,7 +1859,7 @@
             line-height: 1.75;
         }
 
-        /* About Section */
+
         #about {
             background: linear-gradient(180deg, #f8f7fc 0%, #f5f3f9 100%);
             position: relative;
@@ -1918,7 +1917,7 @@
             transform: translateY(-2px);
         }
 
-        /* Footer */
+
         footer {
             background: linear-gradient(180deg, #f8f7fc 0%, #f5f3f9 100%);
             padding: 40px 24px;
@@ -1959,7 +1958,7 @@
             color: #94a3b8;
         }
 
-        /* Fade In Animation with Staggered Delays */
+
         .fade-in {
             opacity: 0;
             transform: translateY(20px);
@@ -1972,13 +1971,13 @@
             transform: translateY(0);
         }
 
-        /* Staggered animation delays for multiple items */
+
         .fade-in[data-delay="1"] { transition-delay: 0.1s; }
         .fade-in[data-delay="2"] { transition-delay: 0.2s; }
         .fade-in[data-delay="3"] { transition-delay: 0.3s; }
         .fade-in[data-delay="4"] { transition-delay: 0.4s; }
 
-        /* Subtle parallax for hero section */
+
         .app-header {
             transform-style: preserve-3d;
             perspective: 1000px;
@@ -1990,7 +1989,7 @@
             will-change: transform;
         }
 
-        /* Global focus states for accessibility */
+
         *:focus-visible {
             outline: 2px solid rgba(124, 58, 237, 0.5);
             outline-offset: 2px;
@@ -2005,7 +2004,7 @@
             outline-offset: 2px;
         }
 
-        /* Ensure smooth easing on all interactive elements */
+
         .tech-badge,
         .nav-links a,
         .footer-logo,
@@ -2015,7 +2014,7 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Responsive */
+
         @media (max-width: 968px) {
             .features-grid {
                 grid-template-columns: 1fr;
@@ -2029,7 +2028,7 @@
             }
 
             .steps-container::before {
-                display: none; /* Hide horizontal line on mobile */
+                display: none;
             }
 
             .step {
@@ -2069,7 +2068,7 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
+
     <nav id="navbar">
         <div class="nav-container">
             <span class="nav-logo">NovaVision</span>
@@ -2083,14 +2082,14 @@
         </div>
     </nav>
 
-    <!-- App Header -->
+
     <header class="app-header">
         <h1 class="app-header-title fade-in">NovaVision</h1>
         <p class="app-header-subtitle fade-in">Transform emotions into AI-generated art</p>
     </header>
 
     <main>
-    <!-- Try It Section -->
+
     <section id="try-it">
         <div class="section-container">
             <div class="app-container fade-in">
@@ -2199,8 +2198,8 @@
                         <div class="skeleton-loader" id="skeletonLoader"></div>
                         <div class="loading-overlay" id="loadingOverlay">
                             <div class="loading-spinner-large"></div>
-                            <div class="loading-text" id="loadingText">Analyzing emotions...</div>
-                            <div class="loading-subtext" id="loadingSubtext">This may take 10-20 seconds</div>
+                            <div class="loading-text" id="loadingText">Analyzing text...</div>
+                            <div class="loading-subtext" id="loadingSubtext">Time depends on the backend and device.</div>
                         </div>
                         <div class="image-placeholder" id="placeholder">
                             <svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
@@ -2215,7 +2214,7 @@
                     <div class="generation-time" id="generationTime">
                         Generated in <span class="time-value" id="generationTimeValue">0.0</span> seconds
                     </div>
-                    <!-- Download & Regenerate Actions -->
+
                     <div class="download-actions" id="downloadActions">
                         <button class="download-btn primary" id="downloadImageBtn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2239,7 +2238,7 @@
                                 <polyline points="23 4 23 10 17 10"/>
                                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                             </svg>
-                            Regenerate
+                            New variation
                         </button>
                     </div>
                     <div class="image-history" id="imageHistory">
@@ -2267,14 +2266,14 @@
                     <span>Emotion Analysis</span>
                 </div>
                 <div class="analysis-content" id="analysisContent">
-                    <!-- Primary Emotion Display -->
+
                     <div class="primary-emotion-display" id="primaryEmotionSection">
                         <span class="primary-emotion-label">Primary Emotion:</span>
                         <span class="primary-emotion-value default" id="primaryEmotion">Neutral</span>
                         <span class="primary-emotion-confidence" id="primaryConfidence">--</span>
                     </div>
 
-                    <!-- Valence & Arousal Indicators -->
+
                     <div class="dimension-indicators" id="dimensionSection">
                         <div class="dimension-item">
                             <div class="dimension-label">Valence</div>
@@ -2286,7 +2285,7 @@
                         </div>
                     </div>
 
-                    <!-- All 7 Emotions Bar Chart -->
+
                     <div class="all-emotions-grid" id="allEmotionsSection">
                         <h4 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 16px;">All Emotions</h4>
                         <div id="emotionBars">
@@ -2300,7 +2299,7 @@
                         </div>
                     </div>
 
-                    <!-- Prompt Section -->
+
                     <div class="prompt-section" id="promptSection">
                         <div class="prompt-label">Generated Prompt</div>
                         <p class="prompt-text default" id="promptText">Your enhanced prompt will appear here...</p>
@@ -2372,7 +2371,7 @@
         </div>
     </section>
 
-    <!-- How It Works Section -->
+
     <section id="how-it-works">
         <div class="section-container">
             <div class="section-header fade-in">
@@ -2400,13 +2399,13 @@
         </div>
     </section>
 
-    <!-- Features Section -->
+
     <section id="features">
         <div class="section-container">
             <div class="section-header fade-in">
                 <p class="section-tag">Why NovaVision</p>
                 <h2 class="section-title">Features</h2>
-                <p class="section-subtitle">Art that truly understands you</p>
+                <p class="section-subtitle">Image prompts guided by emotion labels</p>
             </div>
             <div class="features-grid">
                 <div class="feature-card fade-in" data-delay="1">
@@ -2418,9 +2417,9 @@
                             <line x1="15" y1="9" x2="15.01" y2="9"/>
                         </svg>
                     </div>
-                    <h3 class="feature-title">Knows How You Feel</h3>
+                    <h3 class="feature-title">Emotion Labels from Text</h3>
                     <p class="feature-description">
-                        Type naturally. The emotion classifier reads joy, sadness, excitement, or calm from your words and adjusts the artwork to match.
+                        The classifier scores seven emotion labels from your words and uses the leading label to guide the image prompt's mood.
                     </p>
                 </div>
                 <div class="feature-card fade-in" data-delay="2">
@@ -2451,7 +2450,7 @@
         </div>
     </section>
 
-    <!-- About Section -->
+
     <section id="about">
         <div class="section-container">
             <div class="section-header fade-in">
@@ -2474,7 +2473,7 @@
     </section>
     </main>
 
-    <!-- Footer -->
+
     <footer>
         <div class="footer-logo">NovaVision</div>
         <p class="footer-tagline">AI-powered emotion visualization</p>
@@ -2482,7 +2481,7 @@
     </footer>
 
     <script>
-        // Navbar scroll effect + Subtle parallax for hero + Active nav highlighting
+
         const navbar = document.getElementById('navbar');
         const heroTitle = document.querySelector('.app-header-title');
         const heroSubtitle = document.querySelector('.app-header-subtitle');
@@ -2512,14 +2511,14 @@
         window.addEventListener('scroll', () => {
             const scrollY = window.scrollY;
 
-            // Navbar effect
+
             if (scrollY > 50) {
                 navbar.classList.add('scrolled');
             } else {
                 navbar.classList.remove('scrolled');
             }
 
-            // Subtle parallax effect for hero (only in first 400px of scroll)
+
             if (scrollY < 400) {
                 const parallaxAmount = scrollY * 0.15;
                 const opacityAmount = Math.max(0, 1 - (scrollY / 300));
@@ -2533,14 +2532,14 @@
                 }
             }
 
-            // Update active nav link
+
             updateActiveNav();
         }, { passive: true });
 
-        // Initial call to set active state
+
         updateActiveNav();
 
-        // Fade in on scroll
+
         const observerOptions = {
             root: null,
             rootMargin: '0px',
@@ -2567,7 +2566,7 @@
 
         const emotionOrder = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'disgust', 'neutral'];
 
-        // Emotion-related words for smart detection
+
         const emotionWords = [
             'happy', 'sad', 'angry', 'scared', 'afraid', 'surprised', 'disgusted',
             'joy', 'joyful', 'excited', 'love', 'hate', 'fear', 'anxious', 'worried',
@@ -2583,10 +2582,10 @@
             const lowerText = text.toLowerCase();
             const words = lowerText.split(/\s+/);
 
-            // Check if any emotion words are present
+
             const hasEmotionWord = emotionWords.some(ew => lowerText.includes(ew));
 
-            // Check if it's a sentence (has verb-like patterns or is longer)
+
             const isSentence = words.length >= 4 ||
                               /\b(i |i'm |i am |we |you |they |he |she |it |is |are |was |were |feel|think|believe|want|need|love|hate)\b/i.test(lowerText);
 
@@ -2629,7 +2628,7 @@
             const emotionMap = {};
             emotions.forEach(e => { emotionMap[e.name] = e.score; });
 
-            // Only show dominant badge if confidence > 30%
+
             const showDominant = confidence > 30;
 
             emotionOrder.forEach((emotion, index) => {
@@ -2640,7 +2639,7 @@
                     const value = bar.querySelector('.live-emotion-value');
                     const score = Math.max(0, Math.min(100, Number(emotionMap[emotion]) || 0));
 
-                    // Min width of 2px, then percentage (clamped to [0,100]).
+
                     const width = score > 0 ? Math.max(2, score) + '%' : '2px';
                     fill.style.width = width;
 
@@ -2667,8 +2666,8 @@
             const hasEmotion = hasEmotionalContext(text);
             const wordCount = text.split(/\s+/).length;
 
-            // Every displayed score comes from the classifier; too-short input
-            // gets an honest prompt to keep typing, never invented percentages.
+
+
             if (wordCount <= 2 && !hasEmotion) {
                 liveStatus.classList.remove('analyzing');
                 liveStatusText.textContent = 'Type a bit more to analyze';
@@ -2712,7 +2711,7 @@
 
         emotionInput.addEventListener('input', () => {
             clearTimeout(debounceTimer);
-            // Invalidate immediately, including the debounce gap before the next fetch.
+
             cancelLiveAnalysis();
             const text = emotionInput.value.trim();
 
@@ -2722,7 +2721,7 @@
                 return;
             }
 
-            // Add ready pulse to button when text is entered
+
             if (text.length >= 2) {
                 generateBtn.classList.add('ready');
             }
@@ -2756,23 +2755,23 @@
             canvas.width = 1200;
             canvas.height = 1600;
 
-            // Background
+
             ctx.fillStyle = '#fafafa';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Header gradient bar
+
             const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
             gradient.addColorStop(0, '#6366f1');
             gradient.addColorStop(1, '#8b5cf6');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, 80);
 
-            // NovaVision logo
+
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 32px Inter, sans-serif';
             ctx.fillText('NovaVision', 40, 52);
 
-            // Timestamp
+
             ctx.font = '16px Inter, sans-serif';
             ctx.fillStyle = 'rgba(255,255,255,0.8)';
             const date = new Date(generationData.timestamp).toLocaleString();
@@ -2780,10 +2779,10 @@
             ctx.fillText(date, canvas.width - 40, 52);
             ctx.textAlign = 'left';
 
-            // Load and draw the generated image
+
             const img = new Image();
             img.onload = () => {
-                // Image frame
+
                 ctx.fillStyle = '#ffffff';
                 ctx.shadowColor = 'rgba(0,0,0,0.1)';
                 ctx.shadowBlur = 20;
@@ -2792,12 +2791,12 @@
 
                 ctx.drawImage(img, 50, 130, 680, 680);
 
-                // Emotion Analysis section
+
                 ctx.fillStyle = '#0f172a';
                 ctx.font = 'bold 24px Inter, sans-serif';
                 ctx.fillText('Emotion Analysis', 780, 160);
 
-                // Primary emotion
+
                 ctx.font = '14px Inter, sans-serif';
                 ctx.fillStyle = '#64748b';
                 ctx.fillText('PRIMARY EMOTION', 780, 200);
@@ -2812,29 +2811,29 @@
                 ctx.fillStyle = '#94a3b8';
                 ctx.fillText(generationData.confidence + '% confidence', 780, 270);
 
-                // Emotion bars
+
                 let yPos = 320;
                 generationData.emotions.forEach((e, i) => {
                     ctx.font = '13px Inter, sans-serif';
                     ctx.fillStyle = '#64748b';
                     ctx.fillText(e.name.charAt(0).toUpperCase() + e.name.slice(1), 780, yPos);
 
-                    // Track
+
                     ctx.fillStyle = '#e2e8f0';
                     ctx.fillRect(870, yPos - 10, 250, 8);
 
-                    // Fill
+
                     ctx.fillStyle = i === 0 ? '#6366f1' : '#cbd5e1';
                     ctx.fillRect(870, yPos - 10, (e.score / 100) * 250, 8);
 
-                    // Value
+
                     ctx.fillStyle = '#94a3b8';
                     ctx.fillText((Number(e.score) || 0).toFixed(1) + '%', 1130, yPos);
 
                     yPos += 35;
                 });
 
-                // Prompt section
+
                 ctx.fillStyle = '#0f172a';
                 ctx.font = 'bold 20px Inter, sans-serif';
                 ctx.fillText('Generated Prompt', 40, 880);
@@ -2842,7 +2841,7 @@
                 ctx.font = '14px Inter, sans-serif';
                 ctx.fillStyle = '#64748b';
 
-                // Word wrap the prompt
+
                 const words = generationData.prompt.split(' ');
                 let line = '';
                 let lineY = 920;
@@ -2861,7 +2860,7 @@
                 });
                 ctx.fillText(line, 40, lineY);
 
-                // User input section
+
                 ctx.fillStyle = '#0f172a';
                 ctx.font = 'bold 20px Inter, sans-serif';
                 ctx.fillText('Original Input', 40, lineY + 60);
@@ -2870,7 +2869,7 @@
                 ctx.fillStyle = '#64748b';
                 ctx.fillText('"' + generationData.original_text + '"', 40, lineY + 95);
 
-                // Footer
+
                 ctx.fillStyle = '#e2e8f0';
                 ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
 
@@ -2879,7 +2878,7 @@
                 ctx.textAlign = 'center';
                 ctx.fillText('Generated with NovaVision - AI-powered emotion visualization', canvas.width / 2, canvas.height - 25);
 
-                // Download
+
                 const link = document.createElement('a');
                 const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
                 link.download = `novavision_report_${timestamp}.png`;
@@ -2896,7 +2895,7 @@
             chip.addEventListener('click', () => {
                 emotionInput.value = chip.dataset.prompt;
                 emotionInput.focus();
-                // Trigger live analysis
+
                 const event = new Event('input', { bubbles: true });
                 emotionInput.dispatchEvent(event);
             });
@@ -2948,7 +2947,7 @@
             historyThumbnails.innerHTML = '';
             historyCount.textContent = `${imageHistory.length} of ${maxHistoryItems}`;
 
-            // Add actual thumbnails
+
             imageHistory.forEach(item => {
                 const thumb = document.createElement('div');
                 thumb.className = 'history-thumbnail' + (item === currentGenerationData ? ' active' : '');
@@ -2967,7 +2966,7 @@
                 historyThumbnails.appendChild(thumb);
             });
 
-            // Add placeholders for remaining empty slots
+
             const remainingSlots = maxHistoryItems - imageHistory.length;
             for (let i = 0; i < remainingSlots; i++) {
                 const placeholder = document.createElement('div');
@@ -2977,7 +2976,7 @@
             }
         }
 
-        // ========== Generate button ==========
+
         const generateBtn = document.getElementById('generateBtn');
         const styleSelect = document.getElementById('styleSelect');
         const btnText = generateBtn.querySelector('.btn-text');
@@ -2999,9 +2998,9 @@
         const errorDetails = document.getElementById('errorDetails');
         const retryBtn = document.getElementById('retryBtn');
 
-        // Style descriptions for prompt engineering display
-        // Must mirror STYLE_PRESETS in novavision/prompting.py: this panel shows
-        // the exact text that went into the prompt.
+
+
+
         const styleDescriptions = {
             'photorealistic': 'hyperrealistic photograph, 85mm lens, natural light, ultra sharp, 8k',
             'artistic': 'digital painting, expressive brushwork, rich color, dramatic lighting',
@@ -3011,26 +3010,25 @@
         };
 
         const loadingMessages = [
-            { text: 'Analyzing emotions...', sub: 'Understanding your feelings' },
-            { text: 'Building prompt...', sub: 'Crafting the perfect description' },
-            { text: 'Generating artwork...', sub: 'This may take 10-20 seconds' },
-            { text: 'Almost there...', sub: 'Adding final touches' }
+            { text: 'Analyzing text...', sub: 'The classifier scores emotion labels.' },
+            { text: 'Building image prompt...', sub: 'Text, mood, and style form the image prompt.' },
+            { text: 'Generating image...', sub: 'Time depends on the backend and device.' }
         ];
 
         let loadingInterval = null;
 
         function startLoadingAnimation() {
-            // Hide error if shown
+
             errorDisplay.classList.remove('visible');
 
-            // Show loading states
+
             skeletonLoader.classList.add('active');
             loadingOverlay.classList.add('active');
             imageDisplay.classList.add('generating');
 
             placeholder.style.display = 'none';
 
-            // Cycle through loading messages
+
             let messageIndex = 0;
             loadingText.textContent = loadingMessages[0].text;
             loadingSubtext.textContent = loadingMessages[0].sub;
@@ -3077,10 +3075,10 @@
             generationTimeValue.textContent = data.generationSeconds;
             generationTimeEl.classList.add('visible');
 
-            // Show download buttons
+
             downloadActions.classList.add('visible');
 
-            // Update primary emotion (remove default styling)
+
             const primaryEmotionEl = document.getElementById('primaryEmotion');
             primaryEmotionEl.classList.remove('default');
             primaryEmotionEl.textContent =
@@ -3088,7 +3086,7 @@
             document.getElementById('primaryConfidence').textContent =
                 data.confidence + '% confidence';
 
-            // Update valence display (guard: a malformed response must not throw)
+
             const valence = Number(data.valence);
             const arousal = Number(data.arousal);
             const valenceDisplay = document.getElementById('valenceDisplay');
@@ -3098,7 +3096,7 @@
             valenceDisplay.innerHTML = valenceLabel + '<span class="dimension-number">(' +
                 (Number.isFinite(valence) ? (valence >= 0 ? '+' : '') + valence.toFixed(1) : 'n/a') + ')</span>';
 
-            // Update arousal display
+
             const arousalDisplay = document.getElementById('arousalDisplay');
             const arousalLabel = arousal >= 0.5 ? 'Energized' : 'Calm';
             const arousalClass = arousal >= 0.5 ? 'energized' : 'calm';
@@ -3106,7 +3104,7 @@
             arousalDisplay.innerHTML = arousalLabel + '<span class="dimension-number">(' +
                 (Number.isFinite(arousal) ? arousal.toFixed(1) : 'n/a') + ')</span>';
 
-            // Update all 7 emotion bars
+
             const emotionBars = document.getElementById('emotionBars');
             emotionBars.innerHTML = '';
             data.emotions.forEach((e, i) => {
@@ -3128,12 +3126,12 @@
                 emotionBars.appendChild(bar);
             });
 
-            // Update prompt text (remove default styling)
+
             const promptTextEl = document.getElementById('promptText');
             promptTextEl.classList.remove('default');
             promptTextEl.textContent = '"' + data.prompt + '"';
 
-            // Update Prompt Engineering Display
+
             document.getElementById('userInputDisplay').textContent = data.original_text;
             document.getElementById('enhancedPromptDisplay').textContent = data.prompt;
             document.getElementById('modUserText').textContent = '"' + data.original_text + '"';
@@ -3146,8 +3144,8 @@
                 return;
             }
 
-            // A typoed seed must fail loudly: parseInt('12a') would silently
-            // generate a different image than the one the user meant to reproduce.
+
+
             const userSeed = seedInput.value.trim();
             if (userSeed && !/^\d+$/.test(userSeed)) {
                 showError('Seed must be a whole number.', 'Fix the seed field and try again.');
@@ -3172,8 +3170,8 @@
             const startTime = performance.now();
 
             try {
-                // Token-protected deploys (NOVA_API_TOKEN set): send the token the
-                // server checks, else our own frontend would 401 against /api/generate.
+
+
                 const generateHeaders = { 'Content-Type': 'application/json' };
                 const apiToken = tokenInput.value.trim();
                 if (apiToken) generateHeaders['X-API-Token'] = apiToken;
@@ -3219,9 +3217,17 @@
         generateBtn.addEventListener('click', generateImage);
 
         document.getElementById('regenerateBtn').addEventListener('click', () => {
-            // Clear the seed to get a new random one
-            seedInput.value = '';
-            generateImage();
+            if (!currentGenerationData || generateBtn.disabled) return;
+            clearTimeout(debounceTimer);
+            cancelLiveAnalysis();
+            emotionInput.value = currentGenerationData.original_text;
+            styleSelect.value = currentGenerationData.style;
+            updateLiveEmotions(currentGenerationData.emotions, currentGenerationData.primary_emotion,
+                currentGenerationData.confidence);
+            let seed = Math.floor(Math.random() * 2147483647);
+            if (seed === currentGenerationData.seed) seed = (seed + 1) % 2147483647;
+            seedInput.value = String(seed);
+            return generateImage();
         });
 
         retryBtn.addEventListener('click', () => {
@@ -3229,7 +3235,7 @@
             generateImage();
         });
 
-        // Smooth scroll for anchor links
+
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -3242,6 +3248,6 @@
                 }
             });
         });
-    </script>
+</script>
 </body>
 </html>

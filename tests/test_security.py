@@ -6,8 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = [ROOT / "novavision", ROOT / "scripts", ROOT / "server.py"]
 
-# Unsafe deserialization: arbitrary pickle/torch.load execute attacker code.
-# Model weights must load via HF from_pretrained (safetensors), never these.
+
 _UNSAFE = re.compile(
     r"\bpickle\.loads?\b|\btorch\.load\s*\(|weights_only\s*=\s*False|"
     r"yaml\.load\s*\((?!.*SafeLoader)|\bos\.system\s*\(|shell\s*=\s*True"
@@ -32,7 +31,7 @@ def test_no_unsafe_deserialization_or_shell():
 
 
 def test_no_default_public_bind():
-    # The server must never default to 0.0.0.0; binding is opt-in via novavision.serving.
+
     server = (ROOT / "server.py").read_text()
     bind = re.compile(r"""getenv\(\s*["']HOST["']\s*,\s*["']0\.0\.0\.0["']""")
     assert not bind.search(server)

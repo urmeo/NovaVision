@@ -1,18 +1,11 @@
-"""The committed benchmark numbers must regenerate from the committed records.
-
-This locks the paper's headline table to the raw per-example outputs shipped in
-``results/paper/results.json``: re-deriving every metric and contrast from those
-records (pure numpy, no models, no image regeneration) must reproduce the
-committed summary bit-for-bit. If a record or the summary drifts, this fails.
-Run standalone with ``make repro-check``.
-"""
+"The committed benchmark numbers must regenerate from the committed records."
 
 import json
 from pathlib import Path
 
 from novavision.experiments import run as run_mod
 
-RESULTS = Path(__file__).resolve().parents[1] / "results" / "paper" / "results.json"
+RESULTS = Path(__file__).resolve().parents[1] / "outputs" / "results" / "results.json"
 
 
 def _conditions_for(records):
@@ -44,6 +37,6 @@ def test_committed_pilot_is_an_honest_null():
     metrics = payload["metrics"]
     for tier in ("raw", "emotion", "affect"):
         assert metrics[tier]["shuffled_control"]["p_value"] > 0.05
-    # The probe is degenerate in domain: it collapses onto one label.
+
     assert metrics["probe_health"]["distinct_labels"] <= 2
     assert metrics["raw"]["accuracy"] == metrics["chance"]

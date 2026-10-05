@@ -21,7 +21,7 @@ def test_negative_text_has_negative_valence(lex):
 
 
 def test_load_strips_field_whitespace(tmp_path):
-    # Padded header must be skipped; a trailing-space word must still match (no silent miss).
+
     f = tmp_path / "lex.tsv"
     f.write_text("word \tvalence\tarousal\nzephyrword \t 0.8 \t 0.6 \n", encoding="utf-8")
     s = AffectLexicon.load(f).score("zephyrword")
@@ -56,12 +56,12 @@ def test_inflections_restore_spelling():
 
 def test_ies_of_ie_nouns():
     lex = AffectLexicon({"movie": (0.3, 0.5), "city": (0.1, 0.4)})
-    assert lex.lookup("movies") == (0.3, 0.5)  # not 'movy'
+    assert lex.lookup("movies") == (0.3, 0.5)
     assert lex.lookup("cities") == (0.1, 0.4)
 
 
 def test_meaning_changing_suffixes_not_stripped():
-    # `hon`/`inter` exist; honest/interest must not collapse onto them.
+
     lex = AffectLexicon({"hon": (0.5, 0.5), "inter": (0.0, 0.5), "hope": (0.8, 0.5)})
     assert lex.lookup("honest") is None
     assert lex.lookup("interest") is None
@@ -69,7 +69,7 @@ def test_meaning_changing_suffixes_not_stripped():
 
 
 def test_ly_suffix_not_stripped():
-    # `lovely`/`early` must not collapse onto `love`/`ear`.
+
     lex = AffectLexicon({"love": (0.9, 0.7), "ear": (0.0, 0.4)})
     assert lex.lookup("lovely") is None
     assert lex.lookup("early") is None
@@ -82,6 +82,23 @@ def test_malformed_lexicon_line_raises(tmp_path):
         AffectLexicon.load(bad)
 
 
+@pytest.mark.parametrize(
+    "values", [("nan", "0.5"), ("0.5", "inf"), ("1.1", "0.5"), ("0.5", "-0.1")]
+)
+def test_invalid_norms_are_rejected_before_scoring(tmp_path, values):
+    bad = tmp_path / "bad.tsv"
+    bad.write_text(f"word\tvalence\tarousal\nhappy\t{values[0]}\t{values[1]}\n")
+    with pytest.raises(ValueError, match="Invalid affect"):
+        AffectLexicon.load(bad)
+
+
+def test_caller_cannot_change_loaded_norms():
+    entries = {"happy": (0.8, 0.7)}
+    lexicon = AffectLexicon(entries)
+    entries["happy"] = (float("nan"), 2.0)
+    assert lexicon.score("happy").valence == 0.8
+
+
 def test_negation_flips_valence():
     lex = AffectLexicon({"happy": (0.8, 0.7)})
     assert lex.score("not happy").valence == -0.8
@@ -92,8 +109,8 @@ def test_negation_flips_valence():
 def test_stopwords_are_not_scored_or_counted():
     lex = AffectLexicon({"happy": (0.8, 0.7), "the": (0.9, 0.9)})
     s = lex.score("the happy dog")
-    assert s.valence == 0.8  # "the" never scores, even when the lexicon has it
-    assert s.coverage == 0.5  # matched 1 of 2 content words (happy, dog)
+    assert s.valence == 0.8
+    assert s.coverage == 0.5
 
 
 def test_smart_quote_negation_still_flips():
@@ -103,4 +120,4 @@ def test_smart_quote_negation_still_flips():
 
 def test_inflection_cannot_stem_into_a_function_word():
     lex = AffectLexicon({"will": (0.5, 0.5), "happy": (0.8, 0.7)})
-    assert lex.lookup("wills") is None  # "wills" must not score via "will"
+    assert lex.lookup("wills") is None

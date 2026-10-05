@@ -1,9 +1,4 @@
-"""Turn a run's results.json into a schema-valid benchmark submission.
-
-Reads only committed, script-produced fields, so a submission cannot claim a
-number the run did not measure. Validate the output against
-``benchmark/submission.schema.json`` before opening a leaderboard PR.
-"""
+"Turn a run's results.json into a schema-valid benchmark submission."
 
 from __future__ import annotations
 
@@ -45,8 +40,7 @@ def build_submission(results: dict, system: str) -> dict:
             "benchmark_sha256": cfg.get("benchmark_sha256"),
         },
     }
-    # probe_health is optional in the schema; include it only when the run carries
-    # a valid diagnostic, never a schema-invalid 0 placeholder.
+
     health = metrics.get("probe_health") or {}
     if health.get("distinct_labels") and health.get("n_labels"):
         submission["probe_health"] = {
@@ -58,14 +52,16 @@ def build_submission(results: dict, system: str) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a benchmark submission from a run")
-    parser.add_argument("--results", default="results/paper/results.json")
+    parser.add_argument("--results", default="outputs/results/results.json")
     parser.add_argument("--system", required=True, help="name of the submitted system")
-    parser.add_argument("--out", default="submission.json")
+    parser.add_argument("--out", default="outputs/generated/submission.json")
     args = parser.parse_args()
 
     results = json.loads(Path(args.results).read_text())
     submission = build_submission(results, args.system)
-    Path(args.out).write_text(json.dumps(submission, indent=2))
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(submission, indent=2))
     print(f"Wrote {args.out}. Validate against benchmark/submission.schema.json before submitting.")
 
 

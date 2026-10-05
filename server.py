@@ -23,26 +23,22 @@ logger = logging.getLogger("novavision.server")
 
 MIN_TEXT, MAX_TEXT = 3, 2000
 
-# Serve only the dedicated web asset directory, never the repo root, which would
-# expose source, configs, and benchmark data.
+
 _STATIC = Path(__file__).resolve().parent / "static"
 
 app = Flask(__name__, static_folder=str(_STATIC), static_url_path="")
-# Cap request bodies just above the largest legal payload: 2000 chars of text
-# can reach ~24 KB on the wire when a client JSON-escapes astral characters
-# (😀 is 12 bytes per emoji), plus style/seed overhead. Anything
-# bigger is parser-abuse surface, not a real request.
+
+
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024
 
-# CORS is off by default (same-origin SPA). Enable by listing origins in CORS_ORIGINS.
+
 _origins = os.getenv("CORS_ORIGINS", "").strip()
 if _origins:
     from flask_cors import CORS
 
     CORS(app, origins=[o.strip() for o in _origins.split(",")])
 
-# Per-IP rate limit and a concurrency cap so a public bind cannot turn the GPU
-# generate route into a trivial DoS amplifier. Both are tunable by env.
+
 _rate_limiter = RateLimiter(env_int("NOVA_RATE_LIMIT", 30))
 _gen_guard = ConcurrencyGuard(env_int("NOVA_MAX_CONCURRENCY", 2))
 
@@ -53,7 +49,7 @@ _pipeline_lock = threading.Lock()
 def pipeline() -> NovaVision:
     global _pipeline
     if _pipeline is None:
-        with _pipeline_lock:  # double-checked: concurrent cold starts must not each load models
+        with _pipeline_lock:
             if _pipeline is None:
                 _pipeline = build_pipeline()
     return _pipeline
@@ -68,14 +64,13 @@ _CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
 
 
 def _valid_text(data) -> tuple[str, str | None]:
-    # A JSON body can legally be a list/str/number; only dicts have fields.
+
     data = data if isinstance(data, dict) else {}
     raw = data.get("text", "")
-    # A non-string "text" (number, list, bool, null) is a malformed request, not a
-    # server fault: reject it as a length violation rather than let the regex raise.
+
     if not isinstance(raw, str):
         return "", f"Text must be {MIN_TEXT}-{MAX_TEXT} characters."
-    # Strip control characters before length-checking the prompt.
+
     text = _CONTROL_CHARS.sub(" ", raw).strip()
     if not (MIN_TEXT <= len(text) <= MAX_TEXT):
         return text, f"Text must be {MIN_TEXT}-{MAX_TEXT} characters."
@@ -83,8 +78,7 @@ def _valid_text(data) -> tuple[str, str | None]:
 
 
 def _client_ip() -> str:
-    # X-Forwarded-For is client-spoofable; only trust it behind a configured proxy, else an
-    # attacker could rotate the header to bypass the per-IP rate limit.
+
     if os.getenv("NOVA_TRUST_PROXY", "").strip().lower() in {"1", "true", "yes", "on"}:
         xff = request.headers.get("X-Forwarded-For")
         if xff:
@@ -138,7 +132,7 @@ def analyze():
 
 @app.route("/api/generate", methods=["POST"])
 def generate():
-    # Rate-limit before auth, so token guesses are throttled like everything else.
+
     if (limited := _rate_limited()) is not None:
         return limited
     if not token_ok(_bearer_token()):
@@ -151,14 +145,11 @@ def generate():
 
     style = str(data.get("style", "artistic")).lower()
     if style not in STYLE_PRESETS:
-        # Reject rather than fall back: the style is echoed in the response, and an
-        # unvalidated echo is an XSS-shaped gift to any consumer that renders it.
         return jsonify({"error": f"Unknown style. Choose one of: {', '.join(STYLE_PRESETS)}."}), 400
     raw_seed = data.get("seed")
     if isinstance(raw_seed, bool):
         return jsonify({"error": "seed must be an integer."}), 400
     if isinstance(raw_seed, float) and not raw_seed.is_integer():
-        # int(2.9) truncates silently; the contract says integer.
         return jsonify({"error": "seed must be an integer."}), 400
     try:
         seed = random.randint(0, 2**31 - 1) if raw_seed is None else int(raw_seed)
@@ -167,7 +158,6 @@ def generate():
     if abs(seed) >= 2**63:
         return jsonify({"error": "seed must fit in a signed 64-bit integer."}), 400
 
-    # Concurrency cap: shed load rather than queue requests behind a slow GPU job.
     if not _gen_guard.acquire():
         return jsonify({"error": "Server busy. Try again shortly."}), 429
     try:
@@ -202,13 +192,12 @@ def generate():
 
 
 if __name__ == "__main__":
-    # Localhost unless NOVA_PUBLIC=1 (or a Spaces sandbox) is set; see novavision.serving.
     host = resolve_host()
     port = int(os.getenv("PORT", "8000"))
     if host == "0.0.0.0":  # noqa: S104 - explicit operator opt-in
         logger.warning(
             "Binding 0.0.0.0 (public). Set NOVA_API_TOKEN to protect /api/generate, and "
-            "serve through a real WSGI server (make serve-prod); Flask's built-in "
+            "use a WSGI server (python -m gunicorn --workers 1 server:app); Flask's built-in "
             "server is for development only."
         )
     app.run(host=host, port=port)

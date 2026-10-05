@@ -1,10 +1,4 @@
-"""Paired comparison of two probe-validation reports (exact McNemar).
-
-Both reports must come from the same dataset sample (identical gold sequence),
-which validate_probe guarantees for equal (dataset, split, n, seed). The paper's
-probe-comparison p-values regenerate from the committed artifacts with this
-script; point estimates alone are not evidence of a better probe.
-"""
+"Paired comparison of two probe-validation reports (exact McNemar)."
 
 from __future__ import annotations
 

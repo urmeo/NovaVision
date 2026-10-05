@@ -3,16 +3,14 @@
 .venv
 venv
 __pycache__
-*.pyc
-.pytest_cache
-.mypy_cache
-.ruff_cache
+*.py[cod]
+.*_cache
 .env
+.env.*
 *.egg-info
-results/*
-!results/paper/
-screenshots
-paper
-# tests/ stays in the image so the shipped artifact can self-verify:
-# `pip install pytest && pytest` (the research extra provides matplotlib).
+.coverage*
+coverage.xml
+htmlcov
+outputs/generated
+outputs/figures
 .DS_Store

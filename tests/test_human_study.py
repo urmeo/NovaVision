@@ -45,7 +45,7 @@ def _replayable_payload(records, width=64, height=64):
 
 def test_cohen_kappa_perfect_and_chance():
     assert cohen_kappa(["joy", "anger"], ["joy", "anger"], EMOTIONS) == 1.0
-    # Disagreement below chance gives a negative kappa.
+
     assert cohen_kappa(["joy", "anger"], ["anger", "joy"], EMOTIONS) < 0
 
 
@@ -81,7 +81,6 @@ def test_build_sheet_and_analyze(tmp_path):
     assert (study / "key.csv").exists()
     assert len(list((study / "images").glob("*.png"))) == 7
 
-    # Simulate a rater agreeing with the probe on every item.
     key = list(human_study._read_csv(study / "key.csv"))
     rated = study / "rated.csv"
     human_study._write_csv(
@@ -117,14 +116,14 @@ def _text_payload(record) -> dict:
 
 
 def test_build_sheet_text_track_with_index(tmp_path):
-    # New text-track records carry a row index, so the image is reproducible.
+
     (tmp_path / "results.json").write_text(json.dumps(_text_payload(_text_record(with_index=True))))
     study = human_study.build_sheet(tmp_path, n=1, seed=0)
     assert len(list((study / "images").glob("*.png"))) == 1
 
 
 def test_build_sheet_rejects_unreproducible_record(tmp_path):
-    # Pre-index text-track record (no index, content not in bank): clear error, not a crash.
+
     (tmp_path / "results.json").write_text(
         json.dumps(_text_payload(_text_record(with_index=False)))
     )
@@ -143,7 +142,7 @@ def test_analyze_skips_out_of_vocab_rating(tmp_path):
         ],
     )
     rated = tmp_path / "rated.csv"
-    # 'happy' is an alias -> joy (scored); 'banana' is unknown -> skipped, not a crash.
+
     human_study._write_csv(
         rated,
         ["id", "image", "emotion"],
@@ -176,7 +175,7 @@ def test_build_sheet_reports_per_class_counts(tmp_path):
 def test_historical_pilot_fails_before_backend_initialization(tmp_path, monkeypatch):
     from pathlib import Path
 
-    pilot = Path(__file__).resolve().parents[1] / "results" / "paper" / "results.json"
+    pilot = Path(__file__).resolve().parents[1] / "outputs" / "results" / "results.json"
     (tmp_path / "results.json").write_bytes(pilot.read_bytes())
     monkeypatch.setattr(
         human_study, "get_backend", lambda *a, **kw: pytest.fail("backend initialized")
@@ -207,7 +206,7 @@ def test_replay_allows_new_head_when_source_and_environment_match(tmp_path, monk
 
     def later_commit(**cfg):
         current = original(**cfg)
-        current["git_sha"] = "a" * 40  # a docs/output-only commit changed HEAD
+        current["git_sha"] = "a" * 40
         return current
 
     monkeypatch.setattr(manifest, "build_manifest", later_commit)
@@ -229,7 +228,7 @@ def _saved_original_payload(tmp_path):
     image.save(tmp_path / "original.png")
     record = _text_record(with_index=False)
     record.update(image_path="original.png", image_pixel_sha256=run._image_digest(image))
-    # Original pixels can be verified even when historical replay provenance is absent.
+
     return {"manifest": {"config": {"backend": "hf-api"}}, "records": [record]}
 
 

@@ -1,12 +1,4 @@
-"""Prompt synthesis: emotion as a modifier on independent content.
-
-The conditioning tiers are the ablation. Critically, the image *content* comes
-from the input (text or a content-bank subject), and emotion is layered on as a
-mood/affect modifier; content is never chosen by the emotion label. That
-decoupling is what lets recovery be attributed to the conditioning. The old
-fixed per-emotion scenes survive only as a ``scene`` floor that measures how
-much recovery is pure template recognition.
-"""
+"Prompt synthesis: emotion as a modifier on independent content."
 
 from __future__ import annotations
 
@@ -23,7 +15,7 @@ STYLE_PRESETS = {
     "dreamscape": "surreal dreamscape, ethereal glow, volumetric light, imaginative",
 }
 
-# Affect modifiers, applied to any content (not scene replacements).
+
 EMOTION_MOODS = {
     "joy": "joyful uplifting mood, bright cheerful atmosphere",
     "sadness": "sad melancholic mood, somber wistful atmosphere",
@@ -34,7 +26,7 @@ EMOTION_MOODS = {
     "neutral": "calm neutral mood, plain everyday atmosphere",
 }
 
-# Fixed per-emotion scenes, used ONLY by the `scene` floor.
+
 EMOTION_SCENES = {
     "joy": "a radiant sunlit meadow full of blooming wildflowers",
     "sadness": "a misty rain-soaked forest at dusk",
@@ -47,7 +39,7 @@ EMOTION_SCENES = {
 
 QUALITY = "masterpiece, highly detailed, sharp focus, professional"
 
-# Valence/arousal bucket boundaries for the palette/lighting mapping (circumplex thirds).
+
 VALENCE_POSITIVE, VALENCE_NEGATIVE = 0.33, -0.33
 AROUSAL_HIGH, AROUSAL_LOW = 0.66, 0.33
 
@@ -58,13 +50,7 @@ NEGATIVE_PROMPT = (
 
 
 def va_descriptors(valence: float, arousal: float) -> str:
-    """Map valence/arousal to palette and lighting cues.
-
-    On the content track the valence/arousal passed here is the per-emotion prior,
-    so these cues are a deterministic function of the emotion, the ``affect`` vs
-    ``emotion`` contrast there measures palette/lighting strength only. Independent,
-    text-grounded valence/arousal is exercised on the text track.
-    """
+    "Map valence/arousal to palette and lighting cues."
     if valence >= VALENCE_POSITIVE:
         palette = "warm vibrant palette, golden tones"
     elif valence <= VALENCE_NEGATIVE:
@@ -100,13 +86,13 @@ def build_prompt(
 
     if tier == "raw":
         parts = [content, style_desc, QUALITY]
-    elif tier == "naive":  # bare emotion word
+    elif tier == "naive":
         parts = [content, emotion, style_desc, QUALITY]
     elif tier == "emotion":
         parts = [content, mood, style_desc, QUALITY]
     elif tier == "affect":
         parts = [content, mood, va_descriptors(valence, arousal), style_desc, QUALITY]
-    else:  # scene floor
+    else:
         scene = EMOTION_SCENES.get(emotion, EMOTION_SCENES[NEUTRAL])
         parts = [scene, style_desc, QUALITY]
 

@@ -1,14 +1,4 @@
-"""Bias-correct recovery for the probe's measured error (Rogan-Gladen).
-
-The benchmark reports *apparent* recovery: the rate at which the probe reads back
-the intended emotion. The probe is imperfect, and probe validation measures how
-imperfect (its per-class sensitivity and specificity on labelled images). This
-deconvolves that known error from recovery, so the probe's weakness becomes a
-correction rather than only a caveat.
-
-Use the SAME probe for both inputs: the run's ``results.json`` (apparent recovery)
-and that probe's ``probe_validation`` confusion (the error model).
-"""
+"Bias-correct recovery for the probe's measured error (Rogan-Gladen)."
 
 from __future__ import annotations
 
@@ -57,7 +47,7 @@ def correct(results: dict, validation: dict, tier: str) -> dict:
     if len(labels) != len(EMOTIONS) or set(labels) != set(EMOTIONS):
         raise ValueError("Validation labels must contain each canonical emotion exactly once")
     cm = np.asarray(validation["confusion"], dtype=float)
-    # Validate before indexing; malformed matrices must fail clearly.
+
     _sensitivity_specificity(cm)
     order = [labels.index(e) for e in EMOTIONS]
     ss = _sensitivity_specificity(cm[np.ix_(order, order)])
@@ -92,8 +82,7 @@ def correct(results: dict, validation: dict, tier: str) -> dict:
         if all(np.isfinite(a) for a in apparent.values())
         else np.nan
     )
-    # A partial mean is a different estimand from seven-class recovery. Keep it
-    # explicitly separate and compare apparent/corrected on the SAME labels.
+
     partial_corrected = float(np.mean(corrected_vals)) if corrected_vals else np.nan
     partial_apparent = float(np.mean([apparent[e] for e in estimable])) if estimable else np.nan
     return {
@@ -122,16 +111,16 @@ def _round(x: float) -> float | None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Rogan-Gladen recovery correction")
-    parser.add_argument("--results", default="results/paper/results.json")
-    parser.add_argument("--probe-validation", default="results/paper/probe_validation_scene.json")
+    parser.add_argument("--results", default="outputs/results/results.json")
+    parser.add_argument("--probe-validation", default="outputs/results/probe_validation_scene.json")
     parser.add_argument("--tier", default="emotion")
-    parser.add_argument("--out", default="results/paper/corrected_recovery.json")
+    parser.add_argument("--out", default="outputs/results/corrected_recovery.json")
     args = parser.parse_args()
 
     results = json.loads(Path(args.results).read_text())
     validation = json.loads(Path(args.probe_validation).read_text())
     report = correct(results, validation, args.tier)
-    # Match the results.json contract: standards-compliant JSON, no bare NaN.
+
     Path(args.out).write_text(json.dumps(report, indent=2, allow_nan=False))
     print(json.dumps({k: v for k, v in report.items() if k != "per_class"}, indent=2))
 

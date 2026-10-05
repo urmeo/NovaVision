@@ -1,31 +1,16 @@
-# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
-build/
-dist/
-
-# Environment and secrets
 .venv/
+venv/
 .env
-
-# Tool caches and coverage
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-.coverage
+.env.*
+.*_cache/
+.coverage*
 coverage.xml
 htmlcov/
-
-# Run outputs: every run dir except the canonical committed paper run
-results/*
-!results/paper/
-results/paper/human_study/images/
-results/paper/records.jsonl
-
-# Built benchmark (make benchmark); rebuilt on demand, never committed
-data/affectbench.csv
-data/affectbench.manifest.json
-
-# macOS
+build/
+dist/
+outputs/generated/
+outputs/results/human_study/
 .DS_Store

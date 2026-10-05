@@ -54,10 +54,10 @@ function createApp(fetch) {
             if (!this.listeners.has(name)) this.listeners.set(name, []);
             this.listeners.get(name).push(listener);
         }
-        dispatch(name) { return this.listeners.get(name)?.forEach(listener => listener({})); }
+        dispatch(name) { return Promise.all((this.listeners.get(name) || []).map(listener => listener({}))); }
         click() {
             if (this.tag === 'a') downloads.push({ href: this.href, filename: this.download });
-            this.dispatch('click');
+            return this.dispatch('click');
         }
         focus() {}
         getContext() {
@@ -98,6 +98,7 @@ function createApp(fetch) {
         },
         navigator: { clipboard: { writeText: async text => clipboard.push(text) } },
         performance: { now: () => 1000 },
+        Math: Object.assign(Object.create(Math), { random: () => 0.5 }),
         setTimeout: callback => { timers.set(++nextTimer, callback); return nextTimer; },
         clearTimeout: id => timers.delete(id),
         setInterval: () => ++nextTimer,
@@ -161,6 +162,71 @@ test('history selection restores analysis, seed, image and report downloads', as
     assert(app.reportText.includes('Sadness'));
     assert(app.reportText.includes('"older"'));
     assert(!app.reportText.includes('"latest"'));
+    assert.deepEqual(app.errors, []);
+});
+
+test('new variation uses the displayed history text and style and cancels draft analysis', async () => {
+    const requests = [];
+    let pendingAnalysis;
+    const app = createApp((url, options) => {
+        if (url === '/api/analyze') {
+            return new Promise(resolve => { pendingAnalysis = { resolve, signal: options.signal }; });
+        }
+        const request = JSON.parse(options.body);
+        requests.push(request);
+        return Promise.resolve({ json: async () => ({
+            ...generation(request.text, request.seed, request.text === 'older' ? 'sadness' : 'joy'),
+            style: request.style
+        }) });
+    });
+    const input = app.getElementById('emotionInput');
+    input.value = 'older';
+    app.getElementById('styleSelect').value = 'nature';
+    app.getElementById('seedInput').value = '123';
+    await app.api.generateImage();
+    input.value = 'latest';
+    app.getElementById('styleSelect').value = 'dreamscape';
+    app.getElementById('seedInput').value = '456';
+    await app.api.generateImage();
+    await app.getElementById('historyThumbnails').children[1].click();
+    app.api.downloadImage();
+    assert.equal(app.downloads[0].href, 'data:image/png;base64,older');
+
+    input.value = 'I am happy about this draft';
+    const draftAnalysis = app.api.analyzeLive(input.value);
+    await app.getElementById('regenerateBtn').click();
+
+    assert.equal(requests[2].text, 'older');
+    assert.equal(requests[2].style, 'nature');
+    assert.equal(requests[2].seed, 1073741823);
+    assert.notEqual(requests[2].seed, requests[0].seed);
+    assert.equal(input.value, 'older');
+    assert.equal(app.getElementById('styleSelect').value, 'nature');
+    assert(pendingAnalysis.signal.aborted);
+    pendingAnalysis.resolve({ json: async () => generation('draft', 1, 'joy') });
+    await draftAnalysis;
+    assert.equal(app.getElementById('liveStatusText').textContent, 'Sadness');
+    assert.deepEqual(app.errors, []);
+});
+
+test('new variation removes draft analysis scheduled during the debounce gap', async () => {
+    const requests = [];
+    const app = createApp(async (_, options) => {
+        const request = JSON.parse(options.body);
+        requests.push(request);
+        return { json: async () => generation(request.text, request.seed, 'sadness') };
+    });
+    const input = app.getElementById('emotionInput');
+    input.value = 'I am sad';
+    await app.api.generateImage();
+    input.value = 'I am happy about a different draft';
+    await input.dispatch('input');
+    assert.equal(app.timers.size, 1);
+    await app.getElementById('regenerateBtn').click();
+    assert.equal(app.timers.size, 0);
+    assert.equal(requests[1].text, 'I am sad');
+    assert.notEqual(requests[1].seed, requests[0].seed);
+    assert.equal(app.getElementById('liveStatusText').textContent, 'Sadness');
     assert.deepEqual(app.errors, []);
 });
 

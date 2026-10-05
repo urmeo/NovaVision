@@ -51,7 +51,7 @@ def test_macro_f1_perfect():
 
 
 def test_macro_f1_only_present_labels():
-    # 'c' never appears in y_true, so it does not drag the average to 0.
+
     assert macro_f1(["a", "b"], ["a", "b"], ["a", "b", "c"]) == 1.0
 
 
@@ -86,7 +86,7 @@ def test_paired_test_detects_difference():
     b = [0, 0, 0, 0, 0, 0, 0, 0]
     res = paired_bootstrap_test(a, b)
     assert res["mean_diff"] == 1.0
-    assert 0 < res["p_value"] < 0.05  # +1 smoothing: never exactly 0
+    assert 0 < res["p_value"] < 0.05
 
 
 def test_paired_test_no_difference():
@@ -97,60 +97,60 @@ def test_paired_test_no_difference():
 
 
 def test_majority_baseline():
-    # 3 of 5 are 'neutral' -> a probe always saying 'neutral' scores 0.6.
+
     assert majority_baseline(["neutral", "neutral", "neutral", "joy", "anger"]) == 0.6
-    # Balanced labels collapse the baseline onto chance.
+
     assert majority_baseline(["a", "b", "c", "d"]) == 0.25
     assert math.isnan(majority_baseline([]))
 
 
 def test_prediction_collapse_flags_degenerate_probe():
-    # Probe that says 'neutral' for 9 of 10 images.
+
     c = prediction_collapse(["neutral"] * 9 + ["joy"])
     assert c["label"] == "neutral"
     assert c["rate"] == 0.9
     assert c["distinct"] == 2
-    # A healthy, varied probe: 2 of each over 6 -> rate 1/3, all 3 labels used.
+
     healthy = prediction_collapse(["a", "b", "c", "a", "b", "c"])
     assert round(healthy["rate"], 4) == 0.3333 and healthy["distinct"] == 3
 
 
 def test_permutation_test_detects_real_signal():
     labels = ["a", "b", "c", "d", "e", "f", "g"] * 4
-    # Perfect recovery -> far above the shuffled-label null, tiny p.
+
     perfect = permutation_test(labels, labels, n=500)
     assert perfect["accuracy"] == 1.0
     assert perfect["p_value"] < 0.01
-    assert perfect["null_mean"] < 0.3  # random targets ~ chance
+    assert perfect["null_mean"] < 0.3
 
 
 def test_permutation_test_flags_circular_chance():
-    # Predictions ignore the target (always 'a') -> recovery == shuffled baseline.
+
     truth = ["a", "b", "c", "d", "e", "f", "g"] * 4
     pred = ["a"] * len(truth)
     res = permutation_test(truth, pred, n=500)
-    assert res["p_value"] > 0.2  # indistinguishable from random targets
+    assert res["p_value"] > 0.2
     assert math.isnan(permutation_test(["a"], ["a"])["p_value"])
 
 
 def test_bootstrap_corr_ci_brackets_and_widens_at_small_n():
-    # Perfect monotonic relation -> CI sits high and is valid.
+
     lo, hi = bootstrap_corr_ci([1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6])
     assert -1.0 <= lo <= hi <= 1.0
     assert hi == 1.0
-    # Too few points to bootstrap a correlation -> nan, not a fake number.
+
     nlo, nhi = bootstrap_corr_ci([1, 2], [2, 1])
     assert math.isnan(nlo) and math.isnan(nhi)
 
 
 def test_rogan_gladen_matches_formula_and_bounds():
-    # A perfect test returns the apparent rate unchanged.
+
     assert rogan_gladen(0.3, 1.0, 1.0) == pytest.approx(0.3)
-    # (apparent + spec - 1) / (sens + spec - 1), clamped to [0, 1].
+
     assert rogan_gladen(0.3, 0.45, 0.9) == pytest.approx(0.2 / 0.35)
-    # Below-chance apparent under a good test clamps at 0, never negative.
+
     assert rogan_gladen(0.05, 0.9, 0.9) == 0.0
-    # A non-discriminating test (sens+spec<=1) is uninvertible.
+
     assert math.isnan(rogan_gladen(0.3, 0.5, 0.5))
 
 
@@ -162,7 +162,7 @@ def test_cohens_h_sign_and_zero():
 
 def test_holm_bonferroni_orders_and_rejects():
     adj = holm_bonferroni({"a": 0.01, "b": 0.04, "c": 0.5}, alpha=0.05)
-    # Smallest p tested against m=3: 0.03 < 0.05 -> reject a; adjusted p monotone.
+
     assert adj["a"]["reject"] is True
     assert adj["a"]["p_adjusted"] <= adj["b"]["p_adjusted"] <= adj["c"]["p_adjusted"]
     assert adj["c"]["reject"] is False

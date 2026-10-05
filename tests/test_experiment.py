@@ -65,18 +65,18 @@ def test_summarize_reports_ci_and_chance():
 
 
 def test_summarize_reports_probe_collapse_and_baseline():
-    # A degenerate probe: predicts the WRONG-but-constant label for every item.
+
     records = _records("raw", correct=False)
     metrics = run._summarize(records, run.CONDITIONS["content"])
-    # majority-class baseline is reported next to accuracy so chance is not mistaken for signal
+
     assert "majority_baseline" in metrics["raw"]
-    # per-tier prediction-collapse diagnostic
+
     assert metrics["raw"]["collapse"]["distinct"] >= 1
-    # global probe-health diagnostic over the conditioning tiers
+
     health = metrics["probe_health"]
     assert health["n_labels"] == len(EMOTIONS)
     assert 0.0 <= health["majority_rate"] <= 1.0
-    # VA correlations carry bootstrap CIs, not bare point estimates
+
     assert len(metrics["raw"]["valence_rho_ci"]) == 2
     assert len(metrics["raw"]["arousal_rho_ci"]) == 2
 
@@ -114,7 +114,7 @@ def test_run_experiment_content_track(tmp_path, monkeypatch):
     assert (tmp_path / "figures" / "accuracy.png").exists()
     for tier in ("raw", "emotion", "affect", "scene"):
         assert tier in result["metrics"]
-    # results.json must be standards-compliant JSON (no bare NaN tokens).
+
     import json
 
     txt = (tmp_path / "results.json").read_text()
@@ -124,13 +124,13 @@ def test_run_experiment_content_track(tmp_path, monkeypatch):
 def test_json_safe_replaces_non_finite():
     out = run.json_safe({"a": float("nan"), "b": [1.0, float("inf")], "c": "x", "d": 2})
     assert out == {"a": None, "b": [1.0, None], "c": "x", "d": 2}
-    __import__("json").dumps(out, allow_nan=False)  # must not raise
+    __import__("json").dumps(out, allow_nan=False)
 
 
 def test_contents_zero_means_zero_not_all(tmp_path, monkeypatch):
     monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
     result = run.run_experiment(backend="null", contents=0, seeds=1, out=str(tmp_path))
-    # 0 subjects -> no conditioning-tier records; only the scene floor remains.
+
     assert "raw" not in result["metrics"] and "scene" in result["metrics"]
 
 
@@ -169,7 +169,7 @@ def test_seed_injective_within_guarded_domain():
 
 
 def test_seed_domain_guard():
-    run._check_seed_domain(run.SEED_MAX_ITEMS, run.SEED_MAX_SEEDS)  # boundary is fine
+    run._check_seed_domain(run.SEED_MAX_ITEMS, run.SEED_MAX_SEEDS)
     for items, seeds in ((run.SEED_MAX_ITEMS + 1, 1), (1, run.SEED_MAX_SEEDS + 1)):
         with pytest.raises(ValueError):
             run._check_seed_domain(items, seeds)
@@ -181,9 +181,9 @@ def test_coverage_override_forces_blend_weight(monkeypatch):
 
     class _Lex:
         def score(self, text):
-            return AffectScore(1.0, 1.0, 0.5)  # coverage 0.5 would normally blend
+            return AffectScore(1.0, 1.0, 0.5)
 
-    a = EmotionAnalyzer(lexicon=_Lex(), coverage_override=0.0)  # prior only
+    a = EmotionAnalyzer(lexicon=_Lex(), coverage_override=0.0)
     a._classifier = lambda text, **kw: [[{"label": "joy", "score": 0.9}]]
     from novavision.taxonomy import prior
 
@@ -203,7 +203,7 @@ def test_resume_reuses_checkpoint_and_cleans_up(tmp_path, monkeypatch):
     monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
     out = tmp_path / "run"
     run.run_experiment(backend="null", contents=1, seeds=1, out=str(out), resume=True)
-    # A completed run removes its checkpoint; results.json supersedes it.
+
     assert not (out / "records.jsonl").exists()
     assert (out / "results.json").exists()
 
@@ -294,7 +294,6 @@ def test_save_images_provides_verified_originals_for_hosted_human_study(tmp_path
     from novavision.eval import human_study
     from novavision.generation.base import NullBackend
 
-    # Exercise the hosted workflow without an API token or external call.
     monkeypatch.setattr(run, "get_backend", lambda *a, **kw: NullBackend())
     monkeypatch.setattr(run, "CLIPProbe", FakeProbe)
     measured = []
@@ -374,7 +373,7 @@ def test_resume_preserves_and_verifies_saved_originals(tmp_path, monkeypatch, pr
         assert not (tmp_path / "results.json").exists()
     else:
         run.run_experiment(**kwargs)
-        assert saved.read_bytes() == original  # cached original was retained, not regenerated
+        assert saved.read_bytes() == original
         payload = json.loads((tmp_path / "results.json").read_text())
         assert payload["records"][0] == cached
 

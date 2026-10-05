@@ -1,12 +1,4 @@
-"""Download the Warriner et al. (2013) norms as a NovaVision lexicon.
-
-The norms ship as the paper's Springer supplementary zip (the old
-``crr.ugent.be`` CSV path is dead). The download is fetched over HTTPS and its
-SHA-256 is checked against a pinned digest, so a tampered or silently re-issued
-file fails loudly instead of corrupting every affect score derived from it.
-Override ``--url``/``--sha256`` for a mirror, or ``--no-verify`` to skip the
-check (not recommended for research use).
-"""
+"Download and verify the Warriner (2013) affect norms."
 
 from __future__ import annotations
 
@@ -19,8 +11,6 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-# Warriner et al. (2013), "Norms of valence, arousal, and dominance for 13,915
-# English lemmas", Behavior Research Methods, supplementary material (ESM 1).
 WARRINER_URL = (
     "https://static-content.springer.com/esm/"
     "art%3A10.3758%2Fs13428-012-0314-x/MediaObjects/13428_2012_314_MOESM1_ESM.zip"
@@ -30,12 +20,7 @@ CSV_MEMBER = "BRM-emot-submit.csv"
 
 
 class _HTTPSOnlyRedirect(urllib.request.HTTPRedirectHandler):
-    """Reject any redirect that would downgrade the transport off HTTPS.
-
-    urllib follows http/ftp redirect targets by default, so validating only the
-    initial URL leaves a MITM free to bounce the fetch to plaintext. Every hop
-    must stay HTTPS.
-    """
+    "Reject any redirect that would downgrade the transport off HTTPS."
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         if not newurl.lower().startswith("https://"):
@@ -44,7 +29,7 @@ class _HTTPSOnlyRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def fetch_https(url: str) -> bytes:
-    """GET ``url`` over HTTPS, refusing any downgrade on the initial or redirected hop."""
+    "Fetch over HTTPS; reject transport downgrades."
     if not url.lower().startswith("https://"):
         raise ValueError("refusing a non-HTTPS URL; the norms back research results")
     opener = urllib.request.build_opener(_HTTPSOnlyRedirect)
@@ -82,7 +67,7 @@ def convert(raw: str) -> list[tuple[str, float, float]]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fetch the Warriner affect norms")
-    parser.add_argument("--out", default="data/lexicon/warriner.tsv")
+    parser.add_argument("--out", default="outputs/generated/warriner.tsv")
     parser.add_argument("--url", default=WARRINER_URL, help="norms zip URL (HTTPS)")
     parser.add_argument("--member", default=CSV_MEMBER, help="CSV filename inside the zip")
     parser.add_argument(

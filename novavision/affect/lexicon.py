@@ -7,13 +7,11 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from novavision.data import LEXICON_PATH
+
 _TOKEN = re.compile(r"[a-z][a-z']+")
 
-# Function words are never scored: with a research lexicon (e.g. Warriner) they
-# match ("does" even stems to "doe", the deer) and dilute or distort the score.
-# Kept out of the coverage denominator too, so coverage means "fraction of
-# content words matched". Negators are excluded the same way but drive the
-# negation flip below.
+
 STOPWORDS = frozenset(
     """
 a an the and or but if because as of at by for with about into onto over under
@@ -32,46 +30,39 @@ NEGATORS = frozenset(
     "weren't won't wouldn't couldn't shouldn't ain't without".split()
 )
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_DEFAULT_PATH = _REPO_ROOT / "data" / "lexicon" / "affect_lexicon.tsv"
+_DEFAULT_PATH = LEXICON_PATH
 
 
 @dataclass(frozen=True)
 class AffectScore:
     valence: float
     arousal: float
-    coverage: float  # fraction of content words matched (stopwords excluded)
+    coverage: float
 
 
 def _variants(token: str):
-    """Candidate lemmas in priority order.
-
-    Only reliable inflections are stripped, with spelling restored (caring ->
-    care, running -> run). Derivational suffixes that change meaning (-est,
-    -er, -ness, -less) are deliberately left alone: missing a word is harmless,
-    but mapping `hopeless` to `hope` or `honest` to `hon` corrupts the score.
-    """
+    "Candidate lemmas in priority order."
     yield token
     if token.endswith(("ies", "ied")) and len(token) > 4:
-        yield token[:-3] + "y"  # cities -> city, tried -> try
-        yield token[:-1]  # movies -> movie, lies -> lie
+        yield token[:-3] + "y"
+        yield token[:-1]
     elif token.endswith("ing") and len(token) > 5:
         stem = token[:-3]
-        yield stem + "e"  # caring -> care
-        yield stem  # playing -> play
+        yield stem + "e"
+        yield stem
         if len(stem) > 2 and stem[-1] == stem[-2]:
-            yield stem[:-1]  # running -> run
+            yield stem[:-1]
     elif token.endswith("ed") and len(token) > 4:
         stem = token[:-2]
-        yield stem + "e"  # closed -> close
-        yield stem  # played -> play
+        yield stem + "e"
+        yield stem
         if len(stem) > 2 and stem[-1] == stem[-2]:
-            yield stem[:-1]  # stopped -> stop
+            yield stem[:-1]
     elif token.endswith("es") and len(token) > 4:
-        yield token[:-2]  # wishes -> wish
-        yield token[:-1]  # likes -> like
+        yield token[:-2]
+        yield token[:-1]
     elif token.endswith("s") and not token.endswith("ss") and len(token) > 3:
-        yield token[:-1]  # dogs -> dog
+        yield token[:-1]
 
 
 class AffectLexicon:
@@ -80,7 +71,10 @@ class AffectLexicon:
     def __init__(self, entries: dict[str, tuple[float, float]]):
         if not entries:
             raise ValueError("Lexicon is empty")
-        self._entries = entries
+        for word, (valence, arousal) in entries.items():
+            if not (-1 <= valence <= 1 and 0 <= arousal <= 1):
+                raise ValueError(f"Invalid affect for {word!r}: valence [-1,1], arousal [0,1]")
+        self._entries = dict(entries)
 
     def __len__(self) -> int:
         return len(self._entries)
@@ -88,14 +82,13 @@ class AffectLexicon:
     def lookup(self, word: str) -> tuple[float, float] | None:
         for v in _variants(word.lower()):
             if v in STOPWORDS or v in NEGATORS:
-                continue  # "wills" must not stem into a scored "will"
+                continue
             if v in self._entries:
                 return self._entries[v]
         return None
 
     def score(self, text: str) -> AffectScore:
-        # Smart quotes (U+2019) would otherwise split "can’t" into can|t and
-        # silently defeat the negation flip on text typed from phones.
+
         tokens = _TOKEN.findall(text.lower().replace("’", "'"))
         matched: list[tuple[float, float]] = []
         n_content = 0
@@ -107,8 +100,7 @@ class AffectLexicon:
             if hit is None:
                 continue
             v, a = hit
-            # Two-token lookback negation: "not happy" must not score as happy.
-            # Scope and degree ("hardly", "barely") are deliberately unmodeled.
+
             if any(t in NEGATORS for t in tokens[max(0, i - 2) : i]):
                 v = -v
             matched.append((v, a))
@@ -129,8 +121,7 @@ class AffectLexicon:
                 if not line or line.startswith("#"):
                     continue
                 parts = [p.strip() for p in line.split("\t")]
-                # Only the exact header row is skipped: a lexicon ENTRY for the
-                # word "word" (present in research norms) must not be dropped.
+
                 if [p.lower() for p in parts[:3]] == ["word", "valence", "arousal"]:
                     continue
                 if len(parts) < 3:

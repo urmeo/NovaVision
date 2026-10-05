@@ -1,10 +1,4 @@
-"""Build AffectBench: a balanced Ekman benchmark from GoEmotions.
-
-Sampling is from the GoEmotions *test* split by default (so a benchmark item
-never overlaps a model's training split), deduplicated, and interleaved across
-classes so any prefix stays balanced. A manifest records the split, dataset
-revision, realized per-class counts, and a content hash for reproducibility.
-"""
+"Build AffectBench: a balanced Ekman benchmark from GoEmotions."
 
 from __future__ import annotations
 
@@ -18,7 +12,7 @@ from pathlib import Path
 from novavision.taxonomy import EMOTIONS, to_ekman
 
 DATASET = "google-research-datasets/go_emotions"
-# Pin the dataset revision so a rebuild reconstructs the same pool.
+
 DEFAULT_REVISION = "add492243ff905527e67aeb8b80c082af02207c3"
 
 
@@ -30,22 +24,14 @@ def _normalize(text: str) -> str:
 def _drop_overlap(
     examples: list[tuple[str, str]], exclude_norms: set[str]
 ) -> list[tuple[str, str]]:
-    """Remove examples whose normalised text appears in ``exclude_norms``.
-
-    Used to subtract the train split from the evaluation pool so a benchmark item
-    can never be one a model also saw at training time (cross-split leakage).
-    """
+    "Remove examples whose normalised text appears in ``exclude_norms``."
     if not exclude_norms:
         return examples
     return [(t, e) for t, e in examples if _normalize(t) not in exclude_norms]
 
 
 def _curate(examples: list[tuple[str, str]], n_per_class: int, seed: int) -> dict[str, list[str]]:
-    """Single-label, deduplicated, balanced per-class sampling.
-
-    ``examples`` is (text, ekman_label). Texts are normalised for exact-dup
-    removal, sorted for determinism, then sampled to ``n_per_class``.
-    """
+    "Single-label, deduplicated, balanced per-class sampling."
     buckets: dict[str, list[str]] = defaultdict(list)
     seen: set[str] = set()
     for text, emotion in examples:
@@ -77,15 +63,13 @@ def _interleave(sampled: dict[str, list[str]]) -> list[tuple[str, str]]:
 
 def build(
     n_per_class: int = 100,
-    out_path: str | Path = "data/affectbench.csv",
+    out_path: str | Path = "outputs/generated/affectbench.csv",
     seed: int = 0,
     split: str = "test",
     revision: str = DEFAULT_REVISION,
     drop_train_overlap: bool = True,
 ) -> Path:
     if n_per_class < 1:
-        # A silent empty (n=0) or tail-sliced (negative) benchmark would back a
-        # wrong result; fail loudly, like load_benchmark.
         raise ValueError(f"n_per_class must be a positive integer, got {n_per_class}")
 
     from datasets import load_dataset
@@ -98,8 +82,6 @@ def build(
         if len(row["labels"]) == 1
     ]
 
-    # Cross-split hygiene: drop any eval item that also appears in the train split,
-    # so no benchmark sentence is one a model could have been trained on.
     before = len(examples)
     if drop_train_overlap and split != "train":
         train = load_dataset(DATASET, "simplified", split="train", revision=revision)
@@ -131,7 +113,6 @@ def build(
         "total": len(rows),
         "underfilled": short,
         "balanced": not short,
-        # The count alone cannot show whether the dedup RAN (0 also means disabled).
         "drop_train_overlap": bool(drop_train_overlap and split != "train"),
         "dropped_train_overlap": dropped_overlap,
         "sha256": sha256(out_path),
@@ -145,7 +126,7 @@ def build(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build the AffectBench benchmark")
     parser.add_argument("--n", type=int, default=100, help="examples per emotion")
-    parser.add_argument("--out", default="data/affectbench.csv")
+    parser.add_argument("--out", default="outputs/generated/affectbench.csv")
     parser.add_argument("--split", default="test")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(

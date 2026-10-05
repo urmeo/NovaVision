@@ -1,14 +1,4 @@
-"""Affect-recovery benchmark across conditioning tiers, with floors and stats.
-
-Two tracks share one pipeline. The **content** track renders emotion-neutral
-subjects under each intended emotion, so recovery is attributable to the
-conditioning, not the scene; its floors are ``raw`` (no emotion → chance) and
-``scene`` (fixed template, no content). The **text** track conditions on
-AffectBench sentences, grounds valence/arousal in the text, and uses a
-``shuffled`` floor (condition on a wrong emotion) since the sentence already
-carries affect. Every tier runs over several seeds; tier differences are
-reported with bootstrap CIs and a paired significance test.
-"""
+"Affect-recovery benchmark across conditioning tiers, with floors and stats."
 
 from __future__ import annotations
 
@@ -21,7 +11,13 @@ from pathlib import Path
 
 from novavision.affect.analyzer import EmotionAnalyzer
 from novavision.config import CLIP_MODEL, CLIP_REVISION, default_revision
-from novavision.data import CONTENT_BANK_PATH, load_benchmark, load_content_bank, sha256
+from novavision.data import (
+    CONTENT_BANK_PATH,
+    LEXICON_PATH,
+    load_benchmark,
+    load_content_bank,
+    sha256,
+)
 from novavision.determinism import set_determinism
 from novavision.eval import figures
 from novavision.eval.metrics import (
@@ -48,9 +44,8 @@ CONDITIONS = {
     "content": (*TIERS, "scene"),
     "text": (*TIERS, "shuffled"),
 }
-# The full ordered vocabulary, for consumers that render every condition
-# (report tables, benchmark submissions). Owned here so a new tier cannot
-# silently vanish from downstream artifacts.
+
+
 ALL_CONDITIONS = (*TIERS, "scene", "shuffled")
 CONTRASTS = (
     ("naive", "raw"),
@@ -61,20 +56,12 @@ CONTRASTS = (
 )
 
 
-# _seed is injective only while ei*13 + sk < 97 and ci*97 + 90 < 100_000, i.e.
-# items <= 1030 and seeds <= 13; beyond that, distinct (item, emotion, seed)
-# triples silently share generator noise. Enforced before every run.
 SEED_MAX_ITEMS = 1030
 SEED_MAX_SEEDS = 13
 
 
 def _seed(base: int, ci: int, ei: int, sk: int) -> int:
-    """Shared per (content, emotion, seed) so tiers are paired on noise.
-
-    The formula is frozen: committed records reproduce their images from it
-    (see ``_record``), so collisions are excluded by bounding the domain
-    (``_check_seed_domain``) rather than by changing the mixing.
-    """
+    "Shared per (content, emotion, seed) so tiers are paired on noise."
     return base + ((ci * 97 + ei * 13 + sk) % 100_000)
 
 
@@ -95,12 +82,7 @@ def _shuffle_emotion(gold: str, seed: int) -> str:
 
 
 class _Checkpoint:
-    """Stream records to JSONL so a long run resumes instead of restarting.
-
-    Each image's record is keyed by (tier, intended, index, seed); an interrupted
-    run reloads the completed records and skips their regeneration. A no-op when
-    ``path`` is None, so the default (non-resumable) path is unchanged.
-    """
+    "Stream records to JSONL so a long run resumes instead of restarting."
 
     def __init__(self, path: Path | None, manifest: dict, *, images_dir: Path | None = None):
         self.path = path
@@ -210,7 +192,7 @@ def run_experiment(
     seeds: int = 3,
     base_seed: int = 0,
     style: str = "artistic",
-    out: str = "results",
+    out: str = "outputs/generated/run",
     width: int = 512,
     height: int = 512,
     device: str | None = None,
@@ -251,10 +233,7 @@ def run_experiment(
         n_items = len(bank)
 
     _check_seed_domain(n_items, seeds)
-    lexicon_path = Path(
-        os.getenv("NOVAVISION_LEXICON")
-        or CONTENT_BANK_PATH.parent / "lexicon" / "affect_lexicon.tsv"
-    )
+    lexicon_path = Path(os.getenv("NOVAVISION_LEXICON") or LEXICON_PATH)
     manifest = build_manifest(
         backend=backend,
         track=track,
@@ -286,8 +265,7 @@ def run_experiment(
     manifest["packages"].update(
         {pkg: package_version(pkg) for pkg in ("accelerate", "huggingface-hub", "safetensors")}
     )
-    # Record the revision actually configured on the generator, not a default pin
-    # for a backend (such as the hosted API) that does not use it.
+
     manifest["model_revisions"]["diffusion"] = getattr(gen, "revision", None)
     ckpt = _Checkpoint(
         out_dir / "records.jsonl" if resume else None,
@@ -308,7 +286,7 @@ def run_experiment(
     contrasts = _contrasts(records)
     _write(out, records, metrics, contrasts, manifest, conditions)
     if ckpt.path and ckpt.path.exists():
-        ckpt.path.unlink()  # run completed; results.json supersedes the checkpoint
+        ckpt.path.unlink()
     return {"metrics": metrics, "contrasts": contrasts}
 
 
@@ -350,7 +328,6 @@ def _content_records(bank, gen, probe, style, seeds, base_seed, width, height, c
                         )
                     )
 
-    # scene floor
     for ei, emotion in enumerate(EMOTIONS):
         pv, pa = prior(emotion)
         for sk in range(seeds):
@@ -422,7 +399,6 @@ def _text_records(rows, gen, probe, analyzer, style, seeds, base_seed, width, he
                     )
                 )
 
-            # shuffled floor: condition on a wrong emotion, score against it
             wrong = _shuffle_emotion(gold, seed)
             done = ckpt.cached("shuffled", wrong, ri, sk)
             if done is not None:
@@ -480,7 +456,7 @@ def _record(
         "probe": probe,
         "tier": tier,
         "content": content,
-        "index": index,  # content/row position; the seed salt, so any image can be reproduced
+        "index": index,
         "intended": emotion,
         "classified": classified,
         "seed": sk,
@@ -508,7 +484,7 @@ def _summarize(records, conditions) -> dict:
         lo, hi = bootstrap_ci(correct)
         iv, rv = _col(sub, "intended_valence"), _col(sub, "recovered_valence")
         ia, ra = _col(sub, "intended_arousal"), _col(sub, "recovered_arousal")
-        # drop nan and null (sanitized nan in a re-read results.json)
+
         clip = [r["clip_t"] for r in sub if _finite(r["clip_t"])]
         vlo, vhi = bootstrap_corr_ci(iv, rv)
         alo, ahi = bootstrap_corr_ci(ia, ra)
@@ -543,12 +519,7 @@ def _round_collapse(c: dict) -> dict:
 
 
 def _probe_health(records) -> dict:
-    """Probe-degeneracy diagnostic over the conditioning tiers (floors excluded).
-
-    If the probe collapses onto one label, recovery at chance is the trivial
-    consequence of that collapse, not evidence the floors discriminate, so this
-    is reported next to every headline number.
-    """
+    "Probe-degeneracy diagnostic over the conditioning tiers (floors excluded)."
     preds = [r["predicted"] for r in records if r["tier"] in TIERS]
     c = prediction_collapse(preds)
     return {
@@ -573,7 +544,7 @@ def _classification_accuracy(records) -> float | None:
 
 def _contrasts(records) -> dict:
     """Paired bootstrap on per-item recovery correctness between tiers."""
-    # shared seed pairs tiers
+
     by_key: dict[tuple, dict[str, int]] = {}
     for r in records:
         key = (r["content"], r["intended"], r["seed"])
@@ -630,11 +601,7 @@ def _write(out, records, metrics, contrasts, manifest, conditions) -> None:
 
 
 def _write_figures(out_dir, records, metrics, conditions, *, figures_dir=None) -> None:
-    """Render the accuracy, per-tier confusion, and VA-scatter figures.
-
-    Pure function of the records and summary, so it is reused to refresh figures
-    from an existing run without regenerating any images (see scripts/resummarize).
-    """
+    "Render the accuracy, per-tier confusion, and VA-scatter figures."
     fig_dir = Path(figures_dir) if figures_dir is not None else Path(out_dir) / "figures"
     fig_dir.mkdir(parents=True, exist_ok=True)
     acc = {t: metrics[t]["accuracy"] for t in conditions if t in metrics}
@@ -673,7 +640,7 @@ def main() -> None:
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--device", default=None, help="cpu, cuda, or mps; auto if unset")
-    parser.add_argument("--out", default="results")
+    parser.add_argument("--out", default="outputs/generated/run")
     parser.add_argument(
         "--force-coverage",
         type=float,

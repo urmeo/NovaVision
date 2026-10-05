@@ -18,8 +18,7 @@ def _rho(m: dict, key: str) -> str:
     """Correlation with its bootstrap CI when available, never a bare 3-decimal."""
     rho = m.get(key)
     ci = m.get(f"{key}_ci")
-    # A degenerate correlation writes NaN, which becomes null after a results.json
-    # round-trip; render the CI only when the lower bound is a real number.
+
     if ci:
         lo = ci[0]
         if lo is not None and not (isinstance(lo, float) and lo != lo):
@@ -32,15 +31,13 @@ def _shuffled_note(metrics: dict) -> str:
     parts = []
     for cond in ("naive", "emotion", "affect"):
         sc = (metrics.get(cond) or {}).get("shuffled_control") or {}
-        # An older/edited results.json may carry the control dict without a
-        # p-value; skip that tier rather than KeyError out of report generation.
+
         p = sc.get("p_value")
         if p is not None:
             parts.append(f"{cond} p={p:.2f}")
     if not parts:
         return ""
-    # The null mean is shared across tiers; take it from whichever tier actually
-    # carries it, so a partial dict on one tier does not drop the annotation.
+
     null_mean = next(
         (
             nm
@@ -53,8 +50,8 @@ def _shuffled_note(metrics: dict) -> str:
     base = f" (null mean {null_mean:.3f})" if null_mean is not None else ""
     return (
         "**Shuffled-label control:** one-sided permutation test of recovery vs randomly "
-        f"reassigned target emotions{base}: {', '.join(parts)}. A p near 1 means recovery is "
-        "indistinguishable from the circularity baseline, i.e. not above chance label agreement."
+        f"reassigned target emotions{base}: {', '.join(parts)}. Small p-values indicate "
+        "higher recovery than permuted labels."
     )
 
 
@@ -67,7 +64,7 @@ def metrics_table(metrics: dict) -> str:
         if not m:
             continue
         lo, hi = m["accuracy_ci"]
-        # A degenerate (n<2) condition writes null CI bounds; _fmt renders those.
+
         acc = f"{_fmt(m['accuracy'])} [{_fmt(lo)}, {_fmt(hi)}]"
         lines.append(
             f"| {cond} | {acc} | {_fmt(m['macro_f1'])} | {_rho(m, 'valence_rho')} | "
@@ -144,10 +141,9 @@ def _holm_note(metrics: dict) -> str:
     adjusted = holm_bonferroni(pvals)
     parts = [f"{cond} p_adj={adjusted[cond]['p_adjusted']:.2f}" for cond in pvals]
     survivors = [cond for cond in pvals if adjusted[cond]["reject"]]
-    # The conclusion is derived from the adjusted decisions, never hardcoded, so a
-    # future run where a tier clears the correction reports that truthfully.
+
     verdict = (
-        "no tier survives at 0.05, so the null holds under multiple-comparison control"
+        "no tier is significant at 0.05 after multiple-comparison control"
         if not survivors
         else f"the null is rejected for {', '.join(survivors)} under multiple-comparison control"
     )
@@ -177,13 +173,15 @@ def render(results: dict) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render results as markdown tables")
-    parser.add_argument("--results", default="results/paper/results.json")
-    parser.add_argument("--out", default="results/tables.md")
+    parser.add_argument("--results", default="outputs/results/results.json")
+    parser.add_argument("--out", default="outputs/generated/tables.md")
     args = parser.parse_args()
 
     results = json.loads(Path(args.results).read_text())
     table = render(results)
-    Path(args.out).write_text(table)
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(table)
     print(table)
 
 

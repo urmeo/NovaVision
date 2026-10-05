@@ -7,11 +7,7 @@ import random
 
 
 def set_determinism(seed: int = 0) -> None:
-    """Seed python, numpy, and torch, and ask torch for deterministic kernels.
-
-    Bit-exactness still depends on the device and dtype, so the run manifest
-    records both; this pins everything that is in our control.
-    """
+    "Seed python, numpy, and torch, and ask torch for deterministic kernels."
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
 

@@ -8,25 +8,20 @@ from pathlib import Path
 
 from novavision.taxonomy import EMOTIONS
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-CONTENT_BANK_PATH = _REPO_ROOT / "data" / "content_bank.txt"
+CONTENT_BANK_PATH = Path(__file__).with_name("content_bank.txt")
+LEXICON_PATH = Path(__file__).with_name("affect_lexicon.tsv")
 
 _EMOTIONS = set(EMOTIONS)
 
 
 def load_benchmark(path: str | Path) -> list[dict[str, str]]:
-    """Load validated (text, emotion) rows from a benchmark CSV.
-
-    The path is required: there is no default, so a run can never silently
-    fall back to a sample. Every row is checked for a non-empty text and a
-    known emotion, so a malformed benchmark fails loudly here, not mid-run.
-    """
+    "Load validated (text, emotion) rows from a benchmark CSV."
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Benchmark not found: {path}")
 
     rows: list[dict[str, str]] = []
-    with open(path, encoding="utf-8-sig") as fh:  # tolerate an Excel/Sheets BOM
+    with open(path, encoding="utf-8-sig") as fh:
         reader = csv.DictReader(fh)
         if reader.fieldnames is None or {"text", "emotion"} - set(reader.fieldnames):
             raise ValueError(f"{path} must have 'text' and 'emotion' columns")
@@ -44,12 +39,7 @@ def load_benchmark(path: str | Path) -> list[dict[str, str]]:
 
 
 def load_content_bank(path: str | Path | None = None) -> list[str]:
-    """Load neutral, emotion-independent content prompts.
-
-    These subjects carry no affect on their own, so the same content can be
-    rendered under every intended emotion. That decoupling is what lets the
-    benchmark attribute recovered emotion to the conditioning, not the scene.
-    """
+    "Load neutral, emotion-independent content prompts."
     path = Path(path or CONTENT_BANK_PATH)
     items: list[str] = []
     seen: set[str] = set()
@@ -60,7 +50,6 @@ def load_content_bank(path: str | Path | None = None) -> list[str]:
                 continue
             key = " ".join(line.lower().split())
             if key in seen:
-                # A duplicate silently double-weights that scene in every tier.
                 raise ValueError(f"{path}:{n} duplicate subject: '{line}'")
             seen.add(key)
             items.append(line)

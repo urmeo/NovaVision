@@ -40,9 +40,9 @@ def test_build_pipeline_returns_lazy_null_pipeline(monkeypatch):
     monkeypatch.setenv("NOVA_BACKEND", "null")
     get_settings.cache_clear()
     nv = build_pipeline()
-    get_settings.cache_clear()  # don't leak cached settings to other tests
+    get_settings.cache_clear()
     assert nv.backend.name == "null"
-    assert nv.analyzer is not None  # constructed, no model loaded yet
+    assert nv.analyzer is not None
 
 
 @pytest.mark.parametrize("backend", ["diffusers", "DIFFUSERS", "hf-api", "HF-API"])
@@ -70,7 +70,7 @@ def test_public_api_is_importable():
     assert novavision.__version__ == "1.0.0"
     assert callable(novavision.build_pipeline)
     assert novavision.NovaVision is not None and novavision.Result is not None
-    # run_experiment is exposed lazily (PEP 562) and resolves on access.
+
     assert callable(novavision.run_experiment)
 
 

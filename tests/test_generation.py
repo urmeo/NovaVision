@@ -15,8 +15,7 @@ def test_factory():
 
 
 def test_hf_api_ignores_device_kwarg(monkeypatch):
-    # get_backend forwards `device` to every backend uniformly; the hosted API has
-    # no local device and must absorb it, not crash (the --backend hf-api --device combo).
+
     monkeypatch.setenv("HF_TOKEN", "dummy")
     b = get_backend("hf-api", model_id="stabilityai/sd-turbo", device="cpu")
     assert b.name == "hf-api"
@@ -37,7 +36,7 @@ def test_seed_is_deterministic():
 
 
 def test_negative_seed_does_not_crash():
-    # default backend + negative seed previously raised "expected non-negative integer"
+
     img = NullBackend().generate("hi", width=8, height=8, seed=-1)
     assert img.size == (8, 8)
 
@@ -59,7 +58,7 @@ def test_hf_api_forwards_negative_prompt_for_non_turbo(monkeypatch):
     b._client = FakeClient()
     b.generate("p", width=8, height=8, seed=3, negative_prompt="blurry")
     assert sent["negative_prompt"] == "blurry" and sent["seed"] == 3
-    # turbo model: negative prompt is a no-op, must be dropped
+
     bt = HFApiBackend(model_id="stabilityai/sd-turbo")
     bt._client = FakeClient()
     bt.generate("p", width=8, height=8, seed=3, negative_prompt="blurry")
@@ -69,7 +68,6 @@ def test_hf_api_forwards_negative_prompt_for_non_turbo(monkeypatch):
 def test_diffusers_dtype_known_before_first_generation():
     from novavision.generation.diffusers_backend import DiffusersBackend
 
-    # The manifest reads backend.dtype; it must exist without loading the pipe.
     assert DiffusersBackend(device="cpu").dtype == "float32"
     assert DiffusersBackend(device="cuda").dtype == "float16"
 
