@@ -16,7 +16,12 @@ def _conditions_for(records: list[dict]) -> tuple[str, ...]:
     return run_mod.CONDITIONS[track]
 
 
-def resummarize(results_path: str | Path, *, figures_dir: str | Path | None = None) -> dict:
+def resummarize(
+    results_path: str | Path,
+    *,
+    figures_dir: str | Path | None = None,
+    out: str | Path | None = None,
+) -> dict:
     path = Path(results_path)
     payload = json.loads(path.read_text())
     records = payload["records"]
@@ -29,9 +34,11 @@ def resummarize(results_path: str | Path, *, figures_dir: str | Path | None = No
         "note": "metrics/diagnostics recomputed from the original records; no images regenerated",
         "packages": {pkg: package_version(pkg) for pkg in ("numpy",)},
     }
-    run_mod.dump_results(payload, path)
+    destination = Path(out) if out is not None else path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    run_mod.dump_results(payload, destination)
     run_mod._write_figures(
-        path.parent, records, payload["metrics"], conditions, figures_dir=figures_dir
+        destination.parent, records, payload["metrics"], conditions, figures_dir=figures_dir
     )
     return payload
 
@@ -39,15 +46,10 @@ def resummarize(results_path: str | Path, *, figures_dir: str | Path | None = No
 def main() -> None:
     parser = argparse.ArgumentParser(description="Recompute summary from existing records")
     parser.add_argument("--results", default="outputs/results/results.json")
+    parser.add_argument("--out", default="outputs/generated/reanalysis/results.json")
     parser.add_argument("--figures", default=None, help="override the figure directory")
     args = parser.parse_args()
-    figures_dir = args.figures
-    if (
-        figures_dir is None
-        and Path(args.results).resolve() == Path("outputs/results/results.json").resolve()
-    ):
-        figures_dir = "outputs/figures"
-    payload = resummarize(args.results, figures_dir=figures_dir)
+    payload = resummarize(args.results, figures_dir=args.figures, out=args.out)
     health = payload["metrics"].get("probe_health", {})
     print(json.dumps({"reanalyzed": args.results, "probe_health": health}, indent=2))
 

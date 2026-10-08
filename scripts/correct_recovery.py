@@ -114,14 +114,16 @@ def main() -> None:
     parser.add_argument("--results", default="outputs/results/results.json")
     parser.add_argument("--probe-validation", default="outputs/results/probe_validation_scene.json")
     parser.add_argument("--tier", default="emotion")
-    parser.add_argument("--out", default="outputs/results/corrected_recovery.json")
+    parser.add_argument("--out", default="outputs/generated/corrected_recovery.json")
     args = parser.parse_args()
 
     results = json.loads(Path(args.results).read_text())
     validation = json.loads(Path(args.probe_validation).read_text())
     report = correct(results, validation, args.tier)
 
-    Path(args.out).write_text(json.dumps(report, indent=2, allow_nan=False))
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, indent=2, allow_nan=False))
     print(json.dumps({k: v for k, v in report.items() if k != "per_class"}, indent=2))
 
 

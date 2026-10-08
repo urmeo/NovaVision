@@ -29,6 +29,25 @@ def test_perfect_probe_leaves_recovery_unchanged():
     assert out["corrected_recovery"] == out["apparent_recovery"]
 
 
+def test_correction_cli_defaults_preserve_published_snapshot(tmp_path, monkeypatch):
+    import json
+
+    monkeypatch.chdir(tmp_path)
+    published = tmp_path / "outputs" / "results"
+    published.mkdir(parents=True)
+    (published / "results.json").write_text(json.dumps({"records": _records(0.5)}))
+    (published / "probe_validation_scene.json").write_text(
+        json.dumps({"confusion": _identity_confusion()})
+    )
+    snapshot = published / "corrected_recovery.json"
+    snapshot.write_bytes(b"published correction")
+    monkeypatch.setattr("sys.argv", ["correct_recovery.py"])
+    cr.main()
+    assert snapshot.read_bytes() == b"published correction"
+    output = tmp_path / "outputs" / "generated" / "corrected_recovery.json"
+    assert json.loads(output.read_text())["corrected_recovery"] == 0.5
+
+
 def test_sensitivity_specificity_from_confusion():
     ss = cr._sensitivity_specificity(_identity_confusion())
     for e in EMOTIONS:

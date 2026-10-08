@@ -531,12 +531,13 @@ def _probe_health(records) -> dict:
 
 
 def _classification_accuracy(records) -> float | None:
-    """Upstream classifier vs gold, once per text (text track only)."""
+    """Upstream classifier vs gold, once per input (text track only)."""
     seen, true, pred = set(), [], []
     for r in records:
-        if r.get("classified") is None or r["content"] in seen:
+        item = r.get("index", r["content"])
+        if r.get("classified") is None or item in seen:
             continue
-        seen.add(r["content"])
+        seen.add(item)
         true.append(r["intended"])
         pred.append(r["classified"])
     return round(accuracy(true, pred), 4) if true else None
@@ -547,7 +548,7 @@ def _contrasts(records) -> dict:
 
     by_key: dict[tuple, dict[str, int]] = {}
     for r in records:
-        key = (r["content"], r["intended"], r["seed"])
+        key = (r.get("index", r["content"]), r["intended"], r["seed"])
         by_key.setdefault(key, {})[r["tier"]] = int(r["intended"] == r["predicted"])
 
     out = {}

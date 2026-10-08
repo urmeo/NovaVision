@@ -88,6 +88,28 @@ def test_contrasts_detect_lift():
     assert contrasts["emotion_vs_raw"]["p_value"] < 0.05
 
 
+def test_indexed_repeated_text_keeps_distinct_paired_observations():
+    records = []
+    for index, correct in enumerate((False, True)):
+        for tier in ("raw", "emotion"):
+            records.append(
+                {
+                    "tier": tier,
+                    "content": "repeated text",
+                    "index": index,
+                    "intended": "joy",
+                    "seed": 0,
+                    "predicted": "joy" if tier == "emotion" and correct else "sadness",
+                    "classified": "joy" if correct else "sadness",
+                }
+            )
+    contrast = run._contrasts(records)["emotion_vs_raw"]
+    assert contrast["mean_diff"] == 0.5
+    assert contrast["ci_low"] == 0.0
+    assert contrast["ci_high"] == 1.0
+    assert run._classification_accuracy(records) == 0.5
+
+
 def test_shuffle_emotion_avoids_gold():
     for e in EMOTIONS:
         assert run._shuffle_emotion(e, 3) != e
