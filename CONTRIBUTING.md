@@ -39,7 +39,7 @@ Recompute published summaries; original records stay intact:
 
 ```bash
 python scripts/resummarize.py
-python scripts/report.py
+python scripts/report.py --results outputs/generated/reanalysis/results.json
 python scripts/correct_recovery.py
 python scripts/power_analysis.py
 python scripts/compare_probes.py outputs/results/probe_validation_scene.json outputs/results/probe_validation_scene_l14.json

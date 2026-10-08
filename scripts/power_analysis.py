@@ -100,7 +100,7 @@ def main() -> None:
         help="probe validation JSON; its accuracy is the recovery ceiling",
     )
     parser.add_argument("--planned-n", type=int, default=420, help="per-tier n of the planned run")
-    parser.add_argument("--out", default="outputs/results/power_analysis.json")
+    parser.add_argument("--out", default="outputs/generated/power_analysis.json")
     args = parser.parse_args()
 
     ceiling = json.loads(Path(args.probe_validation).read_text())["accuracy"]

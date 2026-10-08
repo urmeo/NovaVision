@@ -57,3 +57,24 @@ def test_resummarize_writes_figures_to_explicit_directory(tmp_path):
     resummarize.resummarize(path, figures_dir=destination)
     assert (destination / "accuracy.png").exists()
     assert not (tmp_path / "figures").exists()
+
+
+def test_resummarize_cli_keeps_published_records_and_figures(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    published = tmp_path / "outputs" / "results"
+    published.mkdir(parents=True)
+    source = _run_with_records(published)
+    before = source.read_bytes()
+    figure = tmp_path / "outputs" / "figures" / "accuracy.png"
+    figure.parent.mkdir()
+    figure.write_bytes(b"published figure")
+    monkeypatch.setattr("sys.argv", ["resummarize.py"])
+    resummarize.main()
+    destination = tmp_path / "outputs" / "generated" / "reanalysis"
+    assert source.read_bytes() == before
+    assert figure.read_bytes() == b"published figure"
+    assert (
+        json.loads((destination / "results.json").read_text())["records"]
+        == json.loads(before)["records"]
+    )
+    assert (destination / "figures" / "accuracy.png").is_file()

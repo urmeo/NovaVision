@@ -32,6 +32,22 @@ def test_analyze_reports_every_effect():
     assert mid["power_at_planned_n"] >= 0.8
 
 
+def test_power_cli_defaults_preserve_published_snapshot(tmp_path, monkeypatch):
+    import json
+
+    monkeypatch.chdir(tmp_path)
+    published = tmp_path / "outputs" / "results"
+    published.mkdir(parents=True)
+    (published / "probe_validation_scene_l14.json").write_text(json.dumps({"accuracy": 0.455}))
+    snapshot = published / "power_analysis.json"
+    snapshot.write_bytes(b"published planning report")
+    monkeypatch.setattr("sys.argv", ["power_analysis.py"])
+    pa.main()
+    assert snapshot.read_bytes() == b"published planning report"
+    output = tmp_path / "outputs" / "generated" / "power_analysis.json"
+    assert json.loads(output.read_text())["probe_ceiling"] == 0.455
+
+
 def _rng():
     import numpy as np
 
