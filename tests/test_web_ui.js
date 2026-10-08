@@ -1,4 +1,3 @@
-// Run with: node --test tests/test_web_ui.js (Node's built-in test runner).
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
@@ -118,7 +117,6 @@ function createApp(fetch) {
         fetch,
         console: { error: (...args) => errors.push(args) }
     });
-    // Execute the whole shipped script, including the real input and history handlers.
     vm.runInContext(script, context, { filename: 'static/index.html' });
     const api = vm.runInContext('({ generateImage, analyzeLive, downloadImage, downloadReport })', context);
     return { api, getElementById, downloads, reportText, reportImages, reportDraws,
@@ -291,7 +289,6 @@ for (const [backend, label] of [
 
 test('superseded analysis cannot overwrite newer input or repopulate cleared input', async () => {
     const pending = [];
-    // Deliberately ignore abort in the mock: late responses must also be discarded.
     const app = createApp((_, options) => new Promise(resolve => pending.push({ resolve, signal: options.signal })));
     const input = app.getElementById('emotionInput');
     input.value = 'I am very sad';

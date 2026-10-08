@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Boots the real Flask server (null image backend, token set) and exercises the
-# hardened request surface end to end over a real socket: static serving, auth,
-# input validation, and the body cap. No model downloads: every path checked
-# here runs before the ML pipeline is touched.
 set -euo pipefail
 
 PORT="${SMOKE_PORT:-8901}"
@@ -16,10 +12,9 @@ trap 'kill "$SERVER_PID" 2>/dev/null || true; rm -f "$BIG"' EXIT
 
 curl -sf --retry 20 --retry-connrefused --retry-delay 1 -o /dev/null "$BASE/" \
   || { echo "FAIL server did not boot"; exit 1; }
-# Guard against a port squatter: the process we started must be the responder.
 kill -0 "$SERVER_PID" 2>/dev/null || { echo "FAIL server process died; something else owns port ${PORT}"; exit 1; }
 
-expect() { # expect <status> <label> <curl args...>
+expect() {
   local want=$1 label=$2 got; shift 2
   got=$(curl -s -o /dev/null -w "%{http_code}" "$@") || got=000
   [ "$got" = "$want" ] || { echo "FAIL ${label}: want ${want}, got ${got}"; exit 1; }
@@ -41,8 +36,6 @@ expect 400 "non-dict body"   -X POST "$BASE/api/generate" -H "$JSON" -H "X-API-T
 python -c "print('{\"text\": \"' + 'x' * 33800 + '\"}')" > "$BIG"
 expect 413 "oversize body"   -X POST "$BASE/api/analyze" -H "$JSON" --data-binary @"$BIG"
 
-# Write to a file first: piping into `grep -q` makes grep exit on the first
-# match, and the SIGPIPE that gives curl would trip `pipefail`.
 PAGE=$(mktemp)
 curl -s "$BASE/" > "$PAGE"
 grep -q tokenInput "$PAGE" || { echo "FAIL frontend token field missing"; rm -f "$PAGE"; exit 1; }
