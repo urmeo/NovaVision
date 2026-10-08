@@ -8,7 +8,7 @@ from collections.abc import Sequence
 import numpy as np
 
 
-def _check(y_true: Sequence[str], y_pred: Sequence[str]) -> None:
+def _check(y_true: Sequence[object], y_pred: Sequence[object]) -> None:
     if len(y_true) != len(y_pred):
         raise ValueError("y_true and y_pred must be the same length")
 
@@ -32,6 +32,7 @@ def permutation_test(
     y_true: Sequence[str], y_pred: Sequence[str], *, n: int = 2000, seed: int = 0
 ) -> dict[str, float | list[float]]:
     "Shuffled-label control for circularity: is recovery above random targets?"
+    _check(y_true, y_pred)
     yt = np.asarray(list(y_true))
     yp = np.asarray(list(y_pred))
     if len(yt) < 2:
@@ -148,6 +149,7 @@ def holm_bonferroni(pvalues: dict[str, float], alpha: float = 0.05) -> dict[str,
 
 def mae(x: Sequence[float], y: Sequence[float]) -> float:
     """Mean absolute error, an interpretable companion to the VA correlations."""
+    _check(x, y)
     xa = np.asarray(x, dtype=float)
     ya = np.asarray(y, dtype=float)
     if len(xa) == 0:
@@ -156,6 +158,7 @@ def mae(x: Sequence[float], y: Sequence[float]) -> float:
 
 
 def pearson(x: Sequence[float], y: Sequence[float]) -> float:
+    _check(x, y)
     xa = np.asarray(x, dtype=float)
     ya = np.asarray(y, dtype=float)
     if len(xa) < 2 or xa.std() == 0 or ya.std() == 0:
@@ -165,6 +168,7 @@ def pearson(x: Sequence[float], y: Sequence[float]) -> float:
 
 def spearman(x: Sequence[float], y: Sequence[float]) -> float:
     """Rank correlation, robust to the compressed VA scale."""
+    _check(x, y)
     xa = np.asarray(x, dtype=float)
     ya = np.asarray(y, dtype=float)
     if len(xa) < 2:
@@ -196,6 +200,7 @@ def bootstrap_corr_ci(
     if method not in ("spearman", "pearson"):
         raise ValueError(f"unknown method '{method}', expected 'spearman' or 'pearson'")
     corr = spearman if method == "spearman" else pearson
+    _check(x, y)
     xa = np.asarray(x, dtype=float)
     ya = np.asarray(y, dtype=float)
     if len(xa) < 3:
