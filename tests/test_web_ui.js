@@ -170,6 +170,8 @@ test('history selection restores analysis, seed, image and report downloads', as
     assert.equal(app.downloads[0].href, 'data:image/png;base64,older');
     assert.deepEqual(app.reportImages, ['data:image/png;base64,older']);
     assert(app.reportText.includes('Sadness'));
+    assert(app.reportText.includes('Test image · null backend'));
+    assert(!app.reportText.includes('Hosted generation · hf-api backend'));
     assert(app.reportText.includes('"older"'));
     assert(!app.reportText.includes('"latest"'));
     assert.equal(app.reportCanvases[0].height, 1600);
@@ -283,6 +285,8 @@ for (const [backend, label] of [
         app.getElementById('emotionInput').value = 'I feel happy';
         await app.api.generateImage();
         assert.equal(app.getElementById('generationBackend').textContent, label);
+        app.api.downloadReport();
+        assert(app.reportText.includes(label));
         assert.deepEqual(app.errors, []);
     });
 }
