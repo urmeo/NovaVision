@@ -8,8 +8,7 @@ url: "https://github.com/urmeo/NovaVision"
 repository-code: "https://github.com/urmeo/NovaVision"
 license: MIT
 authors:
-  - family-names: Bose
-    given-names: Urme
+  - given-names: Urme
     alias: urmeo
 abstract: >-
   An emotion-guided image app and paired evaluation harness with
